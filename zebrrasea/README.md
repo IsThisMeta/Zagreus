@@ -1,4 +1,4 @@
-# <img width="40px" src="./assets/images/branding_logo.png" alt="ZebrraSea"></img>&nbsp;&nbsp;ZebrraSea
+# ZebrraSea
 
 > :warning: **This project is no longer being actively maintained and this repository is archived.** :warning:
 

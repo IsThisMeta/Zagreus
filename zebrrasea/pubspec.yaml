@@ -73,7 +73,7 @@ flutter:
   fonts:
     - family: ZebrraBrandIcons
       fonts:
-        - asset: assets/ZebrraBrandIcons.ttf
+        - asset: assets/ZebrrraBrandIcons.ttf
 flutter_icons:
   android: true
   ios: true

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature Requests & Support via Discord
+    url: https://www.zebrrasea.app/discord
+    about: Request new features and get support from the community
+  - name: Support via GitHub Discussions
+    url: https://github.com/JagandeepBrar/zebrrasea/discussions
+    about: Ask questions and discuss with other community members
+  - name: Support via Reddit
+    url: https://www.zebrrasea.app/reddit
+    about: Ask the developer and other redditors for support and setup related topics

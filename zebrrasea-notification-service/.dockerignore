@@ -1,0 +1,17 @@
+data/
+node_modules/
+.dockerignore
+.env
+.env.sample
+.eslintignore
+.eslintrc.json
+.gitignore
+.prettierignore
+.prettierrc.json
+Dockerfile
+LICENSE
+nodemon.json
+npm-debug.log
+README.md
+server.log
+serviceaccount.json

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ln -sf '/usr/share/zebrrasea/zebrrasea' '/usr/bin/zebrrasea'

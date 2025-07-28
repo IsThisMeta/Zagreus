@@ -1,0 +1,55 @@
+name: "Build iOS"
+
+on:
+  workflow_call:
+    inputs:
+      build-number:
+        required: true
+        type: string
+
+    secrets:
+      APPLE_ID:
+        required: true
+      APPLE_ITC_TEAM_ID:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+      IOS_CODESIGNING_IDENTITY:
+        required: true
+      MATCH_KEYCHAIN_NAME:
+        required: true
+      MATCH_KEYCHAIN_PASSWORD:
+        required: true
+      MATCH_PASSWORD:
+        required: true
+      MATCH_SSH_PRIVATE_KEY:
+        required: true
+
+jobs:
+  build-app-store:
+    name: App Store
+    runs-on: macos-latest
+    steps:
+      - name: Setup Environment
+        uses: JagandeepBrar/zebrrasea/.github/actions/prepare_for_build@master
+        with:
+          platform: ios
+          match-ssh-private-key: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
+
+      - name: Build ZebrraSea
+        working-directory: ${{ github.workspace }}/ios
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ITC_TEAM_ID: ${{ secrets.APPLE_ITC_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_CODESIGNING_IDENTITY: ${{ secrets.IOS_CODESIGNING_IDENTITY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_KEYCHAIN_NAME: ${{ secrets.MATCH_KEYCHAIN_NAME }}
+          MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
+        run: bundle exec fastlane build_appstore build_number:${{ inputs.build-number }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-appstore-package
+          path: ${{ github.workspace }}/output

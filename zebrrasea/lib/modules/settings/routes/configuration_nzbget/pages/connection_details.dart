@@ -1,0 +1,174 @@
+import 'package:flutter/material.dart';
+import 'package:zebrrasea/core.dart';
+import 'package:zebrrasea/modules/nzbget.dart';
+import 'package:zebrrasea/modules/settings.dart';
+import 'package:zebrrasea/router/routes/settings.dart';
+
+class ConfigurationNZBGetConnectionDetailsRoute extends StatefulWidget {
+  const ConfigurationNZBGetConnectionDetailsRoute({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<ConfigurationNZBGetConnectionDetailsRoute> createState() => _State();
+}
+
+class _State extends State<ConfigurationNZBGetConnectionDetailsRoute>
+    with ZebrraScrollControllerMixin {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return ZebrraScaffold(
+      scaffoldKey: _scaffoldKey,
+      appBar: _appBar() as PreferredSizeWidget?,
+      body: _body(),
+      bottomNavigationBar: _bottomActionBar(),
+    );
+  }
+
+  Widget _appBar() {
+    return ZebrraAppBar(
+      title: 'settings.ConnectionDetails'.tr(),
+      scrollControllers: [scrollController],
+    );
+  }
+
+  Widget _bottomActionBar() {
+    return ZebrraBottomActionBar(
+      actions: [
+        _testConnection(),
+      ],
+    );
+  }
+
+  Widget _body() {
+    return ZebrraBox.profiles.listenableBuilder(
+      builder: (context, _) => ZebrraListView(
+        controller: scrollController,
+        children: [
+          _host(),
+          _username(),
+          _password(),
+          _customHeaders(),
+        ],
+      ),
+    );
+  }
+
+  Widget _host() {
+    String host = ZebrraProfile.current.nzbgetHost;
+    return ZebrraBlock(
+      title: 'settings.Host'.tr(),
+      body: [TextSpan(text: host.isEmpty ? 'zebrrasea.NotSet'.tr() : host)],
+      trailing: const ZebrraIconButton.arrow(),
+      onTap: () async {
+        Tuple2<bool, String> _values = await SettingsDialogs().editHost(
+          context,
+          prefill: host,
+        );
+        if (_values.item1) {
+          ZebrraProfile.current.nzbgetHost = _values.item2;
+          ZebrraProfile.current.save();
+          context.read<NZBGetState>().reset();
+        }
+      },
+    );
+  }
+
+  Widget _username() {
+    String username = ZebrraProfile.current.nzbgetUser;
+    return ZebrraBlock(
+      title: 'settings.Username'.tr(),
+      body: [
+        TextSpan(text: username.isEmpty ? 'zebrrasea.NotSet'.tr() : username),
+      ],
+      trailing: const ZebrraIconButton.arrow(),
+      onTap: () async {
+        Tuple2<bool, String> _values = await ZebrraDialogs().editText(
+          context,
+          'settings.Username'.tr(),
+          prefill: username,
+        );
+        if (_values.item1) {
+          ZebrraProfile.current.nzbgetUser = _values.item2;
+          ZebrraProfile.current.save();
+          context.read<NZBGetState>().reset();
+        }
+      },
+    );
+  }
+
+  Widget _password() {
+    String password = ZebrraProfile.current.nzbgetPass;
+    return ZebrraBlock(
+      title: 'settings.Password'.tr(),
+      body: [
+        TextSpan(
+          text: password.isEmpty
+              ? 'zebrrasea.NotSet'.tr()
+              : ZebrraUI.TEXT_OBFUSCATED_PASSWORD,
+        ),
+      ],
+      trailing: const ZebrraIconButton.arrow(),
+      onTap: () async {
+        Tuple2<bool, String> _values = await ZebrraDialogs().editText(
+          context,
+          'settings.Password'.tr(),
+          prefill: password,
+          extraText: [
+            ZebrraDialog.textSpanContent(
+              text: '${ZebrraUI.TEXT_BULLET} ${'settings.PasswordHint1'.tr()}',
+            ),
+          ],
+        );
+        if (_values.item1) {
+          ZebrraProfile.current.nzbgetPass = _values.item2;
+          ZebrraProfile.current.save();
+          context.read<NZBGetState>().reset();
+        }
+      },
+    );
+  }
+
+  Widget _testConnection() {
+    return ZebrraButton.text(
+      text: 'settings.TestConnection'.tr(),
+      icon: ZebrraIcons.CONNECTION_TEST,
+      onTap: () async {
+        ZebrraProfile _profile = ZebrraProfile.current;
+        if (_profile.nzbgetHost.isEmpty) {
+          showZebrraErrorSnackBar(
+            title: 'settings.HostRequired'.tr(),
+            message: 'settings.HostRequiredMessage'
+                .tr(args: [ZebrraModule.NZBGET.title]),
+          );
+          return;
+        }
+        NZBGetAPI.from(ZebrraProfile.current)
+            .testConnection()
+            .then((_) => showZebrraSuccessSnackBar(
+                  title: 'settings.ConnectedSuccessfully'.tr(),
+                  message: 'settings.ConnectedSuccessfullyMessage'
+                      .tr(args: [ZebrraModule.NZBGET.title]),
+                ))
+            .catchError((error, trace) {
+          ZebrraLogger().error('Connection Test Failed', error, trace);
+          showZebrraErrorSnackBar(
+            title: 'settings.ConnectionTestFailed'.tr(),
+            error: error,
+          );
+        });
+      },
+    );
+  }
+
+  Widget _customHeaders() {
+    return ZebrraBlock(
+      title: 'settings.CustomHeaders'.tr(),
+      body: [TextSpan(text: 'settings.CustomHeadersDescription'.tr())],
+      trailing: const ZebrraIconButton.arrow(),
+      onTap: SettingsRoutes.CONFIGURATION_NZBGET_CONNECTION_DETAILS_HEADERS.go,
+    );
+  }
+}

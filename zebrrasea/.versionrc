@@ -1,0 +1,28 @@
+{
+  "skip": {
+    "bump": true
+  },
+  "types": [
+    {
+      "type": "chore",
+      "hidden": true
+    },
+    {
+      "type": "docs",
+      "hidden": true
+    },
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "refactor",
+      "section": "Tweaks"
+    }
+  ],
+  "releaseCommitMessageFormat": "release: v{{currentTag}}\n\n[skip ci]"
+}

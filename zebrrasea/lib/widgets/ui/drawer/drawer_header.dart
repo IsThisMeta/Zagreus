@@ -32,14 +32,15 @@ class ZebrraDrawerHeader extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: ZebrraColours.accent,
-          image: DecorationImage(
-            image: const AssetImage(ZebrraAssets.brandingLogo),
-            colorFilter: ColorFilter.mode(
-              ZebrraColours.primary.withOpacity(0.15),
-              BlendMode.dstATop,
-            ),
-            fit: BoxFit.cover,
-          ),
+          // Logo removed - add your own branding
+          // image: DecorationImage(
+          //   image: const AssetImage(ZebrraAssets.brandingLogo),
+          //   colorFilter: ColorFilter.mode(
+          //     ZebrraColours.primary.withOpacity(0.15),
+          //     BlendMode.dstATop,
+          //   ),
+          //   fit: BoxFit.cover,
+          // ),
         ),
       ),
     );

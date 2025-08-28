@@ -1,6 +1,0 @@
-Package:ZebrraSea
-Architecture:amd64
-Essential:no
-Priority:optional
-Maintainer:ZebrraSea Support <hello@zebrrasea.app>
-Description:Self-hosted software controller built using Flutter

@@ -1,0 +1,54 @@
+name: "Build Windows"
+
+on:
+  workflow_call:
+    secrets:
+      CODE_SIGNING_CERTIFICATE:
+        required: true
+      CODE_SIGNING_PASSWORD:
+        required: true
+
+jobs:
+  build-app-package:
+    name: App Package
+    runs-on: windows-latest
+    steps:
+      - name: Setup Environment
+        uses: JagandeepBrar/zagreus/.github/actions/prepare_for_build@master
+        with:
+          platform: windows
+
+      - name: Build Zagreus
+        run: npm run build:windows
+
+      - name: Prepare Artifact
+        run: Compress-Archive -path ${{ github.workspace }}\build\windows\x64\runner\Release\* ${{github.workspace}}\output\zagreus-windows-amd64.zip
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-app-package
+          path: ${{ github.workspace }}/output
+
+  build-msix-installer:
+    name: MSIX Installer
+    runs-on: windows-latest
+    steps:
+      - name: Setup Environment
+        uses: JagandeepBrar/zagreus/.github/actions/prepare_for_build@master
+        with:
+          platform: windows
+          code-signing-certificate: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
+
+      - name: Build Zagreus
+        run: |
+          flutter pub run msix:create `
+          --certificate-password=${{ secrets.CODE_SIGNING_PASSWORD }} `
+          --certificate-path=${{ github.workspace }}/keys/codesigning.pfx `
+          --output-path=${{ github.workspace }}/output
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix-installer
+          path: ${{ github.workspace }}/output

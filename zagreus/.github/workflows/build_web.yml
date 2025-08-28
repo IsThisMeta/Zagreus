@@ -1,0 +1,95 @@
+name: "Build Web"
+
+on:
+  workflow_call:
+    inputs:
+      build-flavor:
+        required: true
+        type: string
+      build-title:
+        required: true
+        type: string
+
+jobs:
+  build-hosted:
+    name: Hosted
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Environment
+        uses: JagandeepBrar/zagreus/.github/actions/prepare_for_build@master
+        with:
+          platform: web
+
+      - name: Build Zagreus
+        run: npm run build:web
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-hosted
+          path: ${{ github.workspace }}/build/web
+
+  build-archive:
+    name: Archive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Environment
+        uses: JagandeepBrar/zagreus/.github/actions/prepare_for_build@master
+        with:
+          platform: web
+
+      - name: Build Zagreus
+        run: npm run build:web
+
+      - name: Create Archive
+        uses: thedoctor0/zip-release@0.6.2
+        with:
+          type: zip
+          directory: ${{ github.workspace }}/build/web
+          filename: ../../output/zagreus-web-canvaskit.zip
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-archive
+          path: ${{ github.workspace }}/output
+
+  build-docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Environment
+        uses: JagandeepBrar/zagreus/.github/actions/prepare_for_build@master
+        with:
+          platform: web
+
+      - name: Determine Tags
+        id: tags
+        uses: actions/github-script@v6
+        env:
+          BUILD_FLAVOR: ${{ inputs.build-flavor }}
+          BUILD_TITLE: ${{ inputs.build-title }}
+        with:
+          result-encoding: string
+          script: |
+            const tags = [];
+            tags.push(process.env.BUILD_FLAVOR);
+            tags.push(process.env.BUILD_TITLE);
+            if (process.env.BUILD_FLAVOR === 'stable') tags.push('latest');
+            return tags.map((tag) => `ghcr.io/jagandeepbrar/zagreus:${tag}`).join(',');
+
+      - name: Setup GitHub Package Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build & Push Zagreus
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          provenance: false
+          push: true
+          tags: ${{ steps.tags.outputs.result }}

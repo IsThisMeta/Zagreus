@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ln -sf '/usr/share/zagreus/zagreus' '/usr/bin/zagreus'

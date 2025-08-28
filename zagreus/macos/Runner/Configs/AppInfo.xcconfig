@@ -1,0 +1,3 @@
+PRODUCT_NAME = Zagreus
+PRODUCT_BUNDLE_IDENTIFIER = app.zagreus.zagreus
+PRODUCT_COPYRIGHT = Copyright © 2025 Zag Labs LLC. All rights reserved.

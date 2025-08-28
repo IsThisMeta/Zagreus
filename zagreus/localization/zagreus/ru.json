@@ -1,0 +1,15 @@
+{
+    "zagreus.AnErrorHasOccurred": "Произошла ошибка",
+    "zagreus.Cancel": "Отмена",
+    "zagreus.ChangeProfiles": "Изменить профили",
+    "zagreus.ComingSoon": "Скоро будет",
+    "zagreus.Dashboard": "Панель управления",
+    "zagreus.GoBack": "Назад",
+    "zagreus.ModuleIsNotEnabled": "{} Не включено",
+    "zagreus.Refresh": "Обновить",
+    "zagreus.ReturnToDashboard": "Вернуться в панель управления",
+    "zagreus.SearchTextBar": "Поиск…",
+    "zagreus.Settings": "Настройки",
+    "zagreus.TryAgain": "Попробуйте снова",
+    "zagreus.Unknown": "Неизвестно"
+}

@@ -1,0 +1,112 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zagreus/core.dart';
+import 'package:zagreus/supabase/auth.dart';
+import 'package:zagreus/supabase/messaging.dart';
+import 'package:zagreus/supabase/types.dart';
+
+class ZagSupabaseFirestore {
+  /// Returns an instance of Supabase Client.
+  ///
+  /// Throws an error if [ZagSupabase.initialize] has not been called.
+  static SupabaseClient get instance => Supabase.instance.client;
+
+  /// Add a backup entry to Supabase. Returns true if successful, and false on any error.
+  ///
+  /// If the user is not signed in, returns false.
+  /// Assumes you have a 'backups' table with columns: id, user_id, title, description, timestamp
+  Future<bool> addBackupEntry(
+    String id,
+    int timestamp, {
+    String title = '',
+    String description = '',
+  }) async {
+    if (!ZagSupabaseAuth().isSignedIn) return false;
+    try {
+      final userId = ZagSupabaseAuth().uid;
+      await instance.from('backups').insert({
+        'id': id,
+        'user_id': userId,
+        'title': title,
+        'description': description,
+        'timestamp': timestamp,
+      });
+      return true;
+    } catch (error, stack) {
+      ZagLogger().error('Failed to add backup entry', error, stack);
+      return false;
+    }
+  }
+
+  /// Delete a backup entry from Supabase. Returns true if successful, and false on any error.
+  ///
+  /// If the user is not signed in, returns false.
+  Future<bool> deleteBackupEntry(String? id) async {
+    if (!ZagSupabaseAuth().isSignedIn) return false;
+    try {
+      final userId = ZagSupabaseAuth().uid;
+      await instance
+          .from('backups')
+          .delete()
+          .eq('id', id!)
+          .eq('user_id', userId!);
+      return true;
+    } catch (error, stack) {
+      ZagLogger().error('Failed to delete backup entry', error, stack);
+      return false;
+    }
+  }
+
+  /// Returns a list of all backups available for this account.
+  ///
+  /// If the user is not signed in, returns an empty list.
+  Future<List<ZagSupabaseBackupDocument>> getBackupEntries() async {
+    if (!ZagSupabaseAuth().isSignedIn) return [];
+    try {
+      final userId = ZagSupabaseAuth().uid;
+      final response = await instance
+          .from('backups')
+          .select()
+          .eq('user_id', userId!)
+          .order('timestamp', ascending: false);
+      
+      return (response as List)
+          .map<ZagSupabaseBackupDocument>((document) =>
+              ZagSupabaseBackupDocument.fromMap(document))
+          .toList();
+    } catch (error, stack) {
+      ZagLogger().error('Failed to get backup list', error, stack);
+      return [];
+    }
+  }
+
+  /// Add the current device token to Supabase. Returns true if successful, and false on any error.
+  /// Assumes you have a 'user_devices' table with columns: user_id, device_token, created_at
+  Future<bool> addDeviceToken() async {
+    if (!ZagSupabaseAuth().isSignedIn) return false;
+    try {
+      String? token = await ZagSupabaseMessaging.instance.getToken();
+      final userId = ZagSupabaseAuth().uid;
+      
+      // First, check if this token already exists for this user
+      final existing = await instance
+          .from('user_devices')
+          .select()
+          .eq('user_id', userId!)
+          .eq('device_token', token!);
+      
+      if (existing.isEmpty) {
+        // Insert new device token
+        await instance.from('user_devices').insert({
+          'user_id': userId,
+          'device_token': token,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      }
+      
+      return true;
+    } catch (error, stack) {
+      ZagLogger().error('Failed to add device token', error, stack);
+      return false;
+    }
+  }
+}

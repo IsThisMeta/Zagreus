@@ -11,6 +11,7 @@ import 'package:zagreus/system/network/network.dart';
 import 'package:zagreus/system/recovery_mode/main.dart';
 import 'package:zagreus/system/window_manager/window_manager.dart';
 import 'package:zagreus/system/platform.dart';
+import 'package:zagreus/supabase/core.dart';
 
 /// Zagreus Entry Point: Bootstrap & Run Application
 ///
@@ -40,6 +41,8 @@ Future<void> bootstrap() async {
   if (ZagWindowManager.isSupported) await ZagWindowManager().initialize();
   if (ZagNetwork.isSupported) ZagNetwork().initialize();
   if (ZagImageCache.isSupported) ZagImageCache().initialize();
+  // Initialize Supabase for auth and storage
+  if (ZagSupabase.isSupported) await ZagSupabase().initialize();
   ZagRouter().initialize();
   await ZagMemoryStore().initialize();
 }

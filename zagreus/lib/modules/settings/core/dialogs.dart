@@ -11,6 +11,7 @@ import 'package:zagreus/system/state.dart';
 import 'package:zagreus/utils/validator.dart';
 import 'package:zagreus/vendor.dart';
 import 'package:zagreus/widgets/ui.dart';
+import 'package:zagreus/supabase/types.dart';
 
 class SettingsDialogs {
   Future<Tuple2<bool, int>> setDefaultOption(
@@ -1220,6 +1221,40 @@ class SettingsDialogs {
       contentPadding: ZagDialog.inputTextDialogContentPadding(),
     );
     return Tuple2(_flag, _textController.text);
+  }
+
+  Future<Tuple2<bool, ZagSupabaseBackupDocument?>> getBackupFromCloud(
+    BuildContext context,
+    List<ZagSupabaseBackupDocument> documents,
+  ) async {
+    bool _flag = false;
+    ZagSupabaseBackupDocument? _document;
+
+    void _setValues(bool flag, ZagSupabaseBackupDocument document) {
+      _flag = flag;
+      _document = document;
+      Navigator.of(context).pop();
+    }
+
+    await ZagDialog.dialog(
+      context: context,
+      title: 'settings.RestoreFromCloud'.tr(),
+      content: documents.isEmpty
+          ? [ZagDialog.textContent(text: 'settings.NoBackupsFound'.tr())]
+          : List.generate(
+              documents.length,
+              (index) => ZagDialog.tile(
+                icon: Icons.cloud_download_rounded,
+                iconColor: ZagColours().byListIndex(index),
+                text: documents[index].title ?? 'Unknown Backup',
+                onTap: () => _setValues(true, documents[index]),
+              ),
+            ),
+      contentPadding: documents.isEmpty 
+          ? ZagDialog.textDialogContentPadding()
+          : ZagDialog.listDialogContentPadding(),
+    );
+    return Tuple2(_flag, _document);
   }
 
   Future<Tuple2<bool, int>> changeBackgroundImageOpacity(

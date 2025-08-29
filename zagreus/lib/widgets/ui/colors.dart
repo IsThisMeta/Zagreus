@@ -17,11 +17,11 @@ class ZagColours {
   /// Core accent colour
   static const Color accent = Color(0xFF4ECCA3);
   
-  /// LunaSea aqua blue - RGB(67, 204, 164)
-  static const Color lunaseaAqua = Color(0xFF43CCA4);
+  /// Zagreus aqua blue - RGB(67, 204, 164)
+  static const Color zagreusAqua = Color(0xFF43CCA4);
   
-  /// LunaSea app black background - RGB(40, 40, 52)
-  static const Color lunaseaBackground = Color(0xFF282834);
+  /// Zagreus app black background - RGB(40, 40, 52)
+  static const Color zagreusBackground = Color(0xFF282834);
 
   /// Core primary colour (background)
   static const Color primary = Color(0xFF32323E);

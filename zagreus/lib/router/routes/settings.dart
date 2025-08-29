@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:zagreus/database/models/indexer.dart';
 import 'package:zagreus/modules.dart';
+import 'package:zagreus/modules/settings/routes/account/route.dart';
+import 'package:zagreus/modules/settings/routes/account/pages/password_reset.dart';
+import 'package:zagreus/modules/settings/routes/account/pages/settings.dart';
 import 'package:zagreus/modules/settings/routes/configuration/route.dart';
 import 'package:zagreus/modules/settings/routes/configuration_general/route.dart';
 import 'package:zagreus/modules/settings/routes/configuration_dashboard/pages/calendar_settings.dart';
@@ -55,6 +58,9 @@ import 'package:zagreus/vendor.dart';
 
 enum SettingsRoutes with ZagRoutesMixin {
   HOME('/settings'),
+  ACCOUNT('account'),
+  ACCOUNT_PASSWORD_RESET('password_reset'),
+  ACCOUNT_SETTINGS('settings'),
   CONFIGURATION('configuration'),
   CONFIGURATION_GENERAL('general'),
   CONFIGURATION_DASHBOARD('dashboard'),
@@ -118,6 +124,12 @@ enum SettingsRoutes with ZagRoutesMixin {
     switch (this) {
       case SettingsRoutes.HOME:
         return route(widget: const SettingsRoute());
+      case SettingsRoutes.ACCOUNT:
+        return route(widget: const AccountRoute());
+      case SettingsRoutes.ACCOUNT_PASSWORD_RESET:
+        return route(widget: const AccountPasswordResetRoute());
+      case SettingsRoutes.ACCOUNT_SETTINGS:
+        return route(widget: const AccountSettingsRoute());
       case SettingsRoutes.CONFIGURATION:
         return route(widget: const ConfigurationRoute());
       case SettingsRoutes.CONFIGURATION_GENERAL:
@@ -249,9 +261,15 @@ enum SettingsRoutes with ZagRoutesMixin {
     switch (this) {
       case SettingsRoutes.HOME:
         return [
+          SettingsRoutes.ACCOUNT.routes,
           SettingsRoutes.CONFIGURATION.routes,
           SettingsRoutes.PROFILES.routes,
           SettingsRoutes.SYSTEM.routes,
+        ];
+      case SettingsRoutes.ACCOUNT:
+        return [
+          SettingsRoutes.ACCOUNT_PASSWORD_RESET.routes,
+          SettingsRoutes.ACCOUNT_SETTINGS.routes,
         ];
       case SettingsRoutes.CONFIGURATION:
         return [

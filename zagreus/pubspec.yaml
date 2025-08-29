@@ -49,6 +49,8 @@ dependencies:
   wake_on_lan: ^4.1.0
   window_manager: ^0.4.3
   xml: ^6.3.0
+  # Supabase for auth and storage
+  supabase_flutter: ^2.0.0
 dev_dependencies:
   # Generators
   build_runner: ^2.4.6

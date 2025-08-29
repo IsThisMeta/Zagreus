@@ -30,6 +30,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
+  app_links:
+    dependency: transitive
+    description:
+      name: app_links
+      sha256: "5f88447519add627fe1cbcab4fd1da3d4fed15b9baf29f28b22535c95ecee3e8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.4.1"
+  app_links_linux:
+    dependency: transitive
+    description:
+      name: app_links_linux
+      sha256: f5f7173a78609f3dfd4c2ff2c95bd559ab43c80a87dc6a095921d96c05688c81
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
+  app_links_platform_interface:
+    dependency: transitive
+    description:
+      name: app_links_platform_interface
+      sha256: "05f5379577c513b534a29ddea68176a4d4802c46180ee8e2e966257158772a3f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
+  app_links_web:
+    dependency: transitive
+    description:
+      name: app_links_web
+      sha256: af060ed76183f9e2b87510a9480e56a5352b6c249778d07bd2c95fc35632a555
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   archive:
     dependency: transitive
     description:
@@ -477,6 +509,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  functions_client:
+    dependency: transitive
+    description:
+      name: functions_client
+      sha256: "38e5049d4ca5b3482c606d8bfe82183aa24c9650ef1fa0582ab5957a947b937f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.4"
   get_it:
     dependency: transitive
     description:
@@ -517,6 +557,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.7"
+  gotrue:
+    dependency: transitive
+    description:
+      name: gotrue
+      sha256: "4ed944bfa31cca12e6d224ed07557ccf1bb604959de3c7d5282cd11314e7655b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.14.0"
   graphs:
     dependency: transitive
     description:
@@ -525,6 +573,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  gtk:
+    dependency: transitive
+    description:
+      name: gtk
+      sha256: e8ce9ca4b1df106e4d72dad201d345ea1a036cc12c360f1a7d5a758f78ffa42c
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   hive:
     dependency: "direct main"
     description:
@@ -637,6 +693,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.9.0"
+  jwt_decode:
+    dependency: transitive
+    description:
+      name: jwt_decode
+      sha256: d2e9f68c052b2225130977429d30f187aa1981d789c76ad104a32243cfdebfbb
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   lints:
     dependency: transitive
     description:
@@ -861,6 +925,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.1"
+  postgrest:
+    dependency: transitive
+    description:
+      name: postgrest
+      sha256: "10b81a23b1c829ccadf68c626b4d66666453a1474d24c563f313f5ca7851d575"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.2"
   protobuf:
     dependency: transitive
     description:
@@ -925,6 +997,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  realtime_client:
+    dependency: transitive
+    description:
+      name: realtime_client
+      sha256: "025b7e690e8dcf27844f37d140cca47da5ab31d6fe8d78347fb16763f0a4beb6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.2"
   retrofit:
     dependency: "direct main"
     description:
@@ -941,6 +1021,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.1.9"
+  retry:
+    dependency: transitive
+    description:
+      name: retry
+      sha256: "822e118d5b3aafed083109c72d5f484c6dc66707885e07c0fbcb8b986bba7efc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.2"
   rxdart:
     dependency: transitive
     description:
@@ -1210,6 +1298,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.0"
+  storage_client:
+    dependency: transitive
+    description:
+      name: storage_client
+      sha256: "1c61b19ed9e78f37fdd1ca8b729ab8484e6c8fe82e15c87e070b861951183657"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
   stream_channel:
     dependency: transitive
     description:
@@ -1234,6 +1330,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  supabase:
+    dependency: transitive
+    description:
+      name: supabase
+      sha256: da2afea0f06b06fd0ebb23b916af05df2ef6d56dccae5c0112a2171e668bf9b2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.0"
+  supabase_flutter:
+    dependency: "direct main"
+    description:
+      name: supabase_flutter
+      sha256: f7eefb065f00f947a8f2d0fbb4be3e687ed7165e80c798bc8c4f0d4295855c51
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.10.0"
   supercharged:
     dependency: "direct main"
     description:
@@ -1482,6 +1594,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.3"
+  yet_another_json_isolate:
+    dependency: transitive
+    description:
+      name: yet_another_json_isolate
+      sha256: fe45897501fa156ccefbfb9359c9462ce5dec092f05e8a56109db30be864f01e
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
 sdks:
   dart: ">=3.7.0 <4.0.0"
   flutter: ">=3.27.0"

@@ -40,6 +40,12 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       controller: scrollController,
       children: [
         ZagBlock(
+          title: 'settings.Account'.tr(),
+          body: [TextSpan(text: 'settings.AccountDescription'.tr())],
+          trailing: const ZagIconButton(icon: Icons.account_circle_rounded),
+          onTap: SettingsRoutes.ACCOUNT.go,
+        ),
+        ZagBlock(
           title: 'settings.Configuration'.tr(),
           body: [TextSpan(text: 'settings.ConfigurationDescription'.tr())],
           trailing: const ZagIconButton(icon: Icons.device_hub_rounded),

@@ -37,11 +37,16 @@ build/
 !packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 ios/Flutter/.last_build_id
 
-# LunaSea
+# Zagreus
 output/
 *.packages
 coverage/
 lib/system/environment.dart
+# Environment files
+.env
+.env.*
+# Supabase config
+lib/config/supabase_config.dart
 
 # XCode Build Artifacts
 ios/build/

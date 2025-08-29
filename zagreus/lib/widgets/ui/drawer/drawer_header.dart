@@ -32,15 +32,14 @@ class ZagDrawerHeader extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: ZagColours.accent,
-          // Logo removed - add your own branding
-          // image: DecorationImage(
-          //   image: const AssetImage(ZagAssets.brandingLogo),
-          //   colorFilter: ColorFilter.mode(
-          //     ZagColours.primary.withOpacity(0.15),
-          //     BlendMode.dstATop,
-          //   ),
-          //   fit: BoxFit.cover,
-          // ),
+          image: DecorationImage(
+            image: const AssetImage(ZagAssets.brandingLogo),
+            colorFilter: ColorFilter.mode(
+              ZagColours.primary.withOpacity(0.15),
+              BlendMode.dstATop,
+            ),
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );

@@ -15,10 +15,13 @@ class ZagColours {
   ];
 
   /// Core accent colour
-  static const Color accent = Color(0xFF4ECCA3);
+  static const Color accent = Color(0xFF236969);
   
-  /// Zagreus aqua blue - RGB(67, 204, 164)
-  static const Color zagreusAqua = Color(0xFF43CCA4);
+  /// Dark mode accent colour
+  static const Color accentDark = Color(0xFF236969);
+  
+  /// Light mode accent colour
+  static const Color accentLight = Color(0xFF5AD2BE);
   
   /// Zagreus app black background - RGB(40, 40, 52)
   static const Color zagreusBackground = Color(0xFF282834);

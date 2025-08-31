@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Z larger.png",
+      "filename" : "zagreus light.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "Generated Image August 26, 2025 - 1_44PM.jpeg",
+      "filename" : "zagreus dark.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

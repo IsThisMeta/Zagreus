@@ -51,6 +51,7 @@ class _State extends State<ConfigurationGeneralRoute>
   List<Widget> _appearance() {
     return [
       ZagHeader(text: 'settings.Appearance'.tr()),
+      _themeMode(),
       _imageBackgroundOpacity(),
       _amoledTheme(),
       _amoledThemeBorders(),
@@ -211,6 +212,26 @@ class _State extends State<ConfigurationGeneralRoute>
             BIOSDatabase.BOOT_MODULE.update(result.item2!);
           }
         },
+      ),
+    );
+  }
+
+  Widget _themeMode() {
+    const _db = ZagreusDatabase.THEME_MODE;
+    return _db.listenableBuilder(
+      builder: (context, _) => ZagBlock(
+        title: 'Theme Mode',
+        body: [
+          TextSpan(text: _db.read() == 'light' ? 'Light theme enabled' : 'Dark theme enabled'),
+        ],
+        trailing: ZagSwitch(
+          value: _db.read() == 'light',
+          onChanged: (value) {
+            _db.update(value ? 'light' : 'dark');
+            ZagTheme().initialize();
+            ZagState.reset(context);
+          },
+        ),
       ),
     );
   }

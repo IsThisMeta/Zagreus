@@ -12,11 +12,15 @@ class ZagTheme {
 
   /// Returns the active [ThemeData] by checking the theme database value.
   ThemeData activeTheme() {
+    if (themeMode == 'light') {
+      return _lightTheme();
+    }
     return isAMOLEDTheme ? _pureBlackTheme() : _midnightTheme();
   }
 
   static bool get isAMOLEDTheme => ZagreusDatabase.THEME_AMOLED.read();
   static bool get useBorders => ZagreusDatabase.THEME_AMOLED_BORDER.read();
+  static String get themeMode => ZagreusDatabase.THEME_MODE.read();
 
   /// Midnight theme (Default)
   ThemeData _midnightTheme() {
@@ -91,18 +95,66 @@ class ZagTheme {
     );
   }
 
+  /// Light theme
+  ThemeData _lightTheme() {
+    return ThemeData(
+      useMaterial3: false,
+      brightness: Brightness.light,
+      canvasColor: ZagColours.primaryLight,
+      primaryColor: ZagColours.secondaryLight,
+      highlightColor: ZagColours.accentLight.withOpacity(ZagUI.OPACITY_SPLASH / 2),
+      cardColor: ZagColours.secondaryLight,
+      hoverColor: ZagColours.accentLight.withOpacity(ZagUI.OPACITY_SPLASH / 2),
+      splashColor: ZagColours.accentLight.withOpacity(ZagUI.OPACITY_SPLASH),
+      dialogTheme: DialogThemeData(
+        backgroundColor: ZagColours.secondaryLight,
+      ),
+      iconTheme: const IconThemeData(
+        color: Colors.black87,
+      ),
+      appBarTheme: const AppBarTheme(
+        titleTextStyle: TextStyle(
+          color: Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+        ),
+        iconTheme: IconThemeData(color: Colors.black87),
+      ),
+      tooltipTheme: const TooltipThemeData(
+        decoration: BoxDecoration(
+          color: Colors.grey,
+          borderRadius: BorderRadius.all(Radius.circular(ZagUI.BORDER_RADIUS)),
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: ZagUI.FONT_SIZE_SUBHEADER,
+        ),
+        preferBelow: true,
+      ),
+      unselectedWidgetColor: Colors.black54,
+      textTheme: _lightTextTheme,
+      textButtonTheme: _lightTextButtonThemeData,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+    );
+  }
+
   SystemUiOverlayStyle get overlayStyle {
+    bool isLight = themeMode == 'light';
     return SystemUiOverlayStyle(
-      systemNavigationBarColor: ZagreusDatabase.THEME_AMOLED.read()
-          ? Colors.black
-          : ZagColours.secondary,
-      systemNavigationBarDividerColor: ZagreusDatabase.THEME_AMOLED.read()
-          ? Colors.black
-          : ZagColours.secondary,
+      systemNavigationBarColor: isLight
+          ? ZagColours.secondaryLight
+          : (ZagreusDatabase.THEME_AMOLED.read()
+              ? Colors.black
+              : ZagColours.secondary),
+      systemNavigationBarDividerColor: isLight
+          ? ZagColours.secondaryLight
+          : (ZagreusDatabase.THEME_AMOLED.read()
+              ? Colors.black
+              : ZagColours.secondary),
       statusBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: isLight ? Brightness.dark : Brightness.light,
+      statusBarIconBrightness: isLight ? Brightness.dark : Brightness.light,
+      statusBarBrightness: isLight ? Brightness.light : Brightness.dark,
     );
   }
 
@@ -132,6 +184,37 @@ class ZagTheme {
       style: ButtonStyle(
         overlayColor: MaterialStateProperty.all<Color>(
           ZagColours.accent.withOpacity(ZagUI.OPACITY_SPLASH),
+        ),
+      ),
+    );
+  }
+
+  TextTheme get _lightTextTheme {
+    const textStyle = TextStyle(color: Colors.black87);
+    return const TextTheme(
+      displaySmall: textStyle,
+      displayMedium: textStyle,
+      displayLarge: textStyle,
+      headlineSmall: textStyle,
+      headlineMedium: textStyle,
+      headlineLarge: textStyle,
+      bodySmall: textStyle,
+      bodyMedium: textStyle,
+      bodyLarge: textStyle,
+      titleSmall: textStyle,
+      titleMedium: textStyle,
+      titleLarge: textStyle,
+      labelSmall: textStyle,
+      labelMedium: textStyle,
+      labelLarge: textStyle,
+    );
+  }
+
+  TextButtonThemeData get _lightTextButtonThemeData {
+    return TextButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: MaterialStateProperty.all<Color>(
+          ZagColours.accentLight.withOpacity(ZagUI.OPACITY_SPLASH),
         ),
       ),
     );

@@ -48,7 +48,7 @@ class ZagBlock extends StatelessWidget {
     this.skeletonSubtitles = 2,
     this.disabled = false,
     this.title,
-    this.titleColor = Colors.white,
+    this.titleColor = const Color(0x00000000), // Sentinel value - will be set in build
     this.backgroundColor,
     this.body,
     this.bodyLeadingIcons,
@@ -277,7 +277,9 @@ class ZagBlock extends StatelessWidget {
         title: _scrollableText(
           child: ZagText.title(
             text: title ?? ZagUI.TEXT_EMDASH,
-            color: titleColor,
+            color: titleColor == const Color(0x00000000) 
+                ? (Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white)
+                : titleColor,
             overflow: TextOverflow.visible,
             maxLines: 1,
           ),

@@ -23,14 +23,22 @@ class ZagColours {
   /// Light mode accent colour
   static const Color accentLight = Color(0xFF5AD2BE);
   
-  /// Zagreus app black background - RGB(40, 40, 52)
-  static const Color zagreusBackground = Color(0xFF282834);
+  // Dark Mode Colors
+  static const Color primaryDark = Color(0xFF232534);
+  static const Color secondaryDark = Color(0xFF1A1B28);
+  
+  // Light Mode Colors
+  static const Color primaryLight = Color(0xFFFAFAFB);
+  static const Color secondaryLight = Color(0xFFFFFFFF);
+  
+  /// Zagreus app black background - RGB(35, 37, 52)
+  static const Color zagreusBackground = Color(0xFF232534);
 
   /// Core primary colour (background)
-  static const Color primary = Color(0xFF32323E);
+  static const Color primary = Color(0xFF232534);
 
   /// Core secondary colour (appbar, bottom bar, etc.),
-  static const Color secondary = Color(0xFF282834);
+  static const Color secondary = Color(0xFF1A1B28);
 
   static const Color blue = Color(0xFF00A8E8);
   static const Color blueGrey = Color(0xFF848FA5);
@@ -62,6 +70,24 @@ class ZagColours {
   /// If the index is greater than the list of colour's length, uses modulus to loop list.
   Color byListIndex(int index) {
     return _LIST_COLOR_ICONS[index % _LIST_COLOR_ICONS.length];
+  }
+  
+  /// Get theme-aware primary color
+  static Color primaryColor(BuildContext context) {
+    bool isLight = Theme.of(context).brightness == Brightness.light;
+    return isLight ? primaryLight : primaryDark;
+  }
+  
+  /// Get theme-aware secondary color
+  static Color secondaryColor(BuildContext context) {
+    bool isLight = Theme.of(context).brightness == Brightness.light;
+    return isLight ? secondaryLight : secondaryDark;
+  }
+  
+  /// Get theme-aware accent color
+  static Color accentColor(BuildContext context) {
+    bool isLight = Theme.of(context).brightness == Brightness.light;
+    return isLight ? accentLight : accentDark;
   }
 }
 

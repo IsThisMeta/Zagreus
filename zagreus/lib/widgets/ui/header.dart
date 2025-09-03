@@ -11,13 +11,13 @@ class ZagHeader extends StatelessWidget {
     this.subtitle,
   }) : super(key: key);
 
-  Widget _headerText() {
+  Widget _headerText(BuildContext context) {
     return Text(
       text!,
-      style: const TextStyle(
+      style: TextStyle(
         fontWeight: ZagUI.FONT_WEIGHT_BOLD,
         fontSize: ZagUI.FONT_SIZE_H2,
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white,
       ),
     );
   }
@@ -60,7 +60,7 @@ class ZagHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _headerText(),
+          _headerText(context),
           _barSeperator(),
           if (subtitle != null) _subtitle(),
         ],

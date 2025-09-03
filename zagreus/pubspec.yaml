@@ -85,11 +85,8 @@ flutter_icons:
 flutter_native_splash:
   image: assets/images/branding_full.png
   color: "#32323E"
-  android: true
+  android: false
   ios: true
-  android_12:
-    image: assets/images/branding_full.png
-    color: "#32323E"
 msix_config:
   architecture: x64
   capabilities: internetClientServer,privateNetworkClientServer

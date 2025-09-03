@@ -113,12 +113,15 @@ class ZagTheme {
         color: Colors.black87,
       ),
       appBarTheme: const AppBarTheme(
+        backgroundColor: ZagColours.secondaryLight,
+        foregroundColor: Colors.black87,
         titleTextStyle: TextStyle(
           color: Colors.black87,
           fontSize: 20,
           fontWeight: FontWeight.w500,
         ),
         iconTheme: IconThemeData(color: Colors.black87),
+        elevation: 0,
       ),
       tooltipTheme: const TooltipThemeData(
         decoration: BoxDecoration(

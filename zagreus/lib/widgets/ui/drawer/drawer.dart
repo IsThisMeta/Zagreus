@@ -104,14 +104,18 @@ class ZagDrawer extends StatelessWidget {
             Padding(
               child: Icon(
                 module.icon,
-                color: currentPage ? module.color : ZagColours.white,
+                color: currentPage 
+                    ? (Theme.of(context).brightness == Brightness.light ? ZagColours.accentLight : module.color)
+                    : (Theme.of(context).brightness == Brightness.light ? Colors.black87 : ZagColours.white),
               ),
               padding: ZagUI.MARGIN_DEFAULT_HORIZONTAL * 1.5,
             ),
             Text(
               module.title,
               style: TextStyle(
-                color: currentPage ? module.color : ZagColours.white,
+                color: currentPage 
+                    ? (Theme.of(context).brightness == Brightness.light ? ZagColours.accentLight : module.color)
+                    : (Theme.of(context).brightness == Brightness.light ? Colors.black87 : ZagColours.white),
                 fontWeight: ZagUI.FONT_WEIGHT_BOLD,
               ),
             ),

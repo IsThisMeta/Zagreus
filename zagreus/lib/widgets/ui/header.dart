@@ -22,14 +22,14 @@ class ZagHeader extends StatelessWidget {
     );
   }
 
-  Widget _barSeperator() {
+  Widget _barSeperator(BuildContext context) {
     return Padding(
       child: Container(
         height: 2.0,
         width: ZagUI.DEFAULT_MARGIN_SIZE * 3,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(ZagUI.BORDER_RADIUS),
-          color: ZagColours.accent,
+          color: Theme.of(context).brightness == Brightness.light ? ZagColours.accentLight : ZagColours.accent,
         ),
       ),
       padding: const EdgeInsets.only(
@@ -61,7 +61,7 @@ class ZagHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _headerText(context),
-          _barSeperator(),
+          _barSeperator(context),
           if (subtitle != null) _subtitle(),
         ],
       ),

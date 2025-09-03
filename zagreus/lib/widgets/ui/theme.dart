@@ -17,6 +17,11 @@ class ZagTheme {
     }
     return isAMOLEDTheme ? _pureBlackTheme() : _midnightTheme();
   }
+  
+  /// Get the current accent color based on theme
+  static Color get currentAccent {
+    return themeMode == 'light' ? ZagColours.accentLight : ZagColours.accent;
+  }
 
   static bool get isAMOLEDTheme => ZagreusDatabase.THEME_AMOLED.read();
   static bool get useBorders => ZagreusDatabase.THEME_AMOLED_BORDER.read();

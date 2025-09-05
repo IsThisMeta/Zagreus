@@ -222,6 +222,7 @@ class _State extends State<ZagAppBar> {
       return SizedBox(
         child: ZagIconButton.appBar(
           icon: Icons.menu_rounded,
+          color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white,
           onPressed: () async {
             HapticFeedback.lightImpact();
             if (Scaffold.of(context).hasDrawer) {
@@ -235,6 +236,7 @@ class _State extends State<ZagAppBar> {
     return SizedBox(
       child: ZagIconButton.appBar(
         icon: Icons.arrow_back_ios_new_rounded,
+        color: Theme.of(context).brightness == Brightness.light ? Colors.black87 : Colors.white,
         onPressed: ZagRouter().popSafely,
         onLongPress: ZagRouter().popToRootRoute,
       ),

@@ -217,22 +217,48 @@ class _State extends State<ConfigurationGeneralRoute>
   }
 
   Widget _themeMode() {
-    const _db = ZagreusDatabase.THEME_MODE;
-    return _db.listenableBuilder(
-      builder: (context, _) => ZagBlock(
-        title: 'Theme Mode',
-        body: [
-          TextSpan(text: _db.read() == 'light' ? 'Light theme enabled' : 'Dark theme enabled'),
-        ],
-        trailing: ZagSwitch(
-          value: _db.read() == 'light',
-          onChanged: (value) {
-            _db.update(value ? 'light' : 'dark');
-            ZagTheme().initialize();
-            ZagState.reset(context);
-          },
-        ),
-      ),
+    return ZagBox.zagreus.listenableBuilder(
+      selectItems: [
+        ZagreusDatabase.THEME_MODE,
+        ZagreusDatabase.THEME_FOLLOW_SYSTEM,
+      ],
+      builder: (context, _) {
+        final isFollowingSystem = ZagreusDatabase.THEME_FOLLOW_SYSTEM.read();
+        final currentMode = ZagreusDatabase.THEME_MODE.read();
+        
+        return Column(
+          children: [
+            ZagBlock(
+              title: 'Follow System Theme',
+              body: [
+                TextSpan(text: isFollowingSystem ? 'Following system preference' : 'Manual theme control'),
+              ],
+              trailing: ZagSwitch(
+                value: isFollowingSystem,
+                onChanged: (value) {
+                  ZagreusDatabase.THEME_FOLLOW_SYSTEM.update(value);
+                  ZagTheme().initialize();
+                  ZagState.reset(context);
+                },
+              ),
+            ),
+            if (!isFollowingSystem) ZagBlock(
+              title: 'Theme Mode',
+              body: [
+                TextSpan(text: currentMode == 'light' ? 'Light theme enabled' : 'Dark theme enabled'),
+              ],
+              trailing: ZagSwitch(
+                value: currentMode == 'light',
+                onChanged: (value) {
+                  ZagreusDatabase.THEME_MODE.update(value ? 'light' : 'dark');
+                  ZagTheme().initialize();
+                  ZagState.reset(context);
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -70,15 +70,21 @@ class ZagBIOS extends StatelessWidget {
             selectItems: [
               ZagreusDatabase.THEME_AMOLED,
               ZagreusDatabase.THEME_AMOLED_BORDER,
+              ZagreusDatabase.THEME_MODE,
+              ZagreusDatabase.THEME_FOLLOW_SYSTEM,
             ],
             builder: (context, _) {
+              final brightness = MediaQuery.of(context).platformBrightness;
               return MaterialApp.router(
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
                 locale: context.locale,
                 builder: DevicePreview.appBuilder,
-                darkTheme: theme.activeTheme(),
-                theme: theme.activeTheme(),
+                darkTheme: theme.activeTheme(systemBrightness: Brightness.dark),
+                theme: theme.activeTheme(systemBrightness: Brightness.light),
+                themeMode: ZagreusDatabase.THEME_FOLLOW_SYSTEM.read() 
+                    ? ThemeMode.system 
+                    : (ZagreusDatabase.THEME_MODE.read() == 'light' ? ThemeMode.light : ThemeMode.dark),
                 title: 'Zagreus',
                 routeInformationProvider: router.routeInformationProvider,
                 routeInformationParser: router.routeInformationParser,

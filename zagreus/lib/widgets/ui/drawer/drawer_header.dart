@@ -27,6 +27,19 @@ class ZagDrawerHeader extends StatelessWidget {
               onPressed: page == ZagModule.SETTINGS.key
                   ? Navigator.of(context).pop
                   : ZagModule.SETTINGS.launch,
+              onLongPress: () {
+                // Toggle between light and dark mode
+                final currentMode = ZagreusDatabase.THEME_MODE.read();
+                ZagreusDatabase.THEME_MODE.update(currentMode == 'light' ? 'dark' : 'light');
+                ZagTheme().initialize();
+                ZagState.reset(context);
+                
+                // Show feedback
+                showZagSuccessSnackBar(
+                  title: currentMode == 'light' ? 'Dark Mode Enabled' : 'Light Mode Enabled',
+                  message: 'Long press to toggle again',
+                );
+              },
             )
           ],
         ),

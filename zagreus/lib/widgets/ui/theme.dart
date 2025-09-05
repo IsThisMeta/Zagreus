@@ -11,8 +11,16 @@ class ZagTheme {
   }
 
   /// Returns the active [ThemeData] by checking the theme database value.
-  ThemeData activeTheme() {
-    if (themeMode == 'light') {
+  ThemeData activeTheme({Brightness? systemBrightness}) {
+    // Determine if we should use light theme
+    bool useLightTheme = false;
+    if (ZagreusDatabase.THEME_FOLLOW_SYSTEM.read() && systemBrightness != null) {
+      useLightTheme = systemBrightness == Brightness.light;
+    } else {
+      useLightTheme = themeMode == 'light';
+    }
+    
+    if (useLightTheme) {
       return _lightTheme();
     }
     return isAMOLEDTheme ? _pureBlackTheme() : _midnightTheme();

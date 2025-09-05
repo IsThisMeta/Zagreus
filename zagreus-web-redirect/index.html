@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zagreus - Email Confirmation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 2rem;
+            max-width: 400px;
+        }
+        h1 {
+            margin-bottom: 1rem;
+        }
+        .message {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+        .status {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        .error {
+            background: rgba(255, 59, 48, 0.2);
+        }
+        .success {
+            background: rgba(52, 199, 89, 0.2);
+        }
+        a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zagreus</h1>
+        <div id="status" class="status">
+            <p class="message">Confirming your email...</p>
+        </div>
+    </div>
+
+    <script>
+        // Function to handle the redirect
+        function handleAuthRedirect() {
+            const statusEl = document.getElementById('status');
+            const hash = window.location.hash;
+            const params = new URLSearchParams(window.location.search);
+            
+            // Check if this is an email confirmation
+            if (hash && hash.includes('access_token')) {
+                // Success - email confirmed
+                statusEl.className = 'status success';
+                statusEl.innerHTML = `
+                    <p class="message">✓ Email confirmed successfully!</p>
+                    <p>You can now return to the Zagreus app and sign in.</p>
+                `;
+                
+                // Try to open the app with deep link
+                const deepLink = 'zagreus://auth' + hash;
+                window.location.href = deepLink;
+                
+                // Fallback message if app doesn't open
+                setTimeout(() => {
+                    statusEl.innerHTML += `
+                        <p style="margin-top: 1rem; font-size: 0.9rem;">
+                            If the app didn't open automatically, 
+                            <a href="${deepLink}">tap here</a> or open Zagreus manually.
+                        </p>
+                    `;
+                }, 2000);
+                
+            } else if (params.get('error_description')) {
+                // Error in confirmation
+                const error = params.get('error_description');
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `
+                    <p class="message">⚠️ Confirmation failed</p>
+                    <p>${error}</p>
+                    <p style="margin-top: 1rem;">Please try again or contact support.</p>
+                `;
+                
+            } else if (params.get('type') === 'recovery' && hash) {
+                // Password reset token
+                statusEl.className = 'status success';
+                statusEl.innerHTML = `
+                    <p class="message">Password reset link detected</p>
+                    <p>Opening Zagreus app...</p>
+                `;
+                
+                // Redirect to app with recovery token
+                const deepLink = 'zagreus://auth/reset' + hash;
+                window.location.href = deepLink;
+                
+                setTimeout(() => {
+                    statusEl.innerHTML += `
+                        <p style="margin-top: 1rem; font-size: 0.9rem;">
+                            If the app didn't open, <a href="${deepLink}">tap here</a>.
+                        </p>
+                    `;
+                }, 2000);
+                
+            } else {
+                // Unknown state
+                statusEl.className = 'status';
+                statusEl.innerHTML = `
+                    <p class="message">No action needed</p>
+                    <p>You can return to the Zagreus app.</p>
+                `;
+            }
+        }
+
+        // Run on page load
+        handleAuthRedirect();
+    </script>
+</body>
+</html>

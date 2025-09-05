@@ -11,7 +11,8 @@ enum LinkedContentType {
 }
 
 enum ZagLinkedContent {
-  WEBSITE('https://www.zagreus.app');
+  WEBSITE('https://www.zagreus.app'),
+  NOTIFICATIONS_DOC('https://docs.zagreus.app/notifications');
 
   final String url;
   const ZagLinkedContent(this.url);

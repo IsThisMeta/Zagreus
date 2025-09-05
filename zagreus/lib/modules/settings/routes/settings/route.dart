@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:zagreus/core.dart';
 import 'package:zagreus/router/routes/settings.dart';
+import 'package:zagreus/supabase/messaging.dart';
 
 class SettingsRoute extends StatefulWidget {
   const SettingsRoute({
@@ -51,6 +52,13 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
           trailing: const ZagIconButton(icon: Icons.device_hub_rounded),
           onTap: SettingsRoutes.CONFIGURATION.go,
         ),
+        if (ZagSupabaseMessaging.isSupported)
+          ZagBlock(
+            title: 'settings.Notifications'.tr(),
+            body: [TextSpan(text: 'settings.NotificationsDescription'.tr())],
+            trailing: const ZagIconButton(icon: Icons.notifications_rounded),
+            onTap: SettingsRoutes.NOTIFICATIONS.go,
+          ),
         ZagBlock(
           title: 'settings.Profiles'.tr(),
           body: [TextSpan(text: 'settings.ProfilesDescription'.tr())],

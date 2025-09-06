@@ -53,11 +53,11 @@ dependencies:
   supabase_flutter: ^2.0.0
 dev_dependencies:
   # Generators
-  build_runner: ^2.4.6
+  build_runner: ^2.4.13
   environment_config: ^3.2.0
-  json_serializable: ^6.9.0
+  json_serializable: ^6.8.0
   hive_generator: ^2.0.1
-  retrofit_generator: ^9.1.9
+  retrofit_generator: ^8.2.1
   # Tooling
   flutter_launcher_icons: ^0.14.3
   flutter_lints: ^5.0.0

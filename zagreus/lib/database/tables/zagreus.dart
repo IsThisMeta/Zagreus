@@ -30,7 +30,7 @@ enum ZagreusDatabase<T> with ZagTableMixin<T> {
   QUICK_ACTIONS_TAUTULLI<bool>(false),
   QUICK_ACTIONS_SEARCH<bool>(false),
   USE_24_HOUR_TIME<bool>(false),
-  ENABLE_IN_APP_NOTIFICATIONS<bool>(true),
+  ENABLE_IN_APP_NOTIFICATIONS<bool>(false),
   CHANGELOG_LAST_BUILD_VERSION<int>(0);
 
   @override

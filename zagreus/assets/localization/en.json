@@ -567,6 +567,8 @@
     "settings.NotAvailable": "Not Available",
     "settings.Notifications": "Notifications",
     "settings.NotificationsDescription": "Set up Webhooks for Push Notifications",
+    "settings.PermissionDenied": "Permission Denied",
+    "settings.NotificationPermissionDenied": "Notification permissions were denied. Please enable them in your device settings to receive notifications.",
     "settings.NoAdditionalProfilesAdded": "No additional profiles have been added",
     "settings.NoBackupsFound": "No Backups Found",
     "settings.NoExternalModulesFound": "No External Modules Found",

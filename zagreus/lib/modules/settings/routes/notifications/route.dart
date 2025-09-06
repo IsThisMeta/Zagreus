@@ -71,7 +71,21 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
       trailing: db.listenableBuilder(
         builder: (context, _) => ZagSwitch(
           value: db.read(),
-          onChanged: db.update,
+          onChanged: (value) async {
+            if (value) {
+              // Request notification permissions when enabling
+              bool granted = await ZagSupabaseMessaging.instance.requestNotificationPermissions();
+              if (!granted) {
+                // If permissions denied, don't enable the toggle
+                showZagErrorSnackBar(
+                  title: 'settings.PermissionDenied'.tr(),
+                  message: 'settings.NotificationPermissionDenied'.tr(),
+                );
+                return;
+              }
+            }
+            db.update(value);
+          },
         ),
       ),
     );

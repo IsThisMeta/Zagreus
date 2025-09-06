@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/utils/profile_tools.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 
 class ZagSupabaseMessaging {
-  // For iOS APNS, you would typically handle this through native code
-  // or a package like flutter_apns_only or push_notification_permissions
+  // Method channel for native iOS communication
+  static const MethodChannel _channel = MethodChannel('app.zagreus/notifications');
   
   static bool get isSupported {
     if (ZagSupabase.isSupported && Platform.isIOS) return true;
@@ -15,8 +16,6 @@ class ZagSupabaseMessaging {
   }
 
   /// Returns an instance to handle APNS.
-  /// Note: This is a simplified implementation. In production, you'd want to use
-  /// proper APNS handling packages or native code integration.
   static ZagSupabaseMessaging get instance => ZagSupabaseMessaging();
 
   /// Returns a stream controller for handling messages
@@ -46,10 +45,9 @@ class ZagSupabaseMessaging {
   /// Returns false if permissions are denied or not determined.
   Future<bool> requestNotificationPermissions() async {
     try {
-      // TODO: Implement actual iOS permission request
-      // This would typically use native iOS APIs or a Flutter plugin
-      // to request notification permissions
-      return true; // Dummy implementation
+      // Use method channel to request iOS notification permissions
+      final bool granted = await _channel.invokeMethod('requestPermission');
+      return granted;
     } catch (error, stack) {
       ZagLogger()
           .error('Failed to request notification permission', error, stack);
@@ -59,8 +57,13 @@ class ZagSupabaseMessaging {
 
   /// Return the current notification authorization status.
   Future<AuthorizationStatus> getAuthorizationStatus() async {
-    // TODO: Implement actual status check
-    return AuthorizationStatus.authorized;
+    try {
+      final bool allowed = await _channel.invokeMethod('checkPermission');
+      return allowed ? AuthorizationStatus.authorized : AuthorizationStatus.denied;
+    } catch (error, stack) {
+      ZagLogger().error('Failed to check notification permission', error, stack);
+      return AuthorizationStatus.notDetermined;
+    }
   }
 
   /// Returns true if permissions are allowed.

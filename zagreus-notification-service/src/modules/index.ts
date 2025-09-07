@@ -1,5 +1,6 @@
 import express from 'express';
 import * as Middleware from '../server/middleware';
+import { Controller as Auth } from './auth';
 import { Controller as Custom } from './custom';
 import { Controller as Lidarr } from './lidarr';
 import { Controller as Overseerr } from './overseerr';
@@ -9,12 +10,15 @@ import { Controller as Tautulli } from './tautulli';
 
 export const router = express.Router();
 
-// Shared Middleware
+// Auth endpoints (no middleware needed)
+Auth.enable(router);
+
+// Shared Middleware for webhook endpoints
 router.use(Middleware.startNewRequest);
 router.use(Middleware.extractNotificationOptions);
 router.use(Middleware.extractProfile);
 
-// Modules
+// Webhook Modules
 Custom.enable(router);
 Lidarr.enable(router);
 Overseerr.enable(router);

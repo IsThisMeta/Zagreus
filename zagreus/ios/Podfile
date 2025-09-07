@@ -36,6 +36,14 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target_is_resource_bundle = target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
+    
+    # Fix bundle identifier for app_links
+    if target.name == 'app_links'
+      target.build_configurations.each do |config|
+        config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.zebrralabs.zagreus.applinks'
+      end
+    end
+    
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       # Ensure builds for simulator

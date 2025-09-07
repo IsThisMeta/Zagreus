@@ -33,15 +33,15 @@ export const initialize = (): void => {
   apnsProvider = new Provider(options);
 
   // Handle provider events
-  apnsProvider.on('error', (error) => {
+  apnsProvider.on('error', (error: Error) => {
     logger.error({ error }, 'APNS Provider error');
   });
 
-  apnsProvider.on('socketError', (error) => {
+  apnsProvider.on('socketError', (error: Error) => {
     logger.error({ error }, 'APNS Socket error');
   });
 
-  apnsProvider.on('transmissionError', (errCode, notification, device) => {
+  apnsProvider.on('transmissionError', (errCode: number, notification: any, device: string) => {
     logger.error(
       { errorCode: errCode, device, notification },
       'APNS Transmission error'
@@ -127,12 +127,12 @@ export const sendNotification = async (
     let successCount = 0;
     let failureCount = 0;
 
-    result.sent.forEach((sentResult) => {
+    result.sent.forEach((sentResult: any) => {
       successCount++;
       logger.debug({ device: sentResult.device }, 'Notification sent successfully');
     });
 
-    result.failed.forEach((failedResult) => {
+    result.failed.forEach((failedResult: any) => {
       failureCount++;
       logger.error(
         {
@@ -144,7 +144,7 @@ export const sendNotification = async (
       );
 
       // Handle specific errors
-      if (failedResult.status === '410') {
+      if (failedResult.status === 410) {
         // Token is no longer valid, remove from database
         DatabaseService.removeDeviceToken(failedResult.device).catch((err) => {
           logger.error({ error: err }, 'Failed to remove invalid token');

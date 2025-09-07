@@ -1,6 +1,10 @@
 import { Server } from './server';
-import { Firebase, Redis } from './services';
+import { Redis } from './services';
+import * as APNS from './services/apns';
+import { DatabaseService } from './services/database';
 
-Firebase.initialize();
+// Initialize services
+DatabaseService.initialize();
+APNS.initialize();
 Redis.initialize();
 Server.start();

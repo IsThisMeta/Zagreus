@@ -41,7 +41,7 @@ export const initialize = (): void => {
     connectionTimeoutMillis: 2000,
   });
 
-  pool.on('error', (err) => {
+  pool.on('error', (err: Error) => {
     logger.error({ error: err }, 'Unexpected database error');
   });
 
@@ -97,7 +97,7 @@ export const getUserDevices = async (userId: string): Promise<string[]> => {
     `;
     
     const result = await pool.query<{ token: string }>(query, [userId]);
-    return result.rows.map(row => row.token);
+    return result.rows.map((row: { token: string }) => row.token);
   } catch (error) {
     logger.error({ error, userId }, 'Failed to get user devices');
     throw error;

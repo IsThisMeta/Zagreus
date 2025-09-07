@@ -5,10 +5,23 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/utils/profile_tools.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
+import 'package:dio/dio.dart';
 
 class ZagSupabaseMessaging {
   // Method channel for native iOS communication
   static const MethodChannel _channel = MethodChannel('app.zagreus/notifications');
+  
+  // Singleton instance
+  static final ZagSupabaseMessaging _instance = ZagSupabaseMessaging._internal();
+  factory ZagSupabaseMessaging() => _instance;
+  ZagSupabaseMessaging._internal() {
+    _setupMethodCallHandler();
+  }
+  
+  // Store the current APNS token
+  String? _apnsToken;
+  final _tokenController = StreamController<String>.broadcast();
+  Stream<String> get onTokenRefresh => _tokenController.stream;
   
   static bool get isSupported {
     if (ZagSupabase.isSupported && Platform.isIOS) return true;
@@ -16,7 +29,7 @@ class ZagSupabaseMessaging {
   }
 
   /// Returns an instance to handle APNS.
-  static ZagSupabaseMessaging get instance => ZagSupabaseMessaging();
+  static ZagSupabaseMessaging get instance => _instance;
 
   /// Returns a stream controller for handling messages
   final StreamController<RemoteMessage> _messageController = 
@@ -28,15 +41,84 @@ class ZagSupabaseMessaging {
   /// Returns a [Stream] to handle any notifications that are tapped while the application is in the background (not terminated).
   Stream<RemoteMessage> get onMessageOpenedApp => _messageController.stream;
 
+  /// Set up method call handler to receive messages from iOS
+  void _setupMethodCallHandler() {
+    _channel.setMethodCallHandler((MethodCall call) async {
+      switch (call.method) {
+        case 'onToken':
+          final String token = call.arguments as String;
+          _apnsToken = token;
+          _tokenController.add(token);
+          ZagLogger().debug('Received APNS token: $token');
+          // Automatically register with server when we get a new token
+          await _registerDeviceWithServer(token);
+          break;
+        default:
+          ZagLogger().warning('Unknown method call from iOS: ${call.method}');
+      }
+    });
+  }
+
   /// Returns the APNS device token for this device.
-  /// Note: In production, this would interface with native iOS code to get the actual APNS token
   Future<String?> getToken() async {
-    // TODO: Implement actual APNS token retrieval
-    // This would typically involve:
-    // 1. Requesting notification permissions
-    // 2. Registering for remote notifications
-    // 3. Getting the device token from iOS
-    return 'dummy_apns_token_${DateTime.now().millisecondsSinceEpoch}';
+    // If we already have a token, return it
+    if (_apnsToken != null) return _apnsToken;
+    
+    // Otherwise, request permissions which will trigger token generation
+    final bool granted = await requestNotificationPermissions();
+    if (!granted) {
+      ZagLogger().warning('Notification permissions not granted');
+      return null;
+    }
+    
+    // Wait briefly for the token to be received from iOS
+    // In a production app, you might want to store this in SharedPreferences
+    await Future.delayed(const Duration(seconds: 2));
+    return _apnsToken;
+  }
+
+  /// Register the device token with the notification server
+  Future<bool> _registerDeviceWithServer(String token) async {
+    try {
+      final dio = Dio();
+      final user = ZagSupabase.client.auth.currentUser;
+      if (user == null) {
+        ZagLogger().warning('No authenticated user, cannot register device');
+        return false;
+      }
+
+      // Get device info
+      final deviceInfo = {
+        'user_id': user.id,
+        'email': user.email,
+        'token': token,
+        'device_name': Platform.isIOS ? 'iPhone' : 'Unknown',
+        'device_model': Platform.operatingSystem,
+        'os_version': Platform.operatingSystemVersion,
+        'app_version': '1.0.0', // TODO: Get from package info
+      };
+
+      final response = await dio.post(
+        'https://zagreus-notifications.fly.dev/v1/auth/register',
+        data: deviceInfo,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        ZagLogger().debug('Successfully registered device with notification server');
+        return true;
+      } else {
+        ZagLogger().error('Failed to register device: ${response.statusCode}', null, null);
+        return false;
+      }
+    } catch (error, stack) {
+      ZagLogger().error('Error registering device with server', error, stack);
+      return false;
+    }
   }
 
   /// Request for permission to send a user notifications.

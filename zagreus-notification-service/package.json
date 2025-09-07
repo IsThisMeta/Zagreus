@@ -18,6 +18,7 @@
   "author": "Your Name",
   "license": "GPL-3.0-only",
   "dependencies": {
+    "@parse/node-apn": "^6.5.0",
     "@types/basic-auth": "^1.1.4",
     "@types/express": "^4.17.18",
     "@types/ioredis": "^4.28.10",
@@ -30,12 +31,14 @@
     "firebase-admin": "^11.11.0",
     "ioredis": "^5.3.2",
     "node-typescript-compiler": "3.0.0",
+    "pg": "^8.16.3",
     "pino": "^8.15.4",
     "ts-node": "^10.9.1",
     "tslog": "^4.9.2",
     "typescript": "^5.2.2"
   },
   "devDependencies": {
+    "@types/pg": "^8.15.5",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "eslint": "^8.50.0",

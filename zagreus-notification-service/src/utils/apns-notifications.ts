@@ -1,4 +1,4 @@
-import { Notification, NotificationAlertOptions, Priority } from '@parse/node-apn';
+import { Notification, NotificationAlertOptions } from '@parse/node-apn';
 
 export interface APNSPayload {
   title: string;
@@ -68,10 +68,10 @@ export const buildAPNSNotification = (
     notification.payload['image-url'] = payload.image;
   }
 
-  // Set priority and expiration
+  // Set priority and expiration (10 = high, 5 = default)
   notification.priority = settings.ios.interruptionLevel === APNSInterruptionLevel.TIME_SENSITIVE 
-    ? Priority.high 
-    : Priority.default;
+    ? 10 
+    : 5;
   
   // Set expiry to 28 days (same as Firebase TTL)
   notification.expiry = Math.floor(Date.now() / 1000) + 2419200;

@@ -61,4 +61,28 @@ import UserNotifications
       completion(UIApplication.shared.currentUserNotificationSettings?.types != [])
     }
   }
+  
+  // Handle receiving the device token
+  override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+    let token = tokenParts.joined()
+    
+    // Send token to Flutter
+    if let controller = window?.rootViewController as? FlutterViewController {
+      let channel = FlutterMethodChannel(name: "app.zagreus/notifications",
+                                        binaryMessenger: controller.binaryMessenger)
+      channel.invokeMethod("onToken", arguments: token)
+    }
+  }
+  
+  // Handle registration failure
+  override func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    print("Failed to register for remote notifications: \(error)")
+  }
 }

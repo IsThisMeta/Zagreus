@@ -1,0 +1,36 @@
+# fly.toml app configuration file
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "zagreus-notifications"
+primary_region = "ord"
+
+[build]
+
+[env]
+  PORT = "8080"
+  NODE_ENV = "production"
+  # Redis (using Fly's Redis)
+  REDIS_HOST = "fly-zagreus-redis.upstash.io"
+  REDIS_PORT = "6379"
+  REDIS_USE_TLS = "true"
+  REDIS_USER = "default"
+  # Database (using Supabase)
+  DB_HOST = "aws-0-us-east-2.pooler.supabase.com"
+  DB_PORT = "6543"
+  DB_NAME = "postgres"
+  DB_USER = "postgres.yiinwhchjocltvxmjglg"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

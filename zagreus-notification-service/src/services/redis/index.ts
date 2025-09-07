@@ -20,8 +20,9 @@ export const initialize = (): void => {
   });
 
   redis.on('error', (error) => {
-    logger.fatal(error);
-    process.exit(1);
+    logger.error('Redis connection failed - running without cache');
+    logger.error(error);
+    redis = undefined;
   });
   redis.once('connect', async () => logger.debug('Connected'));
 };

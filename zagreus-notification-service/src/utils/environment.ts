@@ -19,19 +19,32 @@ class _Var {
   public read = (): string => process.env[this.name] ?? this.options!.fallback!;
 }
 
-// Firebase
-export const FIREBASE_PROJECT_ID = new _Var('FIREBASE_PROJECT_ID');
-export const FIREBASE_CLIENT_EMAIL = new _Var('FIREBASE_CLIENT_EMAIL', { redacted: true });
-export const FIREBASE_DATABASE_URL = new _Var('FIREBASE_DATABASE_URL', { redacted: true });
-export const FIREBASE_PRIVATE_KEY = new _Var('FIREBASE_PRIVATE_KEY', { redacted: true });
-// API Keys
-export const FANART_TV_API_KEY = new _Var('FANART_TV_API_KEY', { redacted: true });
-export const THEMOVIEDB_API_KEY = new _Var('THEMOVIEDB_API_KEY', { redacted: true });
+// Firebase (optional - not used with APNS)
+export const FIREBASE_PROJECT_ID = new _Var('FIREBASE_PROJECT_ID', { fallback: 'not-used' });
+export const FIREBASE_CLIENT_EMAIL = new _Var('FIREBASE_CLIENT_EMAIL', { fallback: 'not-used', redacted: true });
+export const FIREBASE_DATABASE_URL = new _Var('FIREBASE_DATABASE_URL', { fallback: 'not-used', redacted: true });
+export const FIREBASE_PRIVATE_KEY = new _Var('FIREBASE_PRIVATE_KEY', { fallback: 'not-used', redacted: true });
+// API Keys (optional - for rich notifications)
+export const FANART_TV_API_KEY = new _Var('FANART_TV_API_KEY', { fallback: '', redacted: true });
+export const THEMOVIEDB_API_KEY = new _Var('THEMOVIEDB_API_KEY', { fallback: '', redacted: true });
 // Redis
 export const REDIS_HOST = new _Var('REDIS_HOST');
 export const REDIS_PORT = new _Var('REDIS_PORT');
 export const REDIS_USE_TLS = new _Var('REDIS_USE_TLS', { fallback: 'false' });
 export const REDIS_USER = new _Var('REDIS_USER', { fallback: '' });
 export const REDIS_PASS = new _Var('REDIS_PASS', { fallback: '', redacted: true });
+// APNS
+export const APNS_AUTH_KEY = new _Var('APNS_AUTH_KEY');
+export const APNS_KEY_ID = new _Var('APNS_KEY_ID');
+export const APNS_TEAM_ID = new _Var('APNS_TEAM_ID');
+export const APNS_CERT_PATH = new _Var('APNS_CERT_PATH', { fallback: '' });
+export const APNS_KEY_PATH = new _Var('APNS_KEY_PATH', { fallback: '' });
+// Database
+export const DB_HOST = new _Var('DB_HOST');
+export const DB_PORT = new _Var('DB_PORT');
+export const DB_NAME = new _Var('DB_NAME');
+export const DB_USER = new _Var('DB_USER');
+export const DB_PASSWORD = new _Var('DB_PASSWORD', { redacted: true });
 // Other
+export const NODE_ENV = new _Var('NODE_ENV', { fallback: 'development' });
 export const PORT = new _Var('PORT', { fallback: '9000' });

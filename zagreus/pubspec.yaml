@@ -84,7 +84,7 @@ flutter_icons:
   adaptive_icon_foreground: assets/icon/icon_adaptive.png
 flutter_native_splash:
   image: assets/images/branding_full.png
-  color: "#32323E"
+  color: "#232534"
   android: false
   ios: true
 msix_config:

@@ -317,15 +317,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: movie.remotePoster != null
-                    ? Image.network(
-                        movie.remotePoster!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _posterPlaceholder(movie);
-                        },
-                      )
-                    : _posterPlaceholder(movie),
+                  child: _buildPosterImage(context, movie),
                 ),
               ),
               const SizedBox(height: 8),
@@ -343,6 +335,30 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           ),
         ),
       ),
+    );
+  }
+  
+  Widget _buildPosterImage(BuildContext context, RadarrMovie movie) {
+    final posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
+    final headers = context.read<RadarrState>().headers;
+    
+    if (posterUrl == null) {
+      return _posterPlaceholder(movie);
+    }
+    
+    // Convert headers to Map<String, String>
+    final stringHeaders = <String, String>{};
+    headers.forEach((key, value) {
+      stringHeaders[key.toString()] = value.toString();
+    });
+    
+    return Image.network(
+      posterUrl,
+      fit: BoxFit.cover,
+      headers: stringHeaders.isNotEmpty ? stringHeaders : null,
+      errorBuilder: (context, error, stackTrace) {
+        return _posterPlaceholder(movie);
+      },
     );
   }
   

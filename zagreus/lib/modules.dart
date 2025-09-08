@@ -31,6 +31,7 @@ const MODULE_SETTINGS_KEY = 'settings';
 const MODULE_SONARR_KEY = 'sonarr';
 const MODULE_TAUTULLI_KEY = 'tautulli';
 const MODULE_WAKE_ON_LAN_KEY = 'wake_on_lan';
+const MODULE_DISCOVER_KEY = 'discover';
 
 @HiveType(typeId: 25, adapterName: 'ZagModuleAdapter')
 enum ZagModule {
@@ -57,7 +58,9 @@ enum ZagModule {
   @HiveField(9)
   TAUTULLI(MODULE_TAUTULLI_KEY),
   @HiveField(10)
-  WAKE_ON_LAN(MODULE_WAKE_ON_LAN_KEY);
+  WAKE_ON_LAN(MODULE_WAKE_ON_LAN_KEY),
+  @HiveField(12)
+  DISCOVER(MODULE_DISCOVER_KEY);
 
   final String key;
   const ZagModule(this.key);
@@ -88,6 +91,8 @@ enum ZagModule {
         return ZagModule.WAKE_ON_LAN;
       case MODULE_EXTERNAL_MODULES_KEY:
         return ZagModule.EXTERNAL_MODULES;
+      case MODULE_DISCOVER_KEY:
+        return ZagModule.DISCOVER;
     }
     return null;
   }
@@ -108,6 +113,8 @@ extension ZagModuleEnablementExtension on ZagModule {
         return false;
       case ZagModule.WAKE_ON_LAN:
         return ZagWakeOnLAN.isSupported;
+      case ZagModule.DISCOVER:
+        return true;
       default:
         return true;
     }
@@ -139,6 +146,8 @@ extension ZagModuleEnablementExtension on ZagModule {
         return ZagProfile.current.wakeOnLANEnabled;
       case ZagModule.EXTERNAL_MODULES:
         return !ZagBox.externalModules.isEmpty;
+      case ZagModule.DISCOVER:
+        return true;
     }
   }
 }
@@ -170,6 +179,8 @@ extension ZagModuleMetadataExtension on ZagModule {
         return 'Wake on LAN';
       case ZagModule.EXTERNAL_MODULES:
         return 'zagreus.ExternalModules'.tr();
+      case ZagModule.DISCOVER:
+        return 'Discover';
     }
   }
 
@@ -199,6 +210,8 @@ extension ZagModuleMetadataExtension on ZagModule {
         return Icons.settings_remote_rounded;
       case ZagModule.EXTERNAL_MODULES:
         return Icons.settings_ethernet_rounded;
+      case ZagModule.DISCOVER:
+        return Icons.explore_rounded;
     }
   }
 
@@ -228,6 +241,8 @@ extension ZagModuleMetadataExtension on ZagModule {
         return ZagColours.accent;
       case ZagModule.EXTERNAL_MODULES:
         return ZagColours.accent;
+      case ZagModule.DISCOVER:
+        return const Color(0xFF6688FF); // RGB(0.4, 0.533, 1.0) = #6688FF
     }
   }
 
@@ -256,6 +271,8 @@ extension ZagModuleMetadataExtension on ZagModule {
       case ZagModule.WAKE_ON_LAN:
         return null;
       case ZagModule.EXTERNAL_MODULES:
+        return null;
+      case ZagModule.DISCOVER:
         return null;
     }
   }
@@ -286,6 +303,8 @@ extension ZagModuleMetadataExtension on ZagModule {
         return null;
       case ZagModule.EXTERNAL_MODULES:
         return null;
+      case ZagModule.DISCOVER:
+        return null;
     }
   }
 
@@ -315,6 +334,8 @@ extension ZagModuleMetadataExtension on ZagModule {
         return 'Wake Your Machine';
       case ZagModule.EXTERNAL_MODULES:
         return 'Access External Modules';
+      case ZagModule.DISCOVER:
+        return 'Browse and Discover Content';
     }
   }
 
@@ -344,6 +365,8 @@ extension ZagModuleMetadataExtension on ZagModule {
         return 'Wake on LAN is an industry standard protocol for waking computers up from a very low power mode remotely by sending a specially constructed packet to the machine.';
       case ZagModule.EXTERNAL_MODULES:
         return 'Zagreus allows you to add links to additional modules that are not currently supported allowing you to open the module\'s web GUI without having to leave Zagreus!';
+      case ZagModule.DISCOVER:
+        return 'Discover new movies and TV shows, browse what\'s trending, see what\'s coming soon, and explore your recently downloaded content.';
     }
   }
 }
@@ -375,6 +398,8 @@ extension ZagModuleRoutingExtension on ZagModule {
         return null;
       case ZagModule.EXTERNAL_MODULES:
         return ZagRoutes.externalModules.root.path;
+      case ZagModule.DISCOVER:
+        return null;
     }
   }
 
@@ -404,6 +429,8 @@ extension ZagModuleRoutingExtension on ZagModule {
         return SettingsRoutes.CONFIGURATION_WAKE_ON_LAN;
       case ZagModule.EXTERNAL_MODULES:
         return SettingsRoutes.CONFIGURATION_EXTERNAL_MODULES;
+      case ZagModule.DISCOVER:
+        return null;
     }
   }
 
@@ -467,8 +494,8 @@ extension ZagModuleWebhookExtension on ZagModule {
 
 extension ZagModuleExtension on ZagModule {
   ShortcutItem get shortcutItem {
-    if (this == ZagModule.WAKE_ON_LAN) {
-      throw Exception('WAKE_ON_LAN does not have a shortcut item');
+    if (this == ZagModule.WAKE_ON_LAN || this == ZagModule.DISCOVER) {
+      throw Exception('$this does not have a shortcut item');
     }
     return ShortcutItem(type: key, localizedTitle: title);
   }
@@ -498,6 +525,8 @@ extension ZagModuleExtension on ZagModule {
       case ZagModule.TAUTULLI:
         return context.read<TautulliState>();
       case ZagModule.EXTERNAL_MODULES:
+        return null;
+      case ZagModule.DISCOVER:
         return null;
     }
   }

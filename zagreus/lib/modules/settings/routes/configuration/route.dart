@@ -98,6 +98,7 @@ class _State extends State<ConfigurationRoute> with ZagScrollControllerMixin {
 
   List<Widget> _moduleList() {
     return ([ZagModule.DASHBOARD, ...ZagModule.active])
+        .where((module) => module.settingsRoute != null)
         .map(_tileFromModuleMap)
         .toList();
   }

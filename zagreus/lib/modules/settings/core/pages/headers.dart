@@ -119,6 +119,8 @@ class _State extends State<SettingsHeaderRoute> with ZagScrollControllerMixin {
         throw Exception('Overseerr does not have a headers page');
       case ZagModule.TAUTULLI:
         return ZagProfile.current.tautulliHeaders;
+      case ZagModule.DISCOVER:
+        throw Exception('Discover does not have a headers page');
     }
   }
 
@@ -148,6 +150,8 @@ class _State extends State<SettingsHeaderRoute> with ZagScrollControllerMixin {
         return context.read<TautulliState>().reset();
       case ZagModule.OVERSEERR:
         return;
+      case ZagModule.DISCOVER:
+        throw Exception('Discover does not have a global state');
     }
   }
 }

@@ -5,7 +5,8 @@ import 'package:zagreus/router/routes.dart';
 import 'package:zagreus/vendor.dart';
 
 enum DiscoverRoutes with ZagRoutesMixin {
-  HOME('/discover');
+  HOME('/discover'),
+  RECENTLY_DOWNLOADED('recently_downloaded');
 
   @override
   final String path;
@@ -23,6 +24,20 @@ enum DiscoverRoutes with ZagRoutesMixin {
     switch (this) {
       case DiscoverRoutes.HOME:
         return route(widget: const DiscoverHomeRoute());
+      case DiscoverRoutes.RECENTLY_DOWNLOADED:
+        return route(widget: const DiscoverRecentlyDownloadedRoute());
+    }
+  }
+  
+  @override
+  List<GoRoute> get subroutes {
+    switch (this) {
+      case DiscoverRoutes.HOME:
+        return [
+          DiscoverRoutes.RECENTLY_DOWNLOADED.routes,
+        ];
+      case DiscoverRoutes.RECENTLY_DOWNLOADED:
+        return [];
     }
   }
 }

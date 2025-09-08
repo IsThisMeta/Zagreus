@@ -4,6 +4,7 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
+import 'package:zagreus/router/routes/discover.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
@@ -506,33 +507,43 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         // Section title
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Row(
-            children: [
-              Icon(
-                ZagIcons.RADARR,
-                color: const Color(0xFFFEC333),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Radarr',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+          child: GestureDetector(
+            onTap: () {
+              DiscoverRoutes.RECENTLY_DOWNLOADED.go();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  ZagIcons.RADARR,
                   color: const Color(0xFFFEC333),
+                  size: 20,
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  'Recently Downloaded',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 8),
+                Text(
+                  'Radarr',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFFEC333),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Recently Downloaded',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.grey,
+                  size: 24,
+                ),
+              ],
+            ),
           ),
         ),
         // Movie list

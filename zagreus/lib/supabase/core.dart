@@ -22,7 +22,7 @@ class ZagSupabase {
       url: _supabaseUrl,
       anonKey: _supabaseAnonKey,
       authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
+        authFlowType: AuthFlowType.implicit,
         autoRefreshToken: true,
       ),
     );

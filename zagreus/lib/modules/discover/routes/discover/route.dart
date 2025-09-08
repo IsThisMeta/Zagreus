@@ -17,6 +17,7 @@ class _State extends State<DiscoverHomeRoute> {
       scaffoldKey: _scaffoldKey,
       appBar: ZagAppBar(
         title: 'Discover',
+        useDrawer: true,
       ),
       body: Center(
         child: Column(

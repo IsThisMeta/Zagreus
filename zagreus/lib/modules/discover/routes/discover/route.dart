@@ -15,6 +15,8 @@ class _State extends State<DiscoverHomeRoute> {
   Widget build(BuildContext context) {
     return ZagScaffold(
       scaffoldKey: _scaffoldKey,
+      module: ZagModule.DISCOVER,
+      drawer: ZagDrawer(page: ZagModule.DISCOVER.key),
       appBar: ZagAppBar(
         title: 'Discover',
         useDrawer: true,

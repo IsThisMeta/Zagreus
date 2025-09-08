@@ -1,1 +1,5 @@
 .DS_Store
+
+# API Keys - DO NOT COMMIT
+**/api_keys.dart
+lib/modules/discover/core/api_keys.dart

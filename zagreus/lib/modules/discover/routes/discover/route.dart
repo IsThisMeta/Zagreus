@@ -4,6 +4,7 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
+import 'package:zagreus/modules/discover/core/tmdb_api.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -64,32 +65,39 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
   
   void _loadMockTrendingData() {
-    // Mock data - in real implementation, this would come from TMDB API
-    setState(() {
-      _trendingItems = [
-        {
-          'title': 'Moana 2',
-          'backdrop': 'https://image.tmdb.org/t/p/original/tElnmtQ6yz1PjN1kePNl8yMSb59.jpg',
-          'rating': 7.2,
-          'watchingNow': 88,
-          'inLibrary': true,
-        },
-        {
-          'title': 'Kaiju No. 8',
-          'backdrop': 'https://image.tmdb.org/t/p/original/geCRueV3ElhSIqJGJRfBdbiLRAp.jpg',
-          'rating': 8.6,
-          'watchingNow': 107,
-          'inLibrary': false,
-        },
-        {
-          'title': 'Wicked',
-          'backdrop': 'https://image.tmdb.org/t/p/original/c7Oft5UtMtfzS1w9YQbKnjQXSMw.jpg',
-          'rating': 8.1,
-          'watchingNow': 234,
-          'inLibrary': true,
-        },
-      ];
-    });
+    _loadTrendingData();
+  }
+  
+  Future<void> _loadTrendingData() async {
+    try {
+      final items = await TMDBApi.getTrending(
+        mediaType: 'all', // Can be 'movie', 'tv', or 'all'
+        timeWindow: _trendingTimeWindow,
+      );
+      
+      // Check against Radarr library if available
+      if (mounted) {
+        final radarrState = context.read<RadarrState>();
+        if (radarrState.enabled && radarrState.movies != null) {
+          final movies = await radarrState.movies!;
+          for (final item in items) {
+            if (item['mediaType'] == 'movie') {
+              final tmdbId = item['tmdbId'] as int;
+              item['inLibrary'] = movies.any((m) => m.tmdbId == tmdbId);
+            }
+          }
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _trendingItems = items;
+        });
+      }
+    } catch (e) {
+      print('Failed to load trending: $e');
+      // Falls back to mock data in the API
+    }
   }
   
   Future<void> _loadRecentlyDownloaded() async {
@@ -463,8 +471,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       onTap: () {
         setState(() {
           _trendingTimeWindow = value;
-          // In real implementation, would reload trending data here
+          _currentHeroIndex = 0;
         });
+        _pageController.jumpToPage(0);
+        _loadTrendingData();
+        _restartAutoScroll();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

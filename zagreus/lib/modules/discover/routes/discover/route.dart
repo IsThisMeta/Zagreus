@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/api/radarr/radarr.dart';
@@ -18,10 +19,77 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   bool _isLoading = true;
   String? _error;
   
+  // Hero carousel state
+  PageController _pageController = PageController();
+  int _currentHeroIndex = 0;
+  String _trendingTimeWindow = 'day'; // 'day' or 'week'
+  List<Map<String, dynamic>> _trendingItems = [];
+  Timer? _autoScrollTimer;
+  
   @override
   void initState() {
     super.initState();
     _loadRecentlyDownloaded();
+    _loadMockTrendingData();
+    _startAutoScroll();
+  }
+  
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+  
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_trendingItems.isNotEmpty) {
+        final nextIndex = (_currentHeroIndex + 1) % _trendingItems.length;
+        _pageController.animateToPage(
+          nextIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+  
+  void _stopAutoScroll() {
+    _autoScrollTimer?.cancel();
+  }
+  
+  void _restartAutoScroll() {
+    _stopAutoScroll();
+    _startAutoScroll();
+  }
+  
+  void _loadMockTrendingData() {
+    // Mock data - in real implementation, this would come from TMDB API
+    setState(() {
+      _trendingItems = [
+        {
+          'title': 'Moana 2',
+          'backdrop': 'https://image.tmdb.org/t/p/original/tElnmtQ6yz1PjN1kePNl8yMSb59.jpg',
+          'rating': 7.2,
+          'watchingNow': 88,
+          'inLibrary': true,
+        },
+        {
+          'title': 'Kaiju No. 8',
+          'backdrop': 'https://image.tmdb.org/t/p/original/geCRueV3ElhSIqJGJRfBdbiLRAp.jpg',
+          'rating': 8.6,
+          'watchingNow': 107,
+          'inLibrary': false,
+        },
+        {
+          'title': 'Wicked',
+          'backdrop': 'https://image.tmdb.org/t/p/original/c7Oft5UtMtfzS1w9YQbKnjQXSMw.jpg',
+          'rating': 8.1,
+          'watchingNow': 234,
+          'inLibrary': true,
+        },
+      ];
+    });
   }
   
   Future<void> _loadRecentlyDownloaded() async {
@@ -164,17 +232,19 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     
     return RefreshIndicator(
       onRefresh: _loadRecentlyDownloaded,
-      child: _recentlyDownloaded.isEmpty 
-        ? _emptyState()
-        : ListView(
-            controller: scrollController,
-            padding: EdgeInsets.only(top: 8),
-            children: [
-              _sectionHeader(),
-              if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
-              const SizedBox(height: 32),
-            ],
-          ),
+      child: ListView(
+        controller: scrollController,
+        padding: EdgeInsets.zero,
+        children: [
+          // Hero carousel
+          _heroCarousel(),
+          // Today/This Week toggle
+          _timeWindowToggle(),
+          // Content sections
+          if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
+          const SizedBox(height: 32),
+        ],
+      ),
     );
   }
   
@@ -210,28 +280,210 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
   
-  Widget _sectionHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+  Widget _heroCarousel() {
+    return SizedBox(
+      height: 450,
+      child: Stack(
         children: [
-          Container(
-            width: 4,
-            height: 24,
-            decoration: BoxDecoration(
-              color: const Color(0xFF6688FF),
-              borderRadius: BorderRadius.circular(2),
+          GestureDetector(
+            onPanDown: (_) => _stopAutoScroll(),
+            onPanCancel: () => _restartAutoScroll(),
+            onPanEnd: (_) => _restartAutoScroll(),
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentHeroIndex = index;
+                });
+              },
+              itemCount: _trendingItems.length,
+              itemBuilder: (context, index) {
+                final item = _trendingItems[index];
+                return Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Backdrop image
+                  Image.network(
+                    item['backdrop'] as String,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade800,
+                        child: Center(
+                          child: Icon(
+                            Icons.movie_rounded,
+                            size: 60,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // Gradient overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.7),
+                        ],
+                        stops: const [0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                  // Content
+                  Positioned(
+                    bottom: 40,
+                    left: 24,
+                    right: 24,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // In library badge
+                        if (item['inLibrary'] as bool)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.play_circle_fill,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'In library',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 12),
+                        // Title
+                        Text(
+                          item['title'] as String,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Rating and watching
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: Colors.yellow,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              item['rating'].toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              '• ${item['watchingNow']} watching now',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            'Discover',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+          // Page indicators
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                _trendingItems.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: _currentHeroIndex == index ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _currentHeroIndex == index
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+  
+  Widget _timeWindowToggle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        children: [
+          _toggleButton('Today', 'day'),
+          const SizedBox(width: 12),
+          _toggleButton('This Week', 'week'),
+        ],
+      ),
+    );
+  }
+  
+  Widget _toggleButton(String label, String value) {
+    final isSelected = _trendingTimeWindow == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _trendingTimeWindow = value;
+          // In real implementation, would reload trending data here
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.grey,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 16,
+          ),
+        ),
       ),
     );
   }

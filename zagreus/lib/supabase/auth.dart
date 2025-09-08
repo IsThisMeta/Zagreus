@@ -177,7 +177,10 @@ class ZagSupabaseAuth {
 
   /// Reset a user's password by sending them a password reset email.
   Future<void> resetPassword(String email) async {
-    await instance.resetPasswordForEmail(email);
+    await instance.resetPasswordForEmail(
+      email,
+      redirectTo: 'https://zagreus.app/reset-password',
+    );
   }
 
   /// Listen to auth state changes.

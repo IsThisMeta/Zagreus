@@ -308,26 +308,28 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               itemCount: _trendingItems.length,
               itemBuilder: (context, index) {
                 final item = _trendingItems[index];
-                return Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Backdrop image
-                  Image.network(
-                    item['backdrop'] as String,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade800,
-                        child: Center(
-                          child: Icon(
-                            Icons.movie_rounded,
-                            size: 60,
-                            color: Colors.grey.shade600,
+                return GestureDetector(
+                onTap: () => _handleHeroTap(item),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Backdrop image
+                    Image.network(
+                      item['backdrop'] as String,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey.shade800,
+                          child: Center(
+                            child: Icon(
+                              Icons.movie_rounded,
+                              size: 60,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
                   // Gradient overlay
                   Container(
                     decoration: BoxDecoration(
@@ -421,6 +423,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     ),
                   ),
                 ],
+                ),
               );
             },
             ),
@@ -464,6 +467,48 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         ],
       ),
     );
+  }
+  
+  void _handleHeroTap(Map<String, dynamic> item) {
+    final mediaType = item['mediaType'] as String;
+    final tmdbId = item['tmdbId'] as int;
+    
+    if (mediaType == 'movie') {
+      // Check if movie is in Radarr library
+      final radarrState = context.read<RadarrState>();
+      if (radarrState.enabled && radarrState.movies != null) {
+        radarrState.movies!.then((movies) {
+          final movie = movies.firstWhere(
+            (m) => m.tmdbId == tmdbId,
+            orElse: () => RadarrMovie(),
+          );
+          
+          if (movie.id != null) {
+            // Movie is in library, navigate to details
+            RadarrRoutes.MOVIE.go(
+              params: {
+                'movie': movie.id.toString(),
+              },
+            );
+          } else {
+            // Movie not in library, could show add movie screen
+            // For now, just show a snackbar
+            showZagSnackBar(
+              title: item['title'] as String,
+              message: 'Movie not in library',
+              type: ZagSnackbarType.INFO,
+            );
+          }
+        });
+      }
+    } else if (mediaType == 'tv') {
+      // For TV shows, we'd need similar logic with Sonarr
+      showZagSnackBar(
+        title: item['title'] as String,
+        message: 'TV show support coming soon',
+        type: ZagSnackbarType.INFO,
+      );
+    }
   }
   
   Widget _toggleButton(String label, String value) {

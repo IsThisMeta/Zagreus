@@ -399,7 +399,7 @@ extension ZagModuleRoutingExtension on ZagModule {
       case ZagModule.EXTERNAL_MODULES:
         return ZagRoutes.externalModules.root.path;
       case ZagModule.DISCOVER:
-        return null;
+        return ZagRoutes.discover.root.path;
     }
   }
 

@@ -9,9 +9,12 @@ class DiscoverHomeRoute extends StatefulWidget {
 }
 
 class _State extends State<DiscoverHomeRoute> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
   @override
   Widget build(BuildContext context) {
     return ZagScaffold(
+      scaffoldKey: _scaffoldKey,
       appBar: ZagAppBar(
         title: 'Discover',
       ),

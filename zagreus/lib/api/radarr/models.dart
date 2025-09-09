@@ -51,6 +51,9 @@ export 'models/movie/movie_file_media_info.dart';
 export 'models/movie/movie_file_quality.dart';
 export 'models/movie/rating.dart';
 
+/// Notification
+export 'models/notification/notification.dart';
+
 /// Quality Profile
 export 'models/quality_profile/format_item.dart';
 export 'models/quality_profile/item.dart';

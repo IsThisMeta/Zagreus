@@ -1,6 +1,7 @@
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/types/list_view_option.dart';
+import 'webhook_manager.dart';
 
 class RadarrState extends ZagModuleState {
   RadarrState() {
@@ -79,6 +80,21 @@ class RadarrState extends ZagModuleState {
             apiKey: _apiKey,
             headers: Map<String, dynamic>.from(_headers),
           );
+    
+    // Sync webhook if enabled
+    if (_enabled && _api != null) {
+      _syncWebhook();
+    }
+  }
+  
+  /// Sync webhook configuration
+  Future<void> _syncWebhook() async {
+    try {
+      await RadarrWebhookManager.syncWebhook(_api!);
+    } catch (e) {
+      // Don't fail profile loading if webhook sync fails
+      ZagLogger().warning('Failed to sync Radarr webhook during profile load');
+    }
   }
 
   //////////////

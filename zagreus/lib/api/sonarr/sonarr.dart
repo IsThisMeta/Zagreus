@@ -12,6 +12,7 @@ class SonarrAPI {
     required this.episodeFile,
     required this.history,
     required this.importList,
+    required this.notification,
     required this.profile,
     required this.queue,
     required this.release,
@@ -51,6 +52,7 @@ class SonarrAPI {
       episodeFile: SonarrControllerEpisodeFile(_dio),
       history: SonarrControllerHistory(_dio),
       importList: SonarrControllerImportList(_dio),
+      notification: SonarrControllerNotification(_dio),
       profile: SonarrControllerProfile(_dio),
       queue: SonarrControllerQueue(_dio),
       release: SonarrControllerRelease(_dio),
@@ -74,6 +76,7 @@ class SonarrAPI {
       episodeFile: SonarrControllerEpisodeFile(client),
       history: SonarrControllerHistory(client),
       importList: SonarrControllerImportList(client),
+      notification: SonarrControllerNotification(client),
       profile: SonarrControllerProfile(client),
       queue: SonarrControllerQueue(client),
       release: SonarrControllerRelease(client),
@@ -94,6 +97,7 @@ class SonarrAPI {
   final SonarrControllerEpisodeFile episodeFile;
   final SonarrControllerHistory history;
   final SonarrControllerImportList importList;
+  final SonarrControllerNotification notification;
   final SonarrControllerProfile profile;
   final SonarrControllerQueue queue;
   final SonarrControllerRelease release;

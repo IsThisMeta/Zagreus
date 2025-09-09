@@ -26,6 +26,9 @@ export 'models/history/history_record.dart';
 /// Import List
 export 'models/import_list/exclusion.dart';
 
+/// Notification
+export 'models/notification/notification.dart';
+
 /// Profile
 export 'models/profile/language_profile_cutoff.dart';
 export 'models/profile/language_profile_item.dart';

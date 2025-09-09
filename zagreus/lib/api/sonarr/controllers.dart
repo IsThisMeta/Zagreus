@@ -46,6 +46,9 @@ part 'controllers/history/get_history_by_series.dart';
 part 'controllers/import_list.dart';
 part 'controllers/import_list/get_exclusion_list.dart';
 
+// Notification
+part 'controllers/notification.dart';
+
 // Profile
 part 'controllers/profile.dart';
 part 'controllers/profile/get_language_profiles.dart';

@@ -12,6 +12,6 @@ class SupabaseConfig {
   // APNS Configuration (for notifications)
   // Get these from Apple Developer Portal
   static const String apnsKeyId = 'YOUR_APNS_KEY_ID'; // e.g., 'ABC123DEFG'
-  static const String apnsTeamId = 'YOUR_APPLE_TEAM_ID'; // e.g., '1234567890'
+  static const String apnsTeamId = 'YOUR_APPLE_TEAM_ID'; // e.g., 'A12BC3456D'
   static const String apnsBundleId = 'app.zagreus'; // Your app bundle ID
 }

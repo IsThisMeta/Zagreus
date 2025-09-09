@@ -11,20 +11,37 @@ export const initialize = (): void => {
   const password = Environment.REDIS_PASS.read();
   const useTLS = Environment.REDIS_USE_TLS.read() === 'true';
 
+  logger.info(`Connecting to Redis at ${host}:${port} (TLS: ${useTLS})`);
+
   redis = new Redis({
     host,
     port,
     username: username ? username : undefined,
     password: password ? password : undefined,
     tls: useTLS ? { host, port } : undefined,
+    retryStrategy: (times) => {
+      const delay = Math.min(times * 50, 2000);
+      logger.warn(`Redis connection attempt ${times} failed, retrying in ${delay}ms`);
+      return delay;
+    },
+    reconnectOnError: (err) => {
+      const targetError = 'READONLY';
+      if (err.message.includes(targetError)) {
+        return true;
+      }
+      return false;
+    },
   });
 
   redis.on('error', (error) => {
-    logger.error('Redis connection failed - running without cache');
-    logger.error(error);
-    redis = undefined;
+    logger.fatal('Redis connection failed - CANNOT PROCEED WITHOUT REDIS');
+    logger.fatal(error);
+    process.exit(1); // Exit if Redis fails - no silly business
   });
-  redis.once('connect', async () => logger.debug('Connected'));
+  
+  redis.once('connect', async () => {
+    logger.info('Redis connected successfully');
+  });
 };
 
 export const set = async (
@@ -36,24 +53,32 @@ export const set = async (
     return res === 'OK';
   };
 
+  if (!redis) {
+    throw new Error('Redis is not initialized');
+  }
+  
   let res = false;
   try {
-    if (redis) {
-      const set = await redis.set(key, value, expiration.mode, expiration.ttl);
-      res = _isSetSuccess(set);
-    }
+    const set = await redis.set(key, value, expiration.mode, expiration.ttl);
+    res = _isSetSuccess(set);
   } catch (error) {
-    logger.error(error);
+    logger.error('Redis SET failed:', error);
+    throw error;
   }
   return res;
 };
 
 export const get = async (key: string): Promise<string | null> => {
+  if (!redis) {
+    throw new Error('Redis is not initialized');
+  }
+  
   let res: string | null = null;
   try {
-    if (redis) res = await redis.get(key);
+    res = await redis.get(key);
   } catch (error) {
-    logger.error(error);
+    logger.error('Redis GET failed:', error);
+    throw error;
   }
   return res;
 };

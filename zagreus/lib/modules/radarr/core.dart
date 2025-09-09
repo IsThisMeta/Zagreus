@@ -6,3 +6,4 @@ export 'core/extensions.dart';
 export 'core/state.dart';
 export 'core/types.dart';
 export 'core/webhooks.dart';
+export 'core/webhook_manager.dart';

@@ -1,6 +1,7 @@
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/types/list_view_option.dart';
+import 'webhook_manager.dart';
 
 class SonarrState extends ZagModuleState {
   SonarrState() {
@@ -70,6 +71,18 @@ class SonarrState extends ZagModuleState {
         apiKey: _apiKey,
         headers: Map<String, dynamic>.from(_headers),
       );
+      // Sync webhook if enabled
+      _syncWebhook();
+    }
+  }
+  
+  /// Sync webhook configuration
+  Future<void> _syncWebhook() async {
+    try {
+      await SonarrWebhookManager.syncWebhook(_api!);
+    } catch (e) {
+      // Don't fail profile loading if webhook sync fails
+      ZagLogger().warning('Failed to sync Sonarr webhook during profile load');
     }
   }
 

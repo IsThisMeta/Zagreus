@@ -75,6 +75,9 @@ part 'commands/movie_file/get_movie_file.dart';
 part 'commands/movie_lookup.dart';
 part 'commands/movie_lookup/get_movie_lookup.dart';
 
+// Notification
+part 'commands/notification.dart';
+
 // Releases
 part 'commands/release.dart';
 part 'commands/release/get_releases.dart';

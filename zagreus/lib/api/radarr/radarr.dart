@@ -32,6 +32,7 @@ class RadarrAPI {
     required this.movie,
     required this.movieFile,
     required this.movieLookup,
+    required this.notification,
     required this.qualityProfile,
     required this.queue,
     required this.release,
@@ -87,6 +88,7 @@ class RadarrAPI {
       movie: RadarrCommandHandlerMovie(_dio),
       movieFile: RadarrCommandHandlerMovieFile(_dio),
       movieLookup: RadarrCommandHandlerMovieLookup(_dio),
+      notification: RadarrCommandHandlerNotification(_dio),
       qualityProfile: RadarrCommandHandlerQualityProfile(_dio),
       queue: RadarrCommandHandlerQueue(_dio),
       release: RadarrCommandHandlerRelease(_dio),
@@ -132,6 +134,7 @@ class RadarrAPI {
       movie: RadarrCommandHandlerMovie(client),
       movieFile: RadarrCommandHandlerMovieFile(client),
       movieLookup: RadarrCommandHandlerMovieLookup(client),
+      notification: RadarrCommandHandlerNotification(client),
       qualityProfile: RadarrCommandHandlerQualityProfile(client),
       queue: RadarrCommandHandlerQueue(client),
       release: RadarrCommandHandlerRelease(client),
@@ -211,6 +214,11 @@ class RadarrAPI {
   ///
   /// _Check the documentation to see all API calls that fall under this category._
   final RadarrCommandHandlerMovieLookup movieLookup;
+
+  /// Command handler for all notification-related API calls.
+  ///
+  /// _Check the documentation to see all API calls that fall under this category._
+  final RadarrCommandHandlerNotification notification;
 
   /// Command handler for all quality profile-related API calls.
   ///

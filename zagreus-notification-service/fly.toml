@@ -11,8 +11,8 @@ primary_region = "ord"
 [env]
   PORT = "8080"
   NODE_ENV = "production"
-  # Redis (using Fly's Redis)
-  REDIS_HOST = "fly-zagreus-redis.upstash.io"
+  # Redis (using Upstash.com)
+  REDIS_HOST = "literate-burro-9541.upstash.io"
   REDIS_PORT = "6379"
   REDIS_USE_TLS = "true"
   REDIS_USER = "default"

@@ -469,7 +469,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
   
-  void _handleHeroTap(Map<String, dynamic> item) {
+  void _handleHeroTap(Map<String, dynamic> item) async {
     final mediaType = item['mediaType'] as String;
     final tmdbId = item['tmdbId'] as int;
     
@@ -477,29 +477,28 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       // Check if movie is in Radarr library
       final radarrState = context.read<RadarrState>();
       if (radarrState.enabled && radarrState.movies != null) {
-        radarrState.movies!.then((movies) {
-          final movie = movies.firstWhere(
-            (m) => m.tmdbId == tmdbId,
-            orElse: () => RadarrMovie(),
+        final movies = await radarrState.movies!;
+        final movie = movies.firstWhere(
+          (m) => m.tmdbId == tmdbId,
+          orElse: () => RadarrMovie(),
+        );
+        
+        if (movie.id != null) {
+          // Movie is in library, navigate to details
+          RadarrRoutes.MOVIE.go(
+            params: {
+              'movie': movie.id.toString(),
+            },
           );
-          
-          if (movie.id != null) {
-            // Movie is in library, navigate to details
-            RadarrRoutes.MOVIE.go(
-              params: {
-                'movie': movie.id.toString(),
-              },
-            );
-          } else {
-            // Movie not in library, could show add movie screen
-            // For now, just show a snackbar
-            showZagSnackBar(
-              title: item['title'] as String,
-              message: 'Movie not in library',
-              type: ZagSnackbarType.INFO,
-            );
-          }
-        });
+        } else {
+          // Movie not in library, navigate to add movie with TMDB ID
+          // Radarr accepts tmdb: prefix for TMDB ID lookups
+          RadarrRoutes.ADD_MOVIE.go(
+            queryParams: {
+              'query': 'tmdb:$tmdbId',
+            },
+          );
+        }
       }
     } else if (mediaType == 'tv') {
       // For TV shows, we'd need similar logic with Sonarr

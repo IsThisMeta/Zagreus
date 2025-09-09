@@ -2,6 +2,7 @@ import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
+import 'package:zagreus/router/routes/radarr.dart';
 
 class RadarrAddMovieSearchPage extends StatefulWidget {
   final bool autofocusSearchBar;
@@ -27,9 +28,37 @@ class _State extends State<RadarrAddMovieSearchPage>
   @override
   Future<void> loadCallback() async {
     if (context.read<RadarrAddMovieState>().searchQuery.isNotEmpty) {
+      final query = context.read<RadarrAddMovieState>().searchQuery;
       context.read<RadarrAddMovieState>().fetchLookup(context);
-      await context.read<RadarrAddMovieState>().lookup;
+      
+      // Wait for lookup results
+      final lookupResults = await context.read<RadarrAddMovieState>().lookup;
       await context.read<RadarrAddMovieState>().exclusions;
+      
+      // If searching by TMDB ID and found exactly one result, auto-navigate
+      if (query.startsWith('tmdb:') && lookupResults != null && lookupResults.length == 1) {
+        final movie = lookupResults.first;
+        
+        // Check if movie exists in library
+        final movies = await context.read<RadarrState>().movies;
+        final existingMovie = movies?.firstWhere(
+          (m) => m.id == movie.id,
+          orElse: () => RadarrMovie(),
+        );
+        
+        if (existingMovie?.id != null) {
+          // Movie exists, go to details
+          RadarrRoutes.MOVIE.go(params: {
+            'movie': existingMovie!.id!.toString(),
+          });
+        } else {
+          // Movie doesn't exist, go to add movie details
+          RadarrRoutes.ADD_MOVIE_DETAILS.go(
+            extra: movie,
+            queryParams: {'isDiscovery': 'false'},
+          );
+        }
+      }
     }
   }
 

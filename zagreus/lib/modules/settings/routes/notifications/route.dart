@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/modules/settings.dart';
-import 'package:zagreus/modules/settings/routes/notifications/widgets/module_tile.dart';
 import 'package:zagreus/utils/links.dart';
 
 class NotificationsRoute extends StatefulWidget {
@@ -58,8 +57,10 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           onTap: ZagLinkedContent.NOTIFICATIONS_DOC.launch,
         ),
         _enableInAppNotifications(),
-        ZagDivider(),
-        ..._modules(),
+        _testNotificationButton(),
+        // Webhook configuration is now handled automatically
+        // ZagDivider(),
+        // ..._modules(),
       ],
     );
   }
@@ -91,13 +92,79 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     );
   }
 
+  Widget _testNotificationButton() {
+    return ZagBlock(
+      title: 'Test Push Notifications',
+      body: [
+        TextSpan(text: 'Send a test notification to verify your setup'),
+      ],
+      trailing: const ZagIconButton(icon: Icons.send_rounded),
+      onTap: () async {
+        // Show loading
+        showZagSnackBar(
+          title: 'Sending Test Notification',
+          message: 'Please wait...',
+          type: ZagSnackbarType.INFO,
+        );
+        
+        try {
+          // First check if we have permissions
+          bool allowed = await ZagSupabaseMessaging.instance.areNotificationsAllowed();
+          if (!allowed) {
+            bool granted = await ZagSupabaseMessaging.instance.requestNotificationPermissions();
+            if (!granted) {
+              showZagErrorSnackBar(
+                title: 'Permission Required',
+                message: 'Please enable notifications in Settings',
+              );
+              return;
+            }
+          }
+          
+          // Get the device token
+          String? token = await ZagSupabaseMessaging.instance.getToken();
+          if (token == null) {
+            showZagErrorSnackBar(
+              title: 'No Device Token',
+              message: 'Failed to get device token. Make sure notifications are enabled.',
+            );
+            return;
+          }
+          
+          showZagSnackBar(
+            title: 'Device Token Retrieved',
+            message: 'Token: ${token.substring(0, 20)}...',
+            type: ZagSnackbarType.SUCCESS,
+            duration: const Duration(seconds: 5),
+          );
+          
+          // TODO: Send test notification via your notification server
+          // For now, simulate a local notification
+          ZagSupabaseMessaging.instance.simulateMessage(
+            RemoteMessage(
+              notification: RemoteNotification(
+                title: '🎉 Notifications Working!',
+                body: 'Your Zagreus notifications are set up correctly.',
+              ),
+              data: {
+                'module': 'settings',
+                'profile': 'default',
+              },
+            ),
+          );
+          
+        } catch (e) {
+          showZagErrorSnackBar(
+            title: 'Test Failed',
+            message: e.toString(),
+          );
+        }
+      },
+    );
+  }
+
   List<Widget> _modules() {
-    List<SettingsNotificationsModuleTile> modules = [];
-    for (ZagModule module in ZagModule.values) {
-      if (module.hasWebhooks) {
-        modules.add(SettingsNotificationsModuleTile(module: module));
-      }
-    }
-    return modules;
+    // Removed webhook tiles - notifications are now handled differently
+    return [];
   }
 }

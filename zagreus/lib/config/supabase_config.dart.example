@@ -1,0 +1,17 @@
+// This file contains your Supabase configuration
+// Copy this file to supabase_config.dart and fill in your values
+// DO NOT commit supabase_config.dart to version control!
+
+class SupabaseConfig {
+  static const String url = 'YOUR_SUPABASE_URL';
+  static const String anonKey = 'YOUR_SUPABASE_ANON_KEY';
+  
+  // Optional: Add other configuration
+  static const String storageUrl = 'YOUR_SUPABASE_URL/storage/v1';
+  
+  // APNS Configuration (for notifications)
+  // Get these from Apple Developer Portal
+  static const String apnsKeyId = 'YOUR_APNS_KEY_ID'; // e.g., 'ABC123DEFG'
+  static const String apnsTeamId = 'YOUR_APPLE_TEAM_ID'; // e.g., '1234567890'
+  static const String apnsBundleId = 'app.zagreus'; // Your app bundle ID
+}

@@ -50,12 +50,6 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           },
         ),
         SettingsBanners.NOTIFICATIONS_MODULE_SUPPORT.banner(),
-        ZagBlock(
-          title: 'settings.GettingStarted'.tr(),
-          body: [TextSpan(text: 'settings.GettingStartedDescription'.tr())],
-          trailing: const ZagIconButton.arrow(),
-          onTap: ZagLinkedContent.NOTIFICATIONS_DOC.launch,
-        ),
         _enableInAppNotifications(),
         _testNotificationButton(),
         // Webhook configuration is now handled automatically

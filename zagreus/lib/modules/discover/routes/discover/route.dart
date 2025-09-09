@@ -16,6 +16,7 @@ class DiscoverHomeRoute extends StatefulWidget {
 
 class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late ZagPageController _pageController;
   
   List<RadarrMovie> _recentlyDownloaded = [];
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
@@ -23,7 +24,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   String? _error;
   
   // Hero carousel state
-  PageController _pageController = PageController();
+  PageController _heroPageController = PageController();
   int _currentHeroIndex = 0;
   String _trendingTimeWindow = 'day'; // 'day' or 'week'
   List<Map<String, dynamic>> _trendingItems = [];
@@ -32,6 +33,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   @override
   void initState() {
     super.initState();
+    _pageController = ZagPageController(initialPage: 0);
     _loadRecentlyDownloaded();
     _loadRecentlyDownloadedShows();
     _loadMockTrendingData();
@@ -41,6 +43,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
+    _heroPageController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -49,7 +52,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_trendingItems.isNotEmpty) {
         final nextIndex = (_currentHeroIndex + 1) % _trendingItems.length;
-        _pageController.animateToPage(
+        _heroPageController.animateToPage(
           nextIndex,
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
@@ -225,10 +228,23 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         useDrawer: true,
       ),
       body: _body(),
+      bottomNavigationBar: _DiscoverNavigationBar(
+        pageController: _pageController,
+      ),
     );
   }
   
   Widget _body() {
+    return ZagPageView(
+      controller: _pageController,
+      children: [
+        _moviesPage(),
+        _tvShowsPage(),
+      ],
+    );
+  }
+  
+  Widget _moviesPage() {
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(
@@ -277,7 +293,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     return RefreshIndicator(
       onRefresh: _loadRecentlyDownloaded,
       child: ListView(
-        controller: scrollController,
+        controller: _DiscoverNavigationBar.scrollControllers[0],
         padding: EdgeInsets.zero,
         children: [
           // Hero carousel
@@ -286,6 +302,24 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _timeWindowToggle(),
           // Content sections
           if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+  
+  Widget _tvShowsPage() {
+    return RefreshIndicator(
+      onRefresh: _loadRecentlyDownloadedShows,
+      child: ListView(
+        controller: _DiscoverNavigationBar.scrollControllers[1],
+        padding: EdgeInsets.zero,
+        children: [
+          // Hero carousel (could be TV shows specific)
+          _heroCarousel(),
+          // Today/This Week toggle
+          _timeWindowToggle(),
+          // TV shows sections
           if (_recentlyDownloadedShows.isNotEmpty) _recentlyDownloadedShowsSection(),
           const SizedBox(height: 32),
         ],
@@ -335,7 +369,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
             onPanCancel: () => _restartAutoScroll(),
             onPanEnd: (_) => _restartAutoScroll(),
             child: PageView.builder(
-              controller: _pageController,
+              controller: _heroPageController,
               onPageChanged: (index) {
                 setState(() {
                   _currentHeroIndex = index;
@@ -554,7 +588,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _trendingTimeWindow = value;
           _currentHeroIndex = 0;
         });
-        _pageController.jumpToPage(0);
+        _heroPageController.jumpToPage(0);
         _loadTrendingData();
         _restartAutoScroll();
       },
@@ -912,6 +946,39 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DiscoverNavigationBar extends StatelessWidget {
+  final PageController? pageController;
+  static List<ScrollController> scrollControllers = List.generate(
+    icons.length,
+    (_) => ScrollController(),
+  );
+
+  static const List<IconData> icons = [
+    Icons.movie_rounded,
+    Icons.tv_rounded,
+  ];
+
+  static const List<String> titles = [
+    'Movies',
+    'TV Shows',
+  ];
+
+  const _DiscoverNavigationBar({
+    Key? key,
+    required this.pageController,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ZagBottomNavigationBar(
+      pageController: pageController,
+      scrollControllers: scrollControllers,
+      icons: icons,
+      titles: titles,
     );
   }
 }

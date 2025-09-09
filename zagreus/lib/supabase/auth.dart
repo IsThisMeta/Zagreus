@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zagreus/core.dart';
-import 'package:zagreus/supabase/firestore.dart';
+import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/types.dart';
 
 class ZagSupabaseAuth {
@@ -43,7 +43,7 @@ class ZagSupabaseAuth {
         password: password,
       );
       if (authResponse.user != null) {
-        ZagSupabaseFirestore().addDeviceToken();
+        ZagSupabaseDatabase().addDeviceToken();
         return ZagSupabaseResponse(state: true, authResponse: authResponse);
       } else {
         return ZagSupabaseResponse(state: false);
@@ -66,7 +66,7 @@ class ZagSupabaseAuth {
         password: password,
       );
       if (authResponse.user != null) {
-        ZagSupabaseFirestore().addDeviceToken();
+        ZagSupabaseDatabase().addDeviceToken();
         return ZagSupabaseResponse(state: true, authResponse: authResponse);
       } else {
         return ZagSupabaseResponse(state: false);

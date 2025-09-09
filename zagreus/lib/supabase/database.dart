@@ -4,7 +4,7 @@ import 'package:zagreus/supabase/auth.dart';
 import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/supabase/types.dart';
 
-class ZagSupabaseFirestore {
+class ZagSupabaseDatabase {
   /// Returns an instance of Supabase Client.
   ///
   /// Throws an error if [ZagSupabase.initialize] has not been called.

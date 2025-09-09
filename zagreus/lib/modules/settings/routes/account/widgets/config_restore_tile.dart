@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/config/encryption_config_private.dart';
 import 'package:zagreus/database/config.dart';
-import 'package:zagreus/supabase/firestore.dart';
+import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/storage.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/settings.dart';
@@ -41,7 +41,7 @@ class _State extends State<SettingsAccountRestoreConfigurationTile> {
     if (_loadingState == ZagLoadingState.ACTIVE) return;
     updateState(ZagLoadingState.ACTIVE);
     try {
-      final docs = await ZagSupabaseFirestore().getBackupEntries();
+      final docs = await ZagSupabaseDatabase().getBackupEntries();
       final result = await SettingsDialogs().getBackupFromCloud(context, docs);
 
       if (result.item1) {

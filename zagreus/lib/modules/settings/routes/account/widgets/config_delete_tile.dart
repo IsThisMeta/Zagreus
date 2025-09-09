@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
-import 'package:zagreus/supabase/firestore.dart';
+import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/storage.dart';
 import 'package:zagreus/supabase/types.dart';
 import 'package:zagreus/modules/settings.dart';
@@ -40,11 +40,11 @@ class _State extends State<SettingsAccountDeleteConfigurationTile> {
 
     try {
       List<ZagSupabaseBackupDocument> documents =
-          await ZagSupabaseFirestore().getBackupEntries();
+          await ZagSupabaseDatabase().getBackupEntries();
       Tuple2<bool, ZagSupabaseBackupDocument?> result =
           await SettingsDialogs().getBackupFromCloud(context, documents);
       if (result.item1) {
-        await ZagSupabaseFirestore()
+        await ZagSupabaseDatabase()
             .deleteBackupEntry(result.item2!.id)
             .then((_) => ZagSupabaseStorage().deleteBackup(result.item2!.id))
             .then((_) {

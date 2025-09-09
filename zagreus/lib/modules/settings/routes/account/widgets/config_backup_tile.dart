@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/config/encryption_config_private.dart';
 import 'package:zagreus/database/config.dart';
-import 'package:zagreus/supabase/firestore.dart';
+import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/storage.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/settings.dart';
@@ -59,7 +59,7 @@ class _State extends State<SettingsAccountBackupConfigurationTile> {
       String format = 'MMMM dd, yyyy\nhh:mm:ss a';
       String title = DateFormat(format).format(DateTime.now());
 
-      await ZagSupabaseFirestore()
+      await ZagSupabaseDatabase()
           .addBackupEntry(id, timestamp, title: title)
           .then((_) => ZagSupabaseStorage().uploadBackup(encrypted, id))
           .then((_) {

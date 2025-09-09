@@ -55,6 +55,9 @@ class SonarrState extends ZagModuleState {
   Map<dynamic, dynamic> _headers = {};
   Map<dynamic, dynamic> get headers => _headers;
 
+  /// Check if Sonarr is properly configured
+  bool get isConfigured => _enabled && _host.isNotEmpty && _apiKey.isNotEmpty;
+
   /// Reset the profile data, reinitializes API instance
   void resetProfile() {
     ZagProfile _profile = ZagProfile.current;
@@ -64,15 +67,20 @@ class SonarrState extends ZagModuleState {
     _host = _profile.sonarrHost;
     _apiKey = _profile.sonarrKey;
     _headers = _profile.sonarrHeaders;
-    // Create the API instance if Sonarr is enabled
-    if (_enabled) {
-      _api = SonarrAPI(
-        host: _host,
-        apiKey: _apiKey,
-        headers: Map<String, dynamic>.from(_headers),
-      );
-      // Sync webhook if enabled
-      _syncWebhook();
+    // Create the API instance if Sonarr is enabled and configured
+    if (_enabled && _host.isNotEmpty && _apiKey.isNotEmpty) {
+      try {
+        _api = SonarrAPI(
+          host: _host,
+          apiKey: _apiKey,
+          headers: Map<String, dynamic>.from(_headers),
+        );
+        // Sync webhook if enabled
+        _syncWebhook();
+      } catch (e) {
+        ZagLogger().error('Failed to create Sonarr API instance', e);
+        _api = null;
+      }
     }
   }
   

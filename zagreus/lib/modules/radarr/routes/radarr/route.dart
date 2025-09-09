@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
+import 'package:zagreus/router/routes/settings.dart';
 
 class RadarrRoute extends StatefulWidget {
   const RadarrRoute({
@@ -74,15 +75,29 @@ class _State extends State<RadarrRoute> {
   }
 
   Widget _body() {
-    return Selector<RadarrState, bool?>(
-      selector: (_, state) => state.enabled,
-      builder: (context, enabled, _) {
-        if (!enabled!) {
+    return Selector<RadarrState, Tuple2<bool, bool>>(
+      selector: (_, state) => Tuple2(state.enabled, state.isConfigured),
+      builder: (context, data, _) {
+        final enabled = data.item1;
+        final isConfigured = data.item2;
+        
+        if (!enabled) {
           return ZagMessage.moduleNotEnabled(
             context: context,
             module: 'Radarr',
           );
         }
+        
+        if (!isConfigured) {
+          return ZagMessage(
+            title: 'Configuration Required',
+            body: 'Please configure your Radarr connection details in Settings.',
+            icon: Icons.settings_rounded,
+            buttonText: 'Go to Settings',
+            onTap: () => SettingsRoutes.CONFIGURATION_RADARR.go(),
+          );
+        }
+        
         return ZagPageView(
           controller: _pageController,
           children: const [

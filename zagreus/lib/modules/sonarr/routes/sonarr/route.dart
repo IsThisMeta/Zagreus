@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/sonarr.dart';
+import 'package:zagreus/router/routes/settings.dart';
 
 class SonarrRoute extends StatefulWidget {
   const SonarrRoute({
@@ -74,15 +75,29 @@ class _State extends State<SonarrRoute> {
   }
 
   Widget _body() {
-    return Selector<SonarrState, bool?>(
-      selector: (_, state) => state.enabled,
-      builder: (context, enabled, _) {
-        if (!enabled!) {
+    return Selector<SonarrState, Tuple2<bool, bool>>(
+      selector: (_, state) => Tuple2(state.enabled, state.isConfigured),
+      builder: (context, data, _) {
+        final enabled = data.item1;
+        final isConfigured = data.item2;
+        
+        if (!enabled) {
           return ZagMessage.moduleNotEnabled(
             context: context,
             module: 'Sonarr',
           );
         }
+        
+        if (!isConfigured) {
+          return ZagMessage(
+            title: 'Configuration Required',
+            body: 'Please configure your Sonarr connection details in Settings.',
+            icon: Icons.settings_rounded,
+            buttonText: 'Go to Settings',
+            onTap: () => SettingsRoutes.CONFIGURATION_SONARR.go(),
+          );
+        }
+        
         return ZagPageView(
           controller: _pageController,
           children: const [

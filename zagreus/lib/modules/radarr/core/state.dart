@@ -64,6 +64,9 @@ class RadarrState extends ZagModuleState {
   Map<dynamic, dynamic> _headers = {};
   Map<dynamic, dynamic> get headers => _headers;
 
+  /// Check if Radarr is properly configured
+  bool get isConfigured => _enabled && _host.isNotEmpty && _apiKey.isNotEmpty;
+
   /// Reset the profile data, reinitializes API instance
   void resetProfile() {
     ZagProfile _profile = ZagProfile.current;
@@ -72,18 +75,22 @@ class RadarrState extends ZagModuleState {
     _host = _profile.radarrHost;
     _apiKey = _profile.radarrKey;
     _headers = _profile.radarrHeaders;
-    // Create the API instance if Radarr is enabled
-    _api = !_enabled
-        ? null
-        : RadarrAPI(
-            host: _host,
-            apiKey: _apiKey,
-            headers: Map<String, dynamic>.from(_headers),
-          );
-    
-    // Sync webhook if enabled
-    if (_enabled && _api != null) {
-      _syncWebhook();
+    // Create the API instance if Radarr is enabled and configured
+    if (_enabled && _host.isNotEmpty && _apiKey.isNotEmpty) {
+      try {
+        _api = RadarrAPI(
+          host: _host,
+          apiKey: _apiKey,
+          headers: Map<String, dynamic>.from(_headers),
+        );
+        // Sync webhook if enabled
+        _syncWebhook();
+      } catch (e) {
+        ZagLogger().error('Failed to create Radarr API instance', e);
+        _api = null;
+      }
+    } else {
+      _api = null;
     }
   }
   

@@ -103,9 +103,10 @@ class _State extends State<SonarrMoreRoute> with AutomaticKeepAliveClientMixin {
             }
             
             // Show loading
-            showZagToast(
+            showZagSnackBar(
               title: 'Testing Webhook',
-              type: ZagToastType.loading,
+              message: 'Please wait...',
+              type: ZagSnackbarType.INFO,
             );
             
             try {

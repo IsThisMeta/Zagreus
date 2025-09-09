@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
+import 'package:zagreus/config/encryption_config_private.dart';
 import 'package:zagreus/database/config.dart';
 import 'package:zagreus/supabase/firestore.dart';
 import 'package:zagreus/supabase/storage.dart';
+import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/utils/encryption.dart';
 import 'package:zagreus/utils/uuid.dart';
@@ -41,37 +43,42 @@ class _State extends State<SettingsAccountBackupConfigurationTile> {
     updateState(ZagLoadingState.ACTIVE);
 
     try {
-      Tuple2<bool, String> _values =
-          await SettingsDialogs().backupConfiguration(context);
-      if (_values.item1) {
-        String decrypted = ZagConfig().export();
-        String encrypted = ZagEncryption().encrypt(_values.item2, decrypted);
-        int timestamp = DateTime.now().millisecondsSinceEpoch;
-        String id = ZagUUID().generate();
-        String format = 'MMMM dd, yyyy\nhh:mm:ss a';
-        String title = DateFormat(format).format(DateTime.now());
-
-        await ZagSupabaseFirestore()
-            .addBackupEntry(id, timestamp, title: title)
-            .then((_) => ZagSupabaseStorage().uploadBackup(encrypted, id))
-            .then((_) {
-          updateState(ZagLoadingState.INACTIVE);
-          showZagSuccessSnackBar(
-            title: 'settings.BackupToCloudSuccess'.tr(),
-            message: title.replaceAll('\n', ' ${ZagUI.TEXT_EMDASH} '),
-          );
-        }).catchError((error, stack) {
-          ZagLogger().error(
-            'Failed to backup configuration to the cloud',
-            error,
-            stack,
-          );
-          showZagErrorSnackBar(
-            title: 'settings.BackupToCloudFailure'.tr(),
-            error: error,
-          );
-        });
+      // Auto-generate encryption key from user ID
+      final user = ZagSupabase.client.auth.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
       }
+      
+      // Use encryption pattern from private config
+      String encryptionKey = EncryptionConfig.getBackupEncryptionKey(user.id, user.email ?? '');
+      
+      String decrypted = ZagConfig().export();
+      String encrypted = ZagEncryption().encrypt(encryptionKey, decrypted);
+      int timestamp = DateTime.now().millisecondsSinceEpoch;
+      String id = ZagUUID().generate();
+      String format = 'MMMM dd, yyyy\nhh:mm:ss a';
+      String title = DateFormat(format).format(DateTime.now());
+
+      await ZagSupabaseFirestore()
+          .addBackupEntry(id, timestamp, title: title)
+          .then((_) => ZagSupabaseStorage().uploadBackup(encrypted, id))
+          .then((_) {
+        updateState(ZagLoadingState.INACTIVE);
+        showZagSuccessSnackBar(
+          title: 'settings.BackupToCloudSuccess'.tr(),
+          message: title.replaceAll('\n', ' ${ZagUI.TEXT_EMDASH} '),
+        );
+      }).catchError((error, stack) {
+        ZagLogger().error(
+          'Failed to backup configuration to the cloud',
+          error,
+          stack,
+        );
+        showZagErrorSnackBar(
+          title: 'settings.BackupToCloudFailure'.tr(),
+          error: error,
+        );
+      });
     } catch (error, stack) {
       ZagLogger().error('Backup Failed', error, stack);
       showZagErrorSnackBar(

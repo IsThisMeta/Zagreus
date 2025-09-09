@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/supabase/core.dart';
@@ -14,8 +15,8 @@ class SonarrWebhookManager {
       return notifications.firstWhereOrNull(
         (n) => n.name == webhookName && n.implementation == 'Webhook',
       );
-    } catch (e) {
-      ZagLogger().error('Failed to get Sonarr webhooks', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to get Sonarr webhooks', e, stackTrace);
       return null;
     }
   }
@@ -50,16 +51,16 @@ class SonarrWebhookManager {
         // Update existing webhook
         notification.id = existing.id;
         await api.notification.update(notification: notification);
-        ZagLogger().info('Updated Sonarr webhook');
+        ZagLogger().debug('Updated Sonarr webhook');
       } else {
         // Create new webhook
         await api.notification.create(notification: notification);
-        ZagLogger().info('Created Sonarr webhook');
+        ZagLogger().debug('Created Sonarr webhook');
       }
       
       return true;
-    } catch (e) {
-      ZagLogger().error('Failed to sync Sonarr webhook', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to sync Sonarr webhook', e, stackTrace);
       return false;
     }
   }
@@ -70,12 +71,12 @@ class SonarrWebhookManager {
       final existing = await getZagreusWebhook(api);
       if (existing != null && existing.id != null) {
         await api.notification.delete(notificationId: existing.id!);
-        ZagLogger().info('Removed Sonarr webhook');
+        ZagLogger().debug('Removed Sonarr webhook');
         return true;
       }
       return false;
-    } catch (e) {
-      ZagLogger().error('Failed to remove Sonarr webhook', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to remove Sonarr webhook', e, stackTrace);
       return false;
     }
   }
@@ -88,8 +89,8 @@ class SonarrWebhookManager {
         return await api.notification.test(notification: existing);
       }
       return false;
-    } catch (e) {
-      ZagLogger().error('Failed to test Sonarr webhook', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to test Sonarr webhook', e, stackTrace);
       return false;
     }
   }

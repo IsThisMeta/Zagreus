@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/supabase/core.dart';
@@ -13,8 +14,8 @@ class RadarrWebhookManager {
       return notifications.firstWhereOrNull(
         (n) => n.name == webhookName && n.implementation == 'Webhook',
       );
-    } catch (e) {
-      ZagLogger().error('Failed to get Radarr webhooks', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to get Radarr webhooks', e, stackTrace);
       return null;
     }
   }
@@ -49,16 +50,16 @@ class RadarrWebhookManager {
         // Update existing webhook
         notification.id = existing.id;
         await api.notification.update(notification: notification);
-        ZagLogger().info('Updated Radarr webhook');
+        ZagLogger().debug('Updated Radarr webhook');
       } else {
         // Create new webhook
         await api.notification.create(notification: notification);
-        ZagLogger().info('Created Radarr webhook');
+        ZagLogger().debug('Created Radarr webhook');
       }
       
       return true;
-    } catch (e) {
-      ZagLogger().error('Failed to sync Radarr webhook', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to sync Radarr webhook', e, stackTrace);
       return false;
     }
   }
@@ -69,12 +70,12 @@ class RadarrWebhookManager {
       final existing = await getZagreusWebhook(api);
       if (existing != null && existing.id != null) {
         await api.notification.delete(notificationId: existing.id!);
-        ZagLogger().info('Removed Radarr webhook');
+        ZagLogger().debug('Removed Radarr webhook');
         return true;
       }
       return false;
-    } catch (e) {
-      ZagLogger().error('Failed to remove Radarr webhook', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to remove Radarr webhook', e, stackTrace);
       return false;
     }
   }
@@ -87,8 +88,8 @@ class RadarrWebhookManager {
         return await api.notification.test(notification: existing);
       }
       return false;
-    } catch (e) {
-      ZagLogger().error('Failed to test Radarr webhook', e);
+    } catch (e, stackTrace) {
+      ZagLogger().error('Failed to test Radarr webhook', e, stackTrace);
       return false;
     }
   }

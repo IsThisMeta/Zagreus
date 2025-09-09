@@ -77,8 +77,8 @@ class SonarrState extends ZagModuleState {
         );
         // Sync webhook if enabled
         _syncWebhook();
-      } catch (e) {
-        ZagLogger().error('Failed to create Sonarr API instance', e);
+      } catch (e, stackTrace) {
+        ZagLogger().error('Failed to create Sonarr API instance', e, stackTrace);
         _api = null;
       }
     }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
+import 'package:zagreus/config/encryption_config_private.dart';
 import 'package:zagreus/database/config.dart';
 import 'package:zagreus/supabase/firestore.dart';
 import 'package:zagreus/supabase/storage.dart';
+import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/utils/encryption.dart';
 
@@ -58,24 +60,28 @@ class _State extends State<SettingsAccountRestoreConfigurationTile> {
   }
 
   Future<void> _decryptBackup(BuildContext context, String encrypted) async {
-    Tuple2<bool, String> _key = await SettingsDialogs().decryptBackup(context);
-    if (_key.item1) {
-      try {
-        String decrypted = ZagEncryption().decrypt(_key.item2, encrypted);
-        await ZagConfig().import(context, decrypted);
-        showZagSuccessSnackBar(
-          title: 'settings.RestoreFromCloudSuccess'.tr(),
-          message: 'settings.RestoreFromCloudSuccessMessage'.tr(),
-        );
-      } catch (_) {
-        showZagErrorSnackBar(
-          title: 'settings.RestoreFromCloudFailure'.tr(),
-          message: 'zagreus.IncorrectEncryptionKey'.tr(),
-          showButton: true,
-          buttonText: 'zagreus.Retry'.tr(),
-          buttonOnPressed: () async => _decryptBackup(context, encrypted),
-        );
+    try {
+      // Auto-generate encryption key from user ID (same as backup)
+      final user = ZagSupabase.client.auth.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
       }
+      
+      // Use same encryption pattern from private config
+      String encryptionKey = EncryptionConfig.getBackupEncryptionKey(user.id, user.email ?? '');
+      
+      String decrypted = ZagEncryption().decrypt(encryptionKey, encrypted);
+      await ZagConfig().import(context, decrypted);
+      showZagSuccessSnackBar(
+        title: 'settings.RestoreFromCloudSuccess'.tr(),
+        message: 'settings.RestoreFromCloudSuccessMessage'.tr(),
+      );
+    } catch (error, stack) {
+      ZagLogger().error('Failed to decrypt backup', error, stack);
+      showZagErrorSnackBar(
+        title: 'settings.RestoreFromCloudFailure'.tr(),
+        message: 'Failed to restore backup. This backup may have been created with a different account.',
+      );
     }
   }
 }

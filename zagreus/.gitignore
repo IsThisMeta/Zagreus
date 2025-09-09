@@ -84,3 +84,6 @@ output/
 debian/DEBIAN/md5sums
 debian/usr/share/lunasea
 *.snap
+
+# Private encryption configuration
+lib/config/encryption_config_private.dart

@@ -90,9 +90,7 @@ class _State extends State<SonarrRoute> {
         
         if (!isConfigured) {
           return ZagMessage(
-            title: 'Configuration Required',
-            body: 'Please configure your Sonarr connection details in Settings.',
-            icon: Icons.settings_rounded,
+            text: 'Please configure your Sonarr connection details in Settings.',
             buttonText: 'Go to Settings',
             onTap: () => SettingsRoutes.CONFIGURATION_SONARR.go(),
           );

@@ -90,9 +90,7 @@ class _State extends State<RadarrRoute> {
         
         if (!isConfigured) {
           return ZagMessage(
-            title: 'Configuration Required',
-            body: 'Please configure your Radarr connection details in Settings.',
-            icon: Icons.settings_rounded,
+            text: 'Please configure your Radarr connection details in Settings.',
             buttonText: 'Go to Settings',
             onTap: () => SettingsRoutes.CONFIGURATION_RADARR.go(),
           );

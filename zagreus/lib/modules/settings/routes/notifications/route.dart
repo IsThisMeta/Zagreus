@@ -163,7 +163,7 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Text(
             'Webhook Status',
-            style: ZagTheme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
         const SizedBox(height: 8),
@@ -173,14 +173,14 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
             TextSpan(
               text: 'Zagreus automatically creates webhooks in your Radarr/Sonarr instances when you configure them.',
               style: TextStyle(
-                color: ZagTheme.of(context).bodyTextColor,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: 13,
               ),
             ),
           ],
-          trailing: Icon(
-            Icons.check_circle_rounded,
-            color: ZagColours.green,
+          trailing: ZagIconButton(
+            icon: Icons.check_circle_rounded,
+            color: ZagColours.accent,
           ),
         ),
         ZagBlock(
@@ -189,18 +189,17 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
             TextSpan(
               text: 'Webhooks are named "Zagreus" and send notifications to the Zagreus notification server.',
               style: TextStyle(
-                color: ZagTheme.of(context).bodyTextColor,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: 13,
               ),
             ),
           ],
-          trailing: Icon(
-            Icons.info_outline_rounded,
+          trailing: ZagIconButton(
+            icon: Icons.info_outline_rounded,
             color: ZagColours.blue,
           ),
           onTap: () {
-            showZagBottomSheet(
-              context: context,
+            ZagBottomModalSheet().show(
               builder: (context) => Container(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -209,12 +208,12 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
                   children: [
                     Text(
                       'Webhook Details',
-                      style: ZagTheme.of(context).textTheme.headlineSmall,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Zagreus automatically manages webhooks for you:',
-                      style: ZagTheme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 8),
                     _webhookDetailRow(Icons.sync_rounded, 'Created when you add a Radarr/Sonarr profile'),
@@ -224,7 +223,7 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
                     const SizedBox(height: 16),
                     Text(
                       'To test webhooks, go to the Radarr or Sonarr "More" menu and tap "Test Webhook".',
-                      style: ZagTheme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -241,14 +240,14 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: ZagTheme.of(context).subBodyTextColor),
+          Icon(icon, size: 16, color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
                 fontSize: 13,
-                color: ZagTheme.of(context).subBodyTextColor,
+                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
               ),
             ),
           ),

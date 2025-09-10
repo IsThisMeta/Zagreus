@@ -32,6 +32,8 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
   String _userId = '';
   String _radarrStatus = '';
   String _sonarrStatus = '';
+  String _radarrJson = '';
+  String _sonarrJson = '';
 
   @override
   void initState() {

@@ -166,7 +166,7 @@ class RadarrNotification {
         ),
         RadarrNotificationField(
           name: 'method',
-          value: 1, // POST
+          value: '1', // POST - must be string!
         ),
         RadarrNotificationField(
           name: 'username',

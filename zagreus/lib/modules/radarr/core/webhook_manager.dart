@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/supabase/core.dart';
@@ -44,9 +45,22 @@ class RadarrWebhookManager {
       final notification = RadarrNotification.webhook(
         name: webhookName,
         url: webhookUrl,
-        username: '', // No username needed
-        password: '', // No password needed
       );
+      
+      // Enable same notification types as Ruddarr (but disable others)
+      notification.onGrab = true;
+      notification.onDownload = true;
+      notification.onUpgrade = true;
+      notification.onRename = false;
+      notification.onMovieAdded = true;
+      notification.onMovieDelete = false;
+      notification.onMovieFileDelete = false;
+      notification.onMovieFileDeleteForUpgrade = false;
+      notification.onHealthIssue = false;
+      notification.includeHealthWarnings = false;
+      notification.onApplicationUpdate = false;
+      notification.onManualInteractionRequired = true;
+      
       
       if (existing != null) {
         // Update existing webhook
@@ -58,9 +72,30 @@ class RadarrWebhookManager {
       }
       
       return true;
+    } on DioException catch (e) {
+      // Extract error details from Radarr's response
+      String errorMsg = 'Webhook sync failed: ';
+      if (e.response?.data != null) {
+        if (e.response!.data is Map) {
+          // Try to get error message from response
+          final data = e.response!.data as Map;
+          if (data['message'] != null) {
+            errorMsg += data['message'];
+          } else if (data['error'] != null) {
+            errorMsg += data['error'];
+          } else {
+            errorMsg += 'Response: ${json.encode(data)}';
+          }
+        } else {
+          errorMsg += e.response!.data.toString();
+        }
+      } else {
+        errorMsg += e.message ?? e.toString();
+      }
+      throw Exception(errorMsg);
     } catch (e, stackTrace) {
       ZagLogger().error('Failed to sync Radarr webhook', e, stackTrace);
-      rethrow; // Rethrow to let caller see the actual error
+      rethrow;
     }
   }
 

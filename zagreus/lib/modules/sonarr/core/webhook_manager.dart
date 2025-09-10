@@ -40,7 +40,7 @@ class SonarrWebhookManager {
       // Build webhook URL with user_id in the path
       // Encode the user ID in base64
       final payload = base64.encode(utf8.encode(userToken));
-      final webhookUrl = 'https://zagreus-notifications.fly.dev/notifications/webhook/$payload';
+      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
       // Create notification object (no auth needed since token is in URL)
       final notification = SonarrNotification.webhook(

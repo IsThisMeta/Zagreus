@@ -74,8 +74,8 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
       
       // Build webhook URLs
       final payload = base64.encode(utf8.encode(user.id));
-      _radarrUrl = 'https://zagreus-notifications.fly.dev/notifications/webhook/$payload';
-      _sonarrUrl = 'https://zagreus-notifications.fly.dev/notifications/webhook/$payload';
+      _radarrUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
+      _sonarrUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
       // Sync Radarr if configured
       if (profile.radarrEnabled && profile.radarrHost.isNotEmpty && profile.radarrKey.isNotEmpty) {

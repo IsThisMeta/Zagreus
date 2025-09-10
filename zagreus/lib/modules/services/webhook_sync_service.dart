@@ -8,22 +8,33 @@ import 'package:zagreus/modules/radarr/core/state.dart';
 import 'package:zagreus/modules/sonarr/core/state.dart';
 import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
+import 'package:zagreus/supabase/core.dart';
 
 /// Service to handle periodic webhook synchronization
 /// Based on Ruddarr's implementation (MIT licensed)
 class WebhookSyncService {
   static const String _lastSyncPrefix = 'webhookLastSync:';
   static const Duration _syncInterval = Duration(hours: 24);
+  static Timer? _timer;
   
   /// Initialize the webhook sync service
   static void initialize() {
+    ZagLogger().debug('WebhookSyncService.initialize called');
     // Do an initial check when app starts
     maybeUpdateWebhooks();
+    
+    // Set up periodic check every hour (will only sync if 24h have passed)
+    _timer?.cancel();
+    _timer = Timer.periodic(Duration(hours: 1), (_) {
+      ZagLogger().debug('Periodic webhook sync check triggered');
+      maybeUpdateWebhooks();
+    });
   }
   
   /// Check if webhooks need updating when app becomes active
   /// Based on Ruddarr's implementation
   static void maybeUpdateWebhooks() {
+    ZagLogger().debug('WebhookSyncService.maybeUpdateWebhooks called');
     _checkAndSync();
   }
   
@@ -37,27 +48,37 @@ class WebhookSyncService {
     try {
       // Get all profiles
       final profiles = ZagBox.profiles.keys.toList();
+      ZagLogger().debug('Checking webhook sync for ${profiles.length} profiles');
       
       for (final profileName in profiles) {
         final profile = ZagBox.profiles.read(profileName);
-        if (profile == null) continue;
+        if (profile == null) {
+          ZagLogger().debug('Profile $profileName is null');
+          continue;
+        }
         
         // Check Radarr
         if (profile.radarrEnabled) {
+          ZagLogger().debug('Profile $profileName has Radarr enabled');
           await _syncIfNeeded(
             profileName: profileName,
             service: 'radarr',
             syncFunction: () => _syncRadarrWebhook(profile),
           );
+        } else {
+          ZagLogger().debug('Profile $profileName has Radarr disabled');
         }
         
         // Check Sonarr
         if (profile.sonarrEnabled) {
+          ZagLogger().debug('Profile $profileName has Sonarr enabled');
           await _syncIfNeeded(
             profileName: profileName,
             service: 'sonarr',
             syncFunction: () => _syncSonarrWebhook(profile),
           );
+        } else {
+          ZagLogger().debug('Profile $profileName has Sonarr disabled');
         }
       }
     } catch (e, stack) {
@@ -99,6 +120,12 @@ class WebhookSyncService {
   /// Sync Radarr webhook
   static Future<bool> _syncRadarrWebhook(ZagProfile profile) async {
     try {
+      // Check if user is authenticated
+      if (!ZagSupabase.isSupported || ZagSupabase.client.auth.currentUser == null) {
+        ZagLogger().debug('Cannot sync Radarr webhook - user not authenticated');
+        return false;
+      }
+      
       // Create Radarr API instance
       final api = RadarrAPI(
         host: profile.radarrHost,
@@ -117,6 +144,12 @@ class WebhookSyncService {
   /// Sync Sonarr webhook
   static Future<bool> _syncSonarrWebhook(ZagProfile profile) async {
     try {
+      // Check if user is authenticated
+      if (!ZagSupabase.isSupported || ZagSupabase.client.auth.currentUser == null) {
+        ZagLogger().debug('Cannot sync Sonarr webhook - user not authenticated');
+        return false;
+      }
+      
       // Create Sonarr API instance
       final api = SonarrAPI(
         host: profile.sonarrHost,

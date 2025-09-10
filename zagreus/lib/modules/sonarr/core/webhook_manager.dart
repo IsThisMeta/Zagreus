@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/sonarr.dart';
@@ -36,15 +37,17 @@ class SonarrWebhookManager {
       // Check if webhook already exists
       final existing = await getZagreusWebhook(api);
       
-      // Build webhook URL with user_id in the payload
-      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook';
+      // Build webhook URL with user_id in the path
+      // Encode the user ID in base64
+      final payload = base64.encode(utf8.encode(userToken));
+      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
-      // Create notification object with user ID in username field
+      // Create notification object (no auth needed since token is in URL)
       final notification = SonarrNotification.webhook(
         name: webhookName,
         url: webhookUrl,
-        username: userToken, // Pass user ID as username for webhook auth
-        password: '', // Can be used for signature if needed
+        username: '', // No username needed
+        password: '', // No password needed
       );
       
       if (existing != null) {

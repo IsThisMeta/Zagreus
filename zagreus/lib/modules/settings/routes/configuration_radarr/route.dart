@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/settings.dart';
+import 'package:zagreus/supabase/core.dart';
+import 'package:zagreus/api/radarr/radarr.dart';
+import 'package:zagreus/modules/radarr/core/webhook_manager.dart';
 
 class ConfigurationRadarrRoute extends StatefulWidget {
   const ConfigurationRadarrRoute({
@@ -15,6 +18,13 @@ class ConfigurationRadarrRoute extends StatefulWidget {
 class _State extends State<ConfigurationRadarrRoute>
     with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Sync webhook when page loads
+    _syncWebhook();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,5 +141,25 @@ class _State extends State<ConfigurationRadarrRoute>
         },
       ),
     );
+  }
+
+  void _syncWebhook() async {
+    try {
+      // Only sync if user is authenticated
+      if (ZagSupabase.isSupported && ZagSupabase.client.auth.currentUser != null) {
+        final profile = ZagProfile.current;
+        if (profile.radarrEnabled && profile.radarrHost.isNotEmpty && profile.radarrKey.isNotEmpty) {
+          ZagLogger().debug('Syncing Radarr webhook when configuration page loads');
+          final api = RadarrAPI(
+            host: profile.radarrHost,
+            apiKey: profile.radarrKey,
+            headers: Map<String, dynamic>.from(profile.radarrHeaders),
+          );
+          await RadarrWebhookManager.syncWebhook(api);
+        }
+      }
+    } catch (e, stack) {
+      ZagLogger().error('Failed to sync webhook on page load', e, stack);
+    }
   }
 }

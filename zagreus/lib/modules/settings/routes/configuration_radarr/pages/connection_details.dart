@@ -3,6 +3,9 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/router/routes/settings.dart';
+import 'package:zagreus/supabase/core.dart';
+import 'package:zagreus/api/radarr/radarr.dart';
+import 'package:zagreus/modules/radarr/core/webhook_manager.dart';
 
 class ConfigurationRadarrConnectionDetailsRoute extends StatefulWidget {
   const ConfigurationRadarrConnectionDetailsRoute({
@@ -70,6 +73,8 @@ class _State extends State<ConfigurationRadarrConnectionDetailsRoute>
           ZagProfile.current.radarrHost = _values.item2;
           ZagProfile.current.save();
           context.read<RadarrState>().reset();
+          // Sync webhook if user is authenticated
+          _syncWebhook();
         }
       },
     );
@@ -97,6 +102,8 @@ class _State extends State<ConfigurationRadarrConnectionDetailsRoute>
           ZagProfile.current.radarrKey = _values.item2;
           ZagProfile.current.save();
           context.read<RadarrState>().reset();
+          // Sync webhook if user is authenticated
+          _syncWebhook();
         }
       },
     );
@@ -132,11 +139,15 @@ class _State extends State<ConfigurationRadarrConnectionDetailsRoute>
             .system
             .status()
             .then(
-              (_) => showZagSuccessSnackBar(
-                title: 'settings.ConnectedSuccessfully'.tr(),
-                message: 'settings.ConnectedSuccessfullyMessage'
-                    .tr(args: [ZagModule.RADARR.title]),
-              ),
+              (_) {
+                showZagSuccessSnackBar(
+                  title: 'settings.ConnectedSuccessfully'.tr(),
+                  message: 'settings.ConnectedSuccessfullyMessage'
+                      .tr(args: [ZagModule.RADARR.title]),
+                );
+                // Sync webhook after successful connection
+                _syncWebhook();
+              },
             )
             .catchError(
           (error, trace) {
@@ -162,5 +173,25 @@ class _State extends State<ConfigurationRadarrConnectionDetailsRoute>
       trailing: const ZagIconButton.arrow(),
       onTap: SettingsRoutes.CONFIGURATION_RADARR_CONNECTION_DETAILS_HEADERS.go,
     );
+  }
+
+  void _syncWebhook() async {
+    try {
+      // Only sync if user is authenticated
+      if (ZagSupabase.isSupported && ZagSupabase.client.auth.currentUser != null) {
+        final profile = ZagProfile.current;
+        if (profile.radarrEnabled && profile.radarrHost.isNotEmpty && profile.radarrKey.isNotEmpty) {
+          ZagLogger().debug('Syncing Radarr webhook after configuration change');
+          final api = RadarrAPI(
+            host: profile.radarrHost,
+            apiKey: profile.radarrKey,
+            headers: Map<String, dynamic>.from(profile.radarrHeaders),
+          );
+          await RadarrWebhookManager.syncWebhook(api);
+        }
+      }
+    } catch (e, stack) {
+      ZagLogger().error('Failed to sync webhook after configuration', e, stack);
+    }
   }
 }

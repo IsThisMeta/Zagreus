@@ -79,31 +79,14 @@ class ZagSupabaseDatabase {
     }
   }
 
-  /// Add the current device token to Supabase. Returns true if successful, and false on any error.
-  /// Assumes you have a 'user_devices' table with columns: user_id, device_token, created_at
+  /// Register the device token with our notification server
+  /// This is called automatically when the user signs in
   Future<bool> addDeviceToken() async {
     if (!ZagSupabaseAuth().isSignedIn) return false;
+    
     try {
-      String? token = await ZagSupabaseMessaging.instance.getToken();
-      final userId = ZagSupabaseAuth().uid;
-      
-      // First, check if this token already exists for this user
-      final existing = await instance
-          .from('user_devices')
-          .select()
-          .eq('user_id', userId!)
-          .eq('device_token', token!);
-      
-      if (existing.isEmpty) {
-        // Insert new device token
-        await instance.from('user_devices').insert({
-          'user_id': userId,
-          'device_token': token,
-          'created_at': DateTime.now().toIso8601String(),
-        });
-      }
-      
-      return true;
+      // Register with our notification server instead of Supabase
+      return await ZagSupabaseMessaging.instance.registerDeviceToken();
     } catch (error, stack) {
       ZagLogger().error('Failed to add device token', error, stack);
       return false;

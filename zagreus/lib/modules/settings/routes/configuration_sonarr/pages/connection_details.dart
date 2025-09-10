@@ -3,6 +3,9 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/router/routes/settings.dart';
+import 'package:zagreus/supabase/core.dart';
+import 'package:zagreus/api/sonarr/sonarr.dart';
+import 'package:zagreus/modules/sonarr/core/webhook_manager.dart';
 
 class ConfigurationSonarrConnectionDetailsRoute extends StatefulWidget {
   const ConfigurationSonarrConnectionDetailsRoute({
@@ -70,6 +73,8 @@ class _State extends State<ConfigurationSonarrConnectionDetailsRoute>
           ZagProfile.current.sonarrHost = _values.item2;
           ZagProfile.current.save();
           context.read<SonarrState>().reset();
+          // Sync webhook if user is authenticated
+          _syncWebhook();
         }
       },
     );
@@ -97,6 +102,8 @@ class _State extends State<ConfigurationSonarrConnectionDetailsRoute>
           ZagProfile.current.sonarrKey = _values.item2;
           ZagProfile.current.save();
           context.read<SonarrState>().reset();
+          // Sync webhook if user is authenticated
+          _syncWebhook();
         }
       },
     );
@@ -136,6 +143,8 @@ class _State extends State<ConfigurationSonarrConnectionDetailsRoute>
             message: 'settings.ConnectedSuccessfullyMessage'
                 .tr(args: [ZagModule.SONARR.title]),
           );
+          // Sync webhook after successful connection
+          _syncWebhook();
         }).catchError((error, trace) {
           ZagLogger().error(
             'Connection Test Failed',
@@ -158,5 +167,25 @@ class _State extends State<ConfigurationSonarrConnectionDetailsRoute>
       trailing: const ZagIconButton.arrow(),
       onTap: SettingsRoutes.CONFIGURATION_SONARR_CONNECTION_DETAILS_HEADERS.go,
     );
+  }
+
+  void _syncWebhook() async {
+    try {
+      // Only sync if user is authenticated
+      if (ZagSupabase.isSupported && ZagSupabase.client.auth.currentUser != null) {
+        final profile = ZagProfile.current;
+        if (profile.sonarrEnabled && profile.sonarrHost.isNotEmpty && profile.sonarrKey.isNotEmpty) {
+          ZagLogger().debug('Syncing Sonarr webhook after configuration change');
+          final api = SonarrAPI(
+            host: profile.sonarrHost,
+            apiKey: profile.sonarrKey,
+            headers: Map<String, dynamic>.from(profile.sonarrHeaders),
+          );
+          await SonarrWebhookManager.syncWebhook(api);
+        }
+      }
+    } catch (e, stack) {
+      ZagLogger().error('Failed to sync webhook after configuration', e, stack);
+    }
   }
 }

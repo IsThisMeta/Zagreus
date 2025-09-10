@@ -96,6 +96,16 @@ class ZagSupabaseMessaging {
     return _apnsToken;
   }
 
+  /// Register the current device token with the notification server
+  Future<bool> registerDeviceToken() async {
+    final token = await getToken();
+    if (token == null) {
+      ZagLogger().warning('No token available to register');
+      return false;
+    }
+    return _registerDeviceWithServer(token);
+  }
+
   /// Register the device token with the notification server
   Future<bool> _registerDeviceWithServer(String token) async {
     try {

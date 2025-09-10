@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/router/routes/settings.dart';
+import 'package:zagreus/supabase/core.dart';
+import 'package:zagreus/api/sonarr/sonarr.dart';
+import 'package:zagreus/modules/sonarr/core/webhook_manager.dart';
 
 class ConfigurationSonarrRoute extends StatefulWidget {
   const ConfigurationSonarrRoute({
@@ -15,6 +18,13 @@ class ConfigurationSonarrRoute extends StatefulWidget {
 class _State extends State<ConfigurationSonarrRoute>
     with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Sync webhook when page loads
+    _syncWebhook();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,5 +128,25 @@ class _State extends State<ConfigurationSonarrRoute>
         },
       ),
     );
+  }
+
+  void _syncWebhook() async {
+    try {
+      // Only sync if user is authenticated
+      if (ZagSupabase.isSupported && ZagSupabase.client.auth.currentUser != null) {
+        final profile = ZagProfile.current;
+        if (profile.sonarrEnabled && profile.sonarrHost.isNotEmpty && profile.sonarrKey.isNotEmpty) {
+          ZagLogger().debug('Syncing Sonarr webhook when configuration page loads');
+          final api = SonarrAPI(
+            host: profile.sonarrHost,
+            apiKey: profile.sonarrKey,
+            headers: Map<String, dynamic>.from(profile.sonarrHeaders),
+          );
+          await SonarrWebhookManager.syncWebhook(api);
+        }
+      }
+    } catch (e, stack) {
+      ZagLogger().error('Failed to sync webhook on page load', e, stack);
+    }
   }
 }

@@ -48,6 +48,8 @@ class RadarrState extends ZagModuleState {
 
   /// API handler instance
   RadarrAPI? _api;
+  
+  /// Get the API instance
   RadarrAPI? get api => _api;
 
   /// Is the API enabled?
@@ -71,20 +73,26 @@ class RadarrState extends ZagModuleState {
 
   /// Reset the profile data, reinitializes API instance
   void resetProfile() {
+    ZagLogger().debug('RadarrState.resetProfile called');
     ZagProfile _profile = ZagProfile.current;
     // Copy profile into state
     _enabled = _profile.radarrEnabled;
     _host = _profile.radarrHost;
     _apiKey = _profile.radarrKey;
     _headers = _profile.radarrHeaders;
+    
+    ZagLogger().debug('Radarr config - Enabled: $_enabled, Host: $_host, Has API Key: ${_apiKey.isNotEmpty}');
+    
     // Create the API instance if Radarr is enabled and configured
     if (_enabled && _host.isNotEmpty && _apiKey.isNotEmpty) {
       try {
+        ZagLogger().debug('Creating Radarr API instance...');
         _api = RadarrAPI(
           host: _host,
           apiKey: _apiKey,
           headers: Map<String, dynamic>.from(_headers),
         );
+        ZagLogger().debug('Radarr API instance created successfully');
         // Sync webhook if enabled
         _syncWebhook();
       } catch (e, stackTrace) {
@@ -92,22 +100,33 @@ class RadarrState extends ZagModuleState {
         _api = null;
       }
     } else {
+      ZagLogger().debug('Radarr not enabled or not configured properly');
       _api = null;
     }
   }
   
   /// Sync webhook configuration
   Future<void> _syncWebhook() async {
+    ZagLogger().debug('Starting Radarr webhook sync...');
     try {
+      if (_api == null) {
+        ZagLogger().warning('Cannot sync webhook - Radarr API is null');
+        return;
+      }
+      
+      ZagLogger().debug('Radarr API exists, calling webhook manager...');
       final success = await RadarrWebhookManager.syncWebhook(_api!);
       if (success) {
+        ZagLogger().debug('Radarr webhook sync successful!');
         // Update last sync time
         final profileName = ZagreusDatabase.ENABLED_PROFILE.read();
         await WebhookSyncService.manualSync(profileName, 'radarr');
+      } else {
+        ZagLogger().warning('Radarr webhook sync returned false');
       }
     } catch (e) {
       // Don't fail profile loading if webhook sync fails
-      ZagLogger().warning('Failed to sync Radarr webhook during profile load');
+      ZagLogger().warning('Failed to sync Radarr webhook during profile load: $e');
     }
   }
 

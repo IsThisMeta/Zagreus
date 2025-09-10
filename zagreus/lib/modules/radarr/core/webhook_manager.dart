@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
@@ -22,6 +23,7 @@ class RadarrWebhookManager {
 
   /// Create or update Zagreus webhook
   static Future<bool> syncWebhook(RadarrAPI api) async {
+    ZagLogger().debug('RadarrWebhookManager.syncWebhook called');
     try {
       // Get user token from Supabase
       final user = ZagSupabase.client.auth.currentUser;
@@ -31,30 +33,43 @@ class RadarrWebhookManager {
       }
       
       final userToken = user.id; // Use Supabase user ID as the token
+      ZagLogger().debug('Got user ID: $userToken');
 
       // Check if webhook already exists
+      ZagLogger().debug('Checking for existing Zagreus webhook...');
       final existing = await getZagreusWebhook(api);
       
-      // Build webhook URL with user_id in the payload
-      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook';
+      if (existing != null) {
+        ZagLogger().debug('Found existing webhook with ID: ${existing.id}');
+      } else {
+        ZagLogger().debug('No existing webhook found');
+      }
       
-      // Create notification object with user ID in username field
+      // Build webhook URL with user_id in the path
+      // Encode the user ID in base64
+      final payload = base64.encode(utf8.encode(userToken));
+      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
+      ZagLogger().debug('Using webhook URL: $webhookUrl');
+      
+      // Create notification object (no auth needed since token is in URL)
       final notification = RadarrNotification.webhook(
         name: webhookName,
         url: webhookUrl,
-        username: userToken, // Pass user ID as username for webhook auth
-        password: '', // Can be used for signature if needed
+        username: '', // No username needed
+        password: '', // No password needed
       );
       
       if (existing != null) {
         // Update existing webhook
         notification.id = existing.id;
+        ZagLogger().debug('Updating existing webhook...');
         await api.notification.update(notification: notification);
-        ZagLogger().debug('Updated Radarr webhook');
+        ZagLogger().debug('Successfully updated Radarr webhook');
       } else {
         // Create new webhook
+        ZagLogger().debug('Creating new webhook...');
         await api.notification.create(notification: notification);
-        ZagLogger().debug('Created Radarr webhook');
+        ZagLogger().debug('Successfully created Radarr webhook');
       }
       
       return true;

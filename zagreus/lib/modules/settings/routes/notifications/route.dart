@@ -434,10 +434,10 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
       children: [
         ZagBlock(
           title: 'Test Push Notification',
-          body: [TextSpan(text: 'Send a test notification to your device')],
+          body: [TextSpan(text: 'Send a test notification after 5s delay')],
           trailing: ZagIconButton(
             icon: Icons.notifications_active_rounded,
-            onPressed: _sendTestNotification,
+            onPressed: () => _sendDirectTestNotification(delay: 5),
           ),
         ),
         const SizedBox(height: 8.0),

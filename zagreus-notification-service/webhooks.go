@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 
@@ -148,6 +149,10 @@ func handleRadarrWebhook(c *gin.Context) {
 		title = "Movie Deleted"
 		body = fmt.Sprintf("%s has been removed from your library", webhook.Movie.Title)
 		
+	case "Test":
+		title = "Zagreus Test"
+		body = "Test notification from Zagreus"
+		
 	default:
 		log.Printf("Unknown Radarr event type: %s", webhook.EventType)
 		c.JSON(200, WebhookResponse{Success: true, Message: "Event ignored"})
@@ -228,4 +233,52 @@ func handleOverseerrWebhook(c *gin.Context) {
 func handleTautulliWebhook(c *gin.Context) {
 	// Similar structure
 	c.JSON(200, gin.H{"message": "Tautulli webhook received"})
+}
+
+// Handle webhook with user ID in URL path (Flutter app compatibility)
+func handleWebhookWithPayload(c *gin.Context) {
+	payload := c.Param("payload")
+	
+	// Decode the base64 user ID
+	userIDBytes, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid payload"})
+		return
+	}
+	userID := string(userIDBytes)
+	
+	// Try to parse as Radarr webhook (since that's what the Flutter app sends)
+	var webhook RadarrWebhook
+	if err := c.ShouldBindJSON(&webhook); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid webhook data"})
+		return
+	}
+	
+	log.Printf("Received webhook via payload URL: %s for user %s", webhook.EventType, userID)
+	
+	var title, body string
+	
+	switch webhook.EventType {
+	case "Test":
+		title = "Zagreus Test"
+		body = "Test notification from Zagreus"
+		
+		// Send the notification without delay since user controls timing from app
+		if err := sendNotificationToUser(userID, title, body); err != nil {
+			log.Printf("Failed to send notification: %v", err)
+			c.JSON(500, gin.H{"error": "Failed to send notification"})
+			return
+		}
+		
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": "Test notification sent",
+		})
+		return
+		
+	default:
+		// If not a test, set the user ID header and forward to normal Radarr handler
+		c.Request.Header.Set("X-User-Id", userID)
+		handleRadarrWebhook(c)
+	}
 }

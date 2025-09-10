@@ -125,15 +125,11 @@ class ZagSupabaseMessaging {
         return false;
       }
 
-      // Get device info
+      // Get device info matching Go service expectations
       final deviceInfo = {
         'user_id': user.id,
-        'email': user.email,
-        'token': token,
-        'device_name': Platform.isIOS ? 'iPhone' : 'Unknown',
-        'device_model': Platform.operatingSystem,
-        'os_version': Platform.operatingSystemVersion,
-        'app_version': '1.0.0', // TODO: Get from package info
+        'device_token': token,
+        'device_type': Platform.isIOS ? 'ios' : 'android',
       };
 
       final response = await dio.post(

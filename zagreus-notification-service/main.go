@@ -55,6 +55,12 @@ func main() {
 			webhook.POST("/tautulli", handleTautulliWebhook)
 			webhook.POST("/custom", handleCustomWebhook)
 		}
+		
+		// Notifications webhook (for Flutter app compatibility)
+		notifications := v1.Group("/notifications/webhook")
+		{
+			notifications.POST("/:payload", handleWebhookWithPayload)
+		}
 	}
 
 	// Test routes

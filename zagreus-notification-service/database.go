@@ -90,7 +90,7 @@ func handleRegister(c *gin.Context) {
 	// Check if device exists
 	var deviceID string
 	err := db.QueryRow(`
-		SELECT id FROM notification_devices 
+		SELECT id::text FROM notification_devices 
 		WHERE user_id = $1 AND device_token = $2
 	`, req.UserID, req.DeviceToken).Scan(&deviceID)
 
@@ -99,7 +99,7 @@ func handleRegister(c *gin.Context) {
 		err = db.QueryRow(`
 			INSERT INTO notification_devices (user_id, device_token, device_type)
 			VALUES ($1, $2, $3)
-			RETURNING id
+			RETURNING id::text
 		`, req.UserID, req.DeviceToken, req.DeviceType).Scan(&deviceID)
 		
 		if err != nil {

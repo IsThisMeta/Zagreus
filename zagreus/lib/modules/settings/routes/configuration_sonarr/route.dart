@@ -18,7 +18,6 @@ class ConfigurationSonarrRoute extends StatefulWidget {
 class _State extends State<ConfigurationSonarrRoute>
     with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String _debugInfo = '';
 
   @override
   void initState() {
@@ -48,11 +47,6 @@ class _State extends State<ConfigurationSonarrRoute>
       controller: scrollController,
       children: [
         ZagModule.SONARR.informationBanner(),
-        if (_debugInfo.isNotEmpty) 
-          ZagBlock(
-            title: 'DEBUG: Webhook Sync',
-            body: [TextSpan(text: _debugInfo, style: TextStyle(fontFamily: 'monospace'))],
-          ),
         _enabledToggle(),
         _connectionDetailsPage(),
         ZagDivider(),
@@ -141,42 +135,18 @@ class _State extends State<ConfigurationSonarrRoute>
       // Only sync if user is authenticated
       if (ZagSupabase.isSupported && ZagSupabase.client.auth.currentUser != null) {
         final profile = ZagProfile.current;
-        setState(() {
-          _debugInfo = 'Host: ${profile.sonarrHost}\n'
-              'API Key: ${profile.sonarrKey.isEmpty ? "NOT SET" : "SET (${profile.sonarrKey.length} chars)"}\n'
-              'Enabled: ${profile.sonarrEnabled}\n'
-              'User ID: ${ZagSupabase.client.auth.currentUser?.id ?? "NO USER"}';
-        });
         
         if (profile.sonarrEnabled && profile.sonarrHost.isNotEmpty && profile.sonarrKey.isNotEmpty) {
-          setState(() {
-            _debugInfo += '\n\nAttempting webhook sync...';
-          });
-          
           final api = SonarrAPI(
             host: profile.sonarrHost,
             apiKey: profile.sonarrKey,
             headers: Map<String, dynamic>.from(profile.sonarrHeaders),
           );
           
-          final success = await SonarrWebhookManager.syncWebhook(api);
-          setState(() {
-            _debugInfo += '\nSync result: ${success ? "SUCCESS" : "FAILED"}';
-          });
-        } else {
-          setState(() {
-            _debugInfo += '\n\nSkipping sync - not fully configured';
-          });
+          await SonarrWebhookManager.syncWebhook(api);
         }
-      } else {
-        setState(() {
-          _debugInfo = 'Not authenticated or Supabase not supported';
-        });
       }
     } catch (e, stack) {
-      setState(() {
-        _debugInfo += '\n\nERROR: $e';
-      });
       ZagLogger().error('Failed to sync webhook on page load', e, stack);
     }
   }

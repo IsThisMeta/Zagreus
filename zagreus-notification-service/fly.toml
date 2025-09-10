@@ -16,11 +16,11 @@ primary_region = "ord"
   REDIS_PORT = "6379"
   REDIS_USE_TLS = "true"
   REDIS_USER = "default"
-  # Database (using Supabase)
-  DB_HOST = "aws-0-us-east-2.pooler.supabase.com"
-  DB_PORT = "6543"
+  # Database (using Supabase direct connection)
+  DB_HOST = "db.unrzdubozarzulnlbdqe.supabase.co"
+  DB_PORT = "5432"
   DB_NAME = "postgres"
-  DB_USER = "postgres.yiinwhchjocltvxmjglg"
+  DB_USER = "postgres"
 
 [http_service]
   internal_port = 8080

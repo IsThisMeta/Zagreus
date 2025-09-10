@@ -13,17 +13,19 @@ interface User {
 }
 
 interface DeviceToken {
-  id: number;
+  id: string;  // uuid in your table
   user_id: string;
   token: string;
   device_name?: string;
   device_model?: string;
-  os_version?: string;
+  ios_version?: string;  // not os_version
   app_version?: string;
+  bundle_id?: string;
+  environment?: string;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
-  last_used_at?: Date;
+  last_used?: Date;
 }
 
 /**
@@ -93,7 +95,7 @@ export const getUserDevices = async (userId: string): Promise<string[]> => {
       SELECT token 
       FROM device_tokens 
       WHERE user_id = $1 AND is_active = true
-      ORDER BY last_used_at DESC NULLS LAST
+      ORDER BY last_used DESC NULLS LAST
     `;
     
     const result = await pool.query<{ token: string }>(query, [userId]);
@@ -119,13 +121,13 @@ export const upsertDeviceToken = async (
 ): Promise<DeviceToken> => {
   try {
     const query = `
-      INSERT INTO device_tokens (user_id, token, device_name, device_model, os_version, app_version)
+      INSERT INTO device_tokens (user_id, token, device_name, device_model, ios_version, app_version)
       VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (user_id, token)
       DO UPDATE SET 
         device_name = COALESCE($3, device_tokens.device_name),
         device_model = COALESCE($4, device_tokens.device_model),
-        os_version = COALESCE($5, device_tokens.os_version),
+        ios_version = COALESCE($5, device_tokens.ios_version),
         app_version = COALESCE($6, device_tokens.app_version),
         is_active = true,
         updated_at = CURRENT_TIMESTAMP
@@ -166,10 +168,11 @@ export const removeDeviceToken = async (token: string): Promise<void> => {
 
 /**
  * Update last used timestamp for device token
+ * Using updated_at since last_used_at doesn't exist
  */
 export const updateTokenLastUsed = async (token: string): Promise<void> => {
   try {
-    const query = 'UPDATE device_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE token = $1';
+    const query = 'UPDATE device_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = $1';
     await pool.query(query, [token]);
   } catch (error) {
     logger.error({ error, token }, 'Failed to update token last used');

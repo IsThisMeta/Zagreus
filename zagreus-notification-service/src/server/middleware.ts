@@ -77,9 +77,17 @@ export async function pullUserTokens(
   const devices: string[] = await DatabaseService.getUserDevices(request.params.id);
   const deviceCount: number = devices?.length ?? 0;
 
+  // Check if this is a test webhook
+  const isTestWebhook = request.body?.eventType === 'Test';
+
   if (deviceCount > 0) {
     response.locals.tokens = devices;
     logger.debug({ device_count: deviceCount });
+    next();
+  } else if (isTestWebhook) {
+    // For test webhooks, continue with empty device list
+    response.locals.tokens = [];
+    logger.debug('Test webhook detected, continuing without devices');
     next();
   } else {
     logger.warn('-> No devices found. Cancelling request...');

@@ -19,39 +19,32 @@ testRouter.get('/test-push/:token', async (req, res) => {
         keyId: Environment.APNS_KEY_ID.read(),
         teamId: Environment.APNS_TEAM_ID.read(),
       },
-      production: false, // Use sandbox for development builds
+      production: false, // Use sandbox for Xcode builds
     });
 
     // Create notification
     const notification = new Notification();
-    notification.topic = 'com.zebrralabs.zagreus';
-    notification.alert = {
-      title: 'Test Notification',
-      body: 'This is a direct test! Can you see this?',
-    };
+    
+    // Set the notification properties - DO NOT set aps directly!
+    notification.alert = 'Test Notification - Can you see this?';
     notification.sound = 'default';
     notification.badge = 1;
+    notification.topic = 'com.zebrralabs.zagreus';
     notification.priority = 10;
     notification.pushType = 'alert';
-    notification.contentAvailable = true;
-    notification.mutableContent = true;
     notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-    
-    // Add interruption level for iOS 15+
-    notification.payload['interruption-level'] = 'time-sensitive';
 
-    // Log the full notification payload
+    // Debug log to see what's being sent
     logger.info({ 
-      notification: {
-        topic: notification.topic,
+      debug: {
         alert: notification.alert,
+        sound: notification.sound, 
         badge: notification.badge,
-        sound: notification.sound,
-        priority: notification.priority,
+        topic: notification.topic,
         pushType: notification.pushType,
-        payload: notification.payload
+        priority: notification.priority
       }
-    }, 'Sending notification with payload');
+    }, 'Notification before sending');
     
     // Send it
     const result = await provider.send(notification, token);

@@ -18,7 +18,9 @@ import UserNotifications
       channel.setMethodCallHandler { (call, result) in
         switch call.method {
         case "requestPermission":
+          print("Zagreus: Method channel received requestPermission")
           self.requestNotificationPermission { granted in
+            print("Zagreus: Returning permission result: \(granted)")
             result(granted)
           }
         case "checkPermission":
@@ -37,6 +39,18 @@ import UserNotifications
   private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
     print("Zagreus: Requesting notification permission")
     if #available(iOS 10.0, *) {
+      // First check current authorization status
+      UNUserNotificationCenter.current().getNotificationSettings { settings in
+        print("Zagreus: Current auth status: \(settings.authorizationStatus.rawValue)")
+        if settings.authorizationStatus == .notDetermined {
+          print("Zagreus: Status is notDetermined, showing permission dialog")
+        } else if settings.authorizationStatus == .denied {
+          print("Zagreus: Permissions were previously denied")
+        } else if settings.authorizationStatus == .authorized {
+          print("Zagreus: Permissions already granted")
+        }
+      }
+      
       UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
         print("Zagreus: Permission granted: \(granted), error: \(String(describing: error))")
         DispatchQueue.main.async {

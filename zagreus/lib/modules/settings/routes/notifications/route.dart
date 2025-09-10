@@ -217,14 +217,44 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
         ZagBlock(
           title: 'Radarr Status',
           body: [TextSpan(text: _radarrStatus.isEmpty ? 'Not checked' : _radarrStatus)],
+          trailing: _radarrStatus.isNotEmpty ? ZagIconButton(
+            icon: Icons.copy_rounded,
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _radarrStatus));
+              showZagSuccessSnackBar(
+                title: 'Copied',
+                message: 'Radarr status copied to clipboard',
+              );
+            },
+          ) : null,
         ),
         ZagBlock(
           title: 'Sonarr Webhook URL',
           body: [TextSpan(text: _sonarrUrl.isEmpty ? 'Not generated' : _sonarrUrl)],
+          trailing: _sonarrUrl.isNotEmpty ? ZagIconButton(
+            icon: Icons.copy_rounded,
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _sonarrUrl));
+              showZagSuccessSnackBar(
+                title: 'Copied',
+                message: 'Sonarr webhook URL copied to clipboard',
+              );
+            },
+          ) : null,
         ),
         ZagBlock(
           title: 'Sonarr Status',
           body: [TextSpan(text: _sonarrStatus.isEmpty ? 'Not checked' : _sonarrStatus)],
+          trailing: _sonarrStatus.isNotEmpty ? ZagIconButton(
+            icon: Icons.copy_rounded,
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _sonarrStatus));
+              showZagSuccessSnackBar(
+                title: 'Copied',
+                message: 'Sonarr status copied to clipboard',
+              );
+            },
+          ) : null,
         ),
       ],
     );

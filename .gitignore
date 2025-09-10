@@ -4,4 +4,3 @@
 **/api_keys.dart
 lib/modules/discover/core/api_keys.dart
 zagreus/lib/config/encryption_config_private.dart
-zagreus-notification-service/src/utils/apns-notifications.ts

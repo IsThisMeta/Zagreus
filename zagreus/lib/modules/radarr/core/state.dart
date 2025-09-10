@@ -1,6 +1,8 @@
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/types/list_view_option.dart';
+import 'package:zagreus/database/tables/zagreus.dart';
+import 'package:zagreus/modules/services/webhook_sync_service.dart';
 import 'webhook_manager.dart';
 
 class RadarrState extends ZagModuleState {
@@ -97,7 +99,12 @@ class RadarrState extends ZagModuleState {
   /// Sync webhook configuration
   Future<void> _syncWebhook() async {
     try {
-      await RadarrWebhookManager.syncWebhook(_api!);
+      final success = await RadarrWebhookManager.syncWebhook(_api!);
+      if (success) {
+        // Update last sync time
+        final profileName = ZagreusDatabase.ENABLED_PROFILE.read();
+        await WebhookSyncService.manualSync(profileName, 'radarr');
+      }
     } catch (e) {
       // Don't fail profile loading if webhook sync fails
       ZagLogger().warning('Failed to sync Radarr webhook during profile load');

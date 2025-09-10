@@ -12,6 +12,7 @@ import 'package:zagreus/system/recovery_mode/main.dart';
 import 'package:zagreus/system/window_manager/window_manager.dart';
 import 'package:zagreus/system/platform.dart';
 import 'package:zagreus/supabase/core.dart';
+import 'package:zagreus/modules/services/webhook_sync_service.dart';
 
 /// Zagreus Entry Point: Bootstrap & Run Application
 ///
@@ -45,12 +46,39 @@ Future<void> bootstrap() async {
   if (ZagSupabase.isSupported) await ZagSupabase().initialize();
   ZagRouter().initialize();
   await ZagMemoryStore().initialize();
+  // Initialize webhook sync service
+  WebhookSyncService.initialize();
 }
 
-class ZagBIOS extends StatelessWidget {
+class ZagBIOS extends StatefulWidget {
   const ZagBIOS({
     super.key,
   });
+
+  @override
+  State<ZagBIOS> createState() => _ZagBIOSState();
+}
+
+class _ZagBIOSState extends State<ZagBIOS> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Check webhooks when app becomes active, like Ruddarr
+      WebhookSyncService.maybeUpdateWebhooks();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

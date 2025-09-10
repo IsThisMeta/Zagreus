@@ -64,6 +64,17 @@ class ZagSupabaseMessaging {
     // If we already have a token, return it
     if (_apnsToken != null) return _apnsToken;
     
+    // Check if running on simulator
+    try {
+      final isSimulator = await _channel.invokeMethod<bool>('isSimulator') ?? false;
+      if (isSimulator) {
+        ZagLogger().warning('Running on simulator - push notifications not available');
+        return null;
+      }
+    } catch (e) {
+      // Method might not be implemented, continue anyway
+    }
+    
     // Otherwise, request permissions which will trigger token generation
     final bool granted = await requestNotificationPermissions();
     if (!granted) {
@@ -71,9 +82,17 @@ class ZagSupabaseMessaging {
       return null;
     }
     
-    // Wait briefly for the token to be received from iOS
-    // In a production app, you might want to store this in SharedPreferences
-    await Future.delayed(const Duration(seconds: 2));
+    // Wait for the token with a timeout
+    int attempts = 0;
+    while (_apnsToken == null && attempts < 10) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      attempts++;
+    }
+    
+    if (_apnsToken == null) {
+      ZagLogger().warning('Failed to receive APNS token after ${attempts * 500}ms');
+    }
+    
     return _apnsToken;
   }
 

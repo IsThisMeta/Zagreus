@@ -1,7 +1,7 @@
 import express from 'express';
 import basicauth from 'basic-auth';
 import { Models } from './';
-import { Firebase } from '../services';
+import { DatabaseService } from '../services/database';
 import { Constants, Logger, Notifications } from '../utils';
 
 const logger = Logger.child({ module: 'middleware' });
@@ -74,7 +74,7 @@ export async function pullUserTokens(
   response: express.Response,
   next: express.NextFunction,
 ): Promise<void> {
-  const devices: string[] = await Firebase.getUserDevices(request.params.id);
+  const devices: string[] = await DatabaseService.getUserDevices(request.params.id);
   const deviceCount: number = devices?.length ?? 0;
 
   if (deviceCount > 0) {
@@ -101,7 +101,7 @@ export async function validateUser(
   response: express.Response,
   next: express.NextFunction,
 ): Promise<void> {
-  if (request.params.id && (await Firebase.hasUserID(request.params.id))) {
+  if (request.params.id && (await DatabaseService.getUser(request.params.id))) {
     logger.debug({ user_id: request.params.id });
     next();
   } else {

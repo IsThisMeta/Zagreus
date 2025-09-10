@@ -19,11 +19,6 @@ class _Var {
   public read = (): string => process.env[this.name] ?? this.options!.fallback!;
 }
 
-// Firebase (optional - not used with APNS)
-export const FIREBASE_PROJECT_ID = new _Var('FIREBASE_PROJECT_ID', { fallback: 'not-used' });
-export const FIREBASE_CLIENT_EMAIL = new _Var('FIREBASE_CLIENT_EMAIL', { fallback: 'not-used', redacted: true });
-export const FIREBASE_DATABASE_URL = new _Var('FIREBASE_DATABASE_URL', { fallback: 'not-used', redacted: true });
-export const FIREBASE_PRIVATE_KEY = new _Var('FIREBASE_PRIVATE_KEY', { fallback: 'not-used', redacted: true });
 // API Keys (optional - for rich notifications)
 export const FANART_TV_API_KEY = new _Var('FANART_TV_API_KEY', { fallback: '', redacted: true });
 export const THEMOVIEDB_API_KEY = new _Var('THEMOVIEDB_API_KEY', { fallback: '', redacted: true });

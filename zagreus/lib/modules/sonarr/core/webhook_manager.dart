@@ -36,14 +36,14 @@ class SonarrWebhookManager {
       // Check if webhook already exists
       final existing = await getZagreusWebhook(api);
       
-      // Build webhook URL using user token
-      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/sonarr/user/$userToken';
+      // Build webhook URL with user_id in the payload
+      final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook';
       
-      // Create notification object
+      // Create notification object with user ID in username field
       final notification = SonarrNotification.webhook(
         name: webhookName,
         url: webhookUrl,
-        username: '', // Can be used for additional auth if needed
+        username: userToken, // Pass user ID as username for webhook auth
         password: '', // Can be used for signature if needed
       );
       

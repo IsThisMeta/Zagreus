@@ -1,7 +1,7 @@
 import express from 'express';
 import { Models, Payloads } from './';
 import { Middleware, Models as ServerModels } from '../../server';
-import { Firebase } from '../../services';
+import * as APNS from '../../services/apns';
 import { Constants, Logger, Notifications } from '../../utils';
 
 export const enable = (api: express.Router) => api.use(route, router);
@@ -71,5 +71,5 @@ const _handleWebhook = async (
         break;
     }
   }
-  if (payload) await Firebase.sendNotification(devices, payload, settings);
+  if (payload) await APNS.sendNotification(devices, payload, settings);
 };

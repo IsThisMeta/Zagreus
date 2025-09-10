@@ -73,7 +73,7 @@ export const buildAPNSNotification = (
     ? 10 
     : 5;
   
-  // Set expiry to 28 days (same as Firebase TTL)
+  // Set expiry to 28 days
   notification.expiry = Math.floor(Date.now() / 1000) + 2419200;
 
   // Enable content-available for background updates
@@ -82,15 +82,6 @@ export const buildAPNSNotification = (
   return notification;
 };
 
-/**
- * Converts Firebase device tokens to APNS tokens
- * Note: In a real implementation, you'd need to handle token migration
- */
-export const convertTokenFormat = (firebaseToken: string): string => {
-  // This is a placeholder - actual implementation would depend on your token migration strategy
-  // Firebase FCM tokens and APNS tokens have different formats
-  return firebaseToken;
-};
 
 /**
  * Validates APNS device tokens

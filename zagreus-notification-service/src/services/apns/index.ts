@@ -1,8 +1,8 @@
 import { Provider, Notification } from '@parse/node-apn';
-import * as Cache from '../firebase/cache'; // Reuse the same cache logic
-import { Environment, Logger } from '../../utils';
+import * as Cache from '../cache';
+import { Environment, Logger, Notifications } from '../../utils';
 import * as APNSNotifications from '../../utils/apns-notifications';
-import { DatabaseService } from '../database'; // New service for user management
+import { DatabaseService } from '../database';
 
 const logger = Logger.child({ module: 'apns' });
 let apnsProvider: Provider;
@@ -56,7 +56,7 @@ export const hasUserID = async (uid: string): Promise<boolean> => {
   try {
     if (!uid) return false;
     
-    // Check in your own database instead of Firebase
+    // Check in database
     const user = await DatabaseService.getUser(uid);
     return !!user;
   } catch (error) {
@@ -97,8 +97,8 @@ export const getUserDevices = async (uid: string): Promise<string[]> => {
  */
 export const sendNotification = async (
   tokens: string[],
-  payload: APNSNotifications.APNSPayload,
-  settings: APNSNotifications.APNSSettings,
+  payload: Notifications.Payload,
+  settings: Notifications.Settings,
 ): Promise<boolean> => {
   try {
     // Validate and group tokens
@@ -117,8 +117,24 @@ export const sendNotification = async (
       return false;
     }
 
+    // Convert Notifications.Payload to APNSPayload
+    const apnsPayload: APNSNotifications.APNSPayload = {
+      title: payload.title,
+      body: payload.body,
+      image: payload.image,
+      data: payload.data,
+    };
+
+    // Convert settings
+    const apnsSettings: APNSNotifications.APNSSettings = {
+      sound: settings.sound,
+      ios: {
+        interruptionLevel: settings.ios.interruptionLevel as APNSNotifications.APNSInterruptionLevel,
+      },
+    };
+
     // Build notification
-    const notification = APNSNotifications.buildAPNSNotification(payload, settings);
+    const notification = APNSNotifications.buildAPNSNotification(apnsPayload, apnsSettings);
     
     // Send to all valid tokens
     const result = await apnsProvider.send(notification, validTokens);

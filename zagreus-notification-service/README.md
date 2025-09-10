@@ -1,10 +1,8 @@
 # Zagreus Notification Service
 
-A TypeScript backend service that handles receiving webhooks from applications supported in [Zagreus](https://www.zagreus.app/github) and sends notifications to the respective user or device.
+A TypeScript backend service that handles receiving webhooks from Radarr/Sonarr and sends push notifications via Apple Push Notification service (APNs) to iOS devices.
 
-> Setting up an instance of your own notification service is **not** necessary to get webhook notifications in Zagreus, simply use the hosted notification service available at [https://notify.zagreus.app](https://notify.zagreus.app). Setting up your own instance _will not_ send notifications to the officially published Zagreus application.
->
-> Setting up your own instance of the notification service is only necessary when building your own version of Zagreus, which utilizes a different Firebase project.
+> This is a custom notification service for Zagreus that uses APNs directly instead of Firebase Cloud Messaging.
 
 ## Usage
 
@@ -14,14 +12,18 @@ For documentation on setting up the webhooks, please look at Zagreus's documenta
 
 ```docker
 docker run -d \
-    -e FIREBASE_CLIENT_EMAIL=firebase-adminsdk-example@project.iam.gserviceaccount.com \
-    -e FIREBASE_DATABASE_URL=https://example-project.firebaseio.com \
-    -e FIREBASE_PRIVATE_KEY=example-private-key \
-    -e FIREBASE_PROJECT_ID=example-project \
+    -e APNS_AUTH_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----" \
+    -e APNS_KEY_ID=YOUR_KEY_ID \
+    -e APNS_TEAM_ID=YOUR_TEAM_ID \
+    -e DB_HOST=postgres \
+    -e DB_PORT=5432 \
+    -e DB_NAME=zagreus \
+    -e DB_USER=postgres \
+    -e DB_PASSWORD=yourpassword \
+    -e REDIS_HOST=redis \
+    -e REDIS_PORT=6379 \
     -e FANART_TV_API_KEY=1234567890 \
     -e THEMOVIEDB_API_KEY=1234567890 \
-    -e REDIS_HOST=192.168.1.100
-    -e REDIS_PORT=6379
     -p 9000:9000 \
     --restart unless-stopped \
 ghcr.io/yourusername/zagreus-notification-service:latest
@@ -31,9 +33,10 @@ ghcr.io/yourusername/zagreus-notification-service:latest
 
 Zagreus's Notification Service requires:
 
-- Node.js v10.0.0 or higher (v14.0.0 or higher is recommended)
-- Redis 6
-- A Firebase Project
+- Node.js v14.0.0 or higher (v18.0.0 or higher is recommended)
+- PostgreSQL 13 or higher
+- Redis 6 or higher
+- Apple Developer account with APNs configured
 
 ### Environment
 
@@ -41,18 +44,22 @@ All environment variables must either be set at an operating system-level, termi
 
 | Variable                | Value                                                                 | Default | Required? |
 | :---------------------- | :-------------------------------------------------------------------- | :-----: | :-------: |
-| `FIREBASE_CLIENT_EMAIL` | The Firebase client email for the project.                            | &mdash; |  &check;  |
-| `FIREBASE_DATABASE_URL` | The Firebase database URL for the project.                            | &mdash; |  &check;  |
-| `FIREBASE_PRIVATE_KEY`  | The Firebase private key for the project.                             | &mdash; |  &check;  |
-| `FIREBASE_PROJECT_ID`   | The Firebase project ID for the project.                              | &mdash; |  &check;  |
-| `FANART_TV_API_KEY`     | A developer [Fanart.tv](https://fanart.tv/) API key.                  | &mdash; |  &check;  |
-| `THEMOVIEDB_API_KEY`    | A developer [The Movie Database](https://www.themoviedb.org) API key. | &mdash; |  &check;  |
-| `REDIS_HOST`            | Redis instance hostname.                                              | &mdash; |  &check;  |
-| `REDIS_PORT`            | Redis instance port.                                                  | &mdash; |  &check;  |
-| `REDIS_USER`            | Redis instance username.                                              |  `""`   |  &cross;  |
-| `REDIS_PASS`            | Redis instance password.                                              |  `""`   |  &cross;  |
+| `APNS_AUTH_KEY`         | APNs authentication key content (.p8 file)                            | &mdash; |  &check;  |
+| `APNS_KEY_ID`           | APNs Key ID from Apple Developer                                      | &mdash; |  &check;  |
+| `APNS_TEAM_ID`          | Apple Developer Team ID                                               | &mdash; |  &check;  |
+| `DB_HOST`               | PostgreSQL hostname                                                   | &mdash; |  &check;  |
+| `DB_PORT`               | PostgreSQL port                                                       | &mdash; |  &check;  |
+| `DB_NAME`               | PostgreSQL database name                                              | &mdash; |  &check;  |
+| `DB_USER`               | PostgreSQL username                                                   | &mdash; |  &check;  |
+| `DB_PASSWORD`           | PostgreSQL password                                                   | &mdash; |  &check;  |
+| `REDIS_HOST`            | Redis instance hostname                                               | &mdash; |  &check;  |
+| `REDIS_PORT`            | Redis instance port                                                   | &mdash; |  &check;  |
+| `REDIS_USER`            | Redis instance username                                               |  `""`   |  &cross;  |
+| `REDIS_PASS`            | Redis instance password                                               |  `""`   |  &cross;  |
 | `REDIS_USE_TLS`         | Use a TLS connection when communicating with Redis?                   | `false` |  &cross;  |
-| `PORT`                  | The port to attach the service web server to.                         | `9000`  |  &cross;  |
+| `FANART_TV_API_KEY`     | A developer [Fanart.tv](https://fanart.tv/) API key                  | &mdash; |  &cross;  |
+| `THEMOVIEDB_API_KEY`    | A developer [The Movie Database](https://www.themoviedb.org) API key | &mdash; |  &cross;  |
+| `PORT`                  | The port to attach the service web server to                         | `9000`  |  &cross;  |
 
 ### Running
 

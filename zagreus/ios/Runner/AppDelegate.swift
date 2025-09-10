@@ -35,10 +35,13 @@ import UserNotifications
   }
   
   private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
+    print("Zagreus: Requesting notification permission")
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+        print("Zagreus: Permission granted: \(granted), error: \(String(describing: error))")
         DispatchQueue.main.async {
           if granted {
+            print("Zagreus: Registering for remote notifications")
             UIApplication.shared.registerForRemoteNotifications()
           }
           completion(granted)
@@ -69,12 +72,16 @@ import UserNotifications
   ) {
     let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
     let token = tokenParts.joined()
+    print("Zagreus: Received device token: \(token)")
     
     // Send token to Flutter
     if let controller = window?.rootViewController as? FlutterViewController {
       let channel = FlutterMethodChannel(name: "app.zagreus/notifications",
                                         binaryMessenger: controller.binaryMessenger)
       channel.invokeMethod("onToken", arguments: token)
+      print("Zagreus: Sent token to Flutter")
+    } else {
+      print("Zagreus: Failed to get FlutterViewController")
     }
   }
   

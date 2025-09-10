@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/supabase/messaging.dart';
+import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/utils/links.dart';
+import 'package:dio/dio.dart';
 
 class NotificationsRoute extends StatefulWidget {
   const NotificationsRoute({
@@ -118,32 +120,49 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           if (token == null) {
             showZagErrorSnackBar(
               title: 'No Device Token',
-              message: 'Failed to get device token. Make sure notifications are enabled.',
+              message: 'Check Xcode console for errors. Are you on a real device?',
             );
             return;
           }
           
           showZagSnackBar(
-            title: 'Device Token Retrieved',
-            message: 'Token: ${token.substring(0, 20)}...',
-            type: ZagSnackbarType.SUCCESS,
-            duration: const Duration(seconds: 5),
+            title: 'Sending Test Notification',
+            message: 'Check your notification center...',
+            type: ZagSnackbarType.INFO,
           );
           
-          // TODO: Send test notification via your notification server
-          // For now, simulate a local notification
-          ZagSupabaseMessaging.instance.simulateMessage(
-            RemoteMessage(
-              notification: RemoteNotification(
-                title: '🎉 Notifications Working!',
-                body: 'Your Zagreus notifications are set up correctly.',
-              ),
+          // Send actual test notification to the server
+          try {
+            final dio = Dio();
+            final user = ZagSupabase.client.auth.currentUser;
+            
+            final response = await dio.post(
+              'https://zagreus-notifications.fly.dev/v1/notifications/test',
               data: {
-                'module': 'settings',
-                'profile': 'default',
+                'user_id': user?.id,
+                'token': token,
               },
-            ),
-          );
+              options: Options(
+                headers: {'Content-Type': 'application/json'},
+              ),
+            );
+            
+            if (response.statusCode == 200) {
+              showZagSuccessSnackBar(
+                title: 'Test Notification Sent! 🎉',
+                message: 'Check your notification center.',
+              );
+            } else {
+              throw Exception('Server returned ${response.statusCode}');
+            }
+          } catch (e) {
+            // Server doesn't have test endpoint - show error
+            showZagErrorSnackBar(
+              title: 'Test Endpoint Not Available',
+              message: 'Test notifications from Radarr/Sonarr webhooks instead.',
+            );
+            ZagLogger().debug('Test notification endpoint not available: $e');
+          }
           
         } catch (e) {
           showZagErrorSnackBar(

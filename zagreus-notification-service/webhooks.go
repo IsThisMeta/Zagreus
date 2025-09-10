@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -32,15 +34,26 @@ type SonarrEpisode struct {
 
 // Radarr webhook structures
 type RadarrWebhook struct {
-	EventType string      `json:"eventType"`
-	Movie     RadarrMovie `json:"movie"`
+	EventType     string                 `json:"eventType"`
+	Movie         RadarrMovie           `json:"movie"`
+	AddMethod     string                 `json:"addMethod,omitempty"`
+	InstanceName  string                 `json:"instanceName,omitempty"`
+	ApplicationURL string                `json:"applicationUrl,omitempty"`
 }
 
 type RadarrMovie struct {
-	Title  string `json:"title"`
-	Year   int    `json:"year"`
-	ImdbID string `json:"imdbId"`
-	TmdbID int    `json:"tmdbId"`
+	ID            int                    `json:"id"`
+	Title         string                 `json:"title"`
+	Year          int                    `json:"year"`
+	ImdbID        string                 `json:"imdbId,omitempty"`
+	TmdbID        int                    `json:"tmdbId"`
+	TitleSlug     string                 `json:"titleSlug,omitempty"`
+	FolderName    string                 `json:"folderName,omitempty"`
+	Path          string                 `json:"path,omitempty"`
+	Genres        []string               `json:"genres,omitempty"`
+	Images        []map[string]interface{} `json:"images,omitempty"`
+	Tags          []interface{}          `json:"tags,omitempty"`
+	Overview      string                 `json:"overview,omitempty"`
 }
 
 // Generic webhook response
@@ -50,8 +63,9 @@ type WebhookResponse struct {
 }
 
 func handleSonarrWebhook(c *gin.Context) {
-	var webhook SonarrWebhook
-	if err := c.ShouldBindJSON(&webhook); err != nil {
+	// Parse as generic JSON first to handle flexible structure
+	var genericWebhook map[string]interface{}
+	if err := c.ShouldBindJSON(&genericWebhook); err != nil {
 		c.JSON(400, gin.H{"error": "Invalid webhook data"})
 		return
 	}
@@ -63,39 +77,95 @@ func handleSonarrWebhook(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Received Sonarr webhook: %s for user %s", webhook.EventType, userID)
+	eventType, _ := genericWebhook["eventType"].(string)
+	log.Printf("Received Sonarr webhook: %s for user %s", eventType, userID)
+
+	// Extract series info
+	seriesTitle := "Unknown Series"
+	if series, ok := genericWebhook["series"].(map[string]interface{}); ok {
+		if t, ok := series["title"].(string); ok {
+			seriesTitle = t
+		}
+	}
+
+	// Extract episodes info
+	var episodes []map[string]interface{}
+	if eps, ok := genericWebhook["episodes"].([]interface{}); ok {
+		for _, ep := range eps {
+			if episode, ok := ep.(map[string]interface{}); ok {
+				episodes = append(episodes, episode)
+			}
+		}
+	}
 
 	// Handle different event types
 	var title, body string
 	
-	switch webhook.EventType {
+	switch eventType {
+	case "Test":
+		title = "Sonarr Test"
+		body = "Test notification from Sonarr"
+		
 	case "Grab":
-		if len(webhook.Episodes) > 0 {
-			ep := webhook.Episodes[0]
+		if len(episodes) > 0 {
+			seasonNum := 0
+			episodeNum := 0
+			if s, ok := episodes[0]["seasonNumber"].(float64); ok {
+				seasonNum = int(s)
+			}
+			if e, ok := episodes[0]["episodeNumber"].(float64); ok {
+				episodeNum = int(e)
+			}
 			title = "Episode Grabbed"
 			body = fmt.Sprintf("%s S%02dE%02d has been grabbed", 
-				webhook.Series.Title, ep.SeasonNumber, ep.EpisodeNumber)
+				seriesTitle, seasonNum, episodeNum)
 		}
 		
 	case "Download":
-		if len(webhook.Episodes) > 0 {
-			ep := webhook.Episodes[0]
+		if len(episodes) > 0 {
+			seasonNum := 0
+			episodeNum := 0
+			if s, ok := episodes[0]["seasonNumber"].(float64); ok {
+				seasonNum = int(s)
+			}
+			if e, ok := episodes[0]["episodeNumber"].(float64); ok {
+				episodeNum = int(e)
+			}
 			title = "Episode Downloaded"
 			body = fmt.Sprintf("%s S%02dE%02d is ready to watch", 
-				webhook.Series.Title, ep.SeasonNumber, ep.EpisodeNumber)
+				seriesTitle, seasonNum, episodeNum)
 		}
 		
 	case "Rename":
 		title = "Episodes Renamed"
 		body = fmt.Sprintf("%d episodes of %s have been renamed", 
-			len(webhook.Episodes), webhook.Series.Title)
+			len(episodes), seriesTitle)
 		
 	case "SeriesDelete":
 		title = "Series Deleted"
-		body = fmt.Sprintf("%s has been removed from your library", webhook.Series.Title)
+		body = fmt.Sprintf("%s has been removed from your library", seriesTitle)
+		
+	case "SeriesAdd":
+		title = "Series Added"
+		body = fmt.Sprintf("%s has been added to your library", seriesTitle)
+		
+	case "EpisodeFileDelete":
+		if len(episodes) > 0 {
+			seasonNum := 0
+			episodeNum := 0
+			if s, ok := episodes[0]["seasonNumber"].(float64); ok {
+				seasonNum = int(s)
+			}
+			if e, ok := episodes[0]["episodeNumber"].(float64); ok {
+				episodeNum = int(e)
+			}
+			title = "Episode File Deleted"
+			body = fmt.Sprintf("File deleted for %s S%02dE%02d", 
+				seriesTitle, seasonNum, episodeNum)
+		}
 		
 	default:
-		log.Printf("Unknown Sonarr event type: %s", webhook.EventType)
+		log.Printf("Unknown Sonarr event type: %s", eventType)
 		c.JSON(200, WebhookResponse{Success: true, Message: "Event ignored"})
 		return
 	}
@@ -255,45 +325,83 @@ func handleWebhookWithPayload(c *gin.Context) {
 	}
 	userID := string(userIDBytes)
 	
-	// Try to parse as Radarr webhook (since that's what the Flutter app sends)
-	var webhook RadarrWebhook
-	if err := c.ShouldBindJSON(&webhook); err != nil {
+	// First read the raw body for debugging
+	bodyBytes, _ := c.GetRawData()
+	log.Printf("Raw webhook body: %s", string(bodyBytes))
+	
+	// Restore body for parsing
+	c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	
+	// Parse as generic JSON first to get eventType
+	var genericWebhook map[string]interface{}
+	if err := c.ShouldBindJSON(&genericWebhook); err != nil {
 		log.Printf("Failed to parse webhook JSON: %v", err)
-		
-		// Log the raw body for debugging
-		if body, readErr := c.GetRawData(); readErr == nil {
-			log.Printf("Raw webhook body: %s", string(body))
-		}
-		
-		c.JSON(400, gin.H{"error": "Invalid webhook data: " + err.Error()})
+		c.JSON(400, gin.H{"error": "Invalid webhook data"})
 		return
 	}
 	
-	log.Printf("Received webhook via payload URL: %s for user %s", webhook.EventType, userID)
+	eventType, _ := genericWebhook["eventType"].(string)
+	log.Printf("Received webhook via payload URL: %s for user %s", eventType, userID)
 	
 	var title, body string
 	
-	switch webhook.EventType {
+	// Extract movie info from the webhook
+	movieTitle := "Unknown Movie"
+	movieYear := 0
+	
+	if movie, ok := genericWebhook["movie"].(map[string]interface{}); ok {
+		if t, ok := movie["title"].(string); ok {
+			movieTitle = t
+		}
+		if y, ok := movie["year"].(float64); ok {
+			movieYear = int(y)
+		}
+	}
+	
+	switch eventType {
 	case "Test":
 		title = "Zagreus Test"
 		body = "Test notification from Zagreus"
 		
-		// Send the notification without delay since user controls timing from app
-		if err := sendNotificationToUser(userID, title, body); err != nil {
-			log.Printf("Failed to send notification: %v", err)
-			c.JSON(500, gin.H{"error": "Failed to send notification"})
-			return
-		}
+	case "MovieAdded":
+		title = "Movie Added"
+		body = fmt.Sprintf("%s (%d) has been added to your library", movieTitle, movieYear)
 		
-		c.JSON(200, gin.H{
-			"success": true,
-			"message": "Test notification sent",
-		})
-		return
+	case "Grab":
+		title = "Movie Grabbed"
+		body = fmt.Sprintf("%s (%d) has been grabbed", movieTitle, movieYear)
+		
+	case "Download":
+		title = "Movie Downloaded"
+		body = fmt.Sprintf("%s (%d) is ready to watch", movieTitle, movieYear)
+		
+	case "Rename":
+		title = "Movie Renamed"
+		body = fmt.Sprintf("%s has been renamed", movieTitle)
+		
+	case "MovieDelete":
+		title = "Movie Deleted"
+		body = fmt.Sprintf("%s has been removed from your library", movieTitle)
+		
+	case "MovieFileDelete":
+		title = "Movie File Deleted"
+		body = fmt.Sprintf("File deleted for %s", movieTitle)
 		
 	default:
-		// If not a test, set the user ID header and forward to normal Radarr handler
-		c.Request.Header.Set("X-User-Id", userID)
-		handleRadarrWebhook(c)
+		log.Printf("Unknown event type: %s", eventType)
+		c.JSON(200, gin.H{"success": true, "message": "Event type not handled: " + eventType})
+		return
 	}
+	
+	// Send the notification
+	if err := sendNotificationToUser(userID, title, body); err != nil {
+		log.Printf("Failed to send notification: %v", err)
+		c.JSON(500, gin.H{"error": "Failed to send notification"})
+		return
+	}
+	
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("Notification sent for %s", eventType),
+	})
 }

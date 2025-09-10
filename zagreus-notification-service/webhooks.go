@@ -153,6 +153,14 @@ func handleRadarrWebhook(c *gin.Context) {
 		title = "Zagreus Test"
 		body = "Test notification from Zagreus"
 		
+	case "MovieAdded":
+		title = "Movie Added"
+		body = fmt.Sprintf("%s has been added to your library", webhook.Movie.Title)
+		
+	case "MovieFileDelete":
+		title = "Movie File Deleted"
+		body = fmt.Sprintf("File deleted for %s", webhook.Movie.Title)
+		
 	default:
 		log.Printf("Unknown Radarr event type: %s", webhook.EventType)
 		c.JSON(200, WebhookResponse{Success: true, Message: "Event ignored"})
@@ -250,7 +258,14 @@ func handleWebhookWithPayload(c *gin.Context) {
 	// Try to parse as Radarr webhook (since that's what the Flutter app sends)
 	var webhook RadarrWebhook
 	if err := c.ShouldBindJSON(&webhook); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid webhook data"})
+		log.Printf("Failed to parse webhook JSON: %v", err)
+		
+		// Log the raw body for debugging
+		if body, readErr := c.GetRawData(); readErr == nil {
+			log.Printf("Raw webhook body: %s", string(body))
+		}
+		
+		c.JSON(400, gin.H{"error": "Invalid webhook data: " + err.Error()})
 		return
 	}
 	

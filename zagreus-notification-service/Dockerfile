@@ -1,17 +1,36 @@
-FROM node:18-alpine
-LABEL org.opencontainers.image.source="https://github.com/zebrralabs/zagreus-notification-service"
-# Install packages, copy data, build project
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Copy APNS key
+# Build stage
+FROM golang:1.21-alpine AS builder
+
+# Install git for go mod download
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY *.go ./
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o zagreus-notifications .
+
+# Final stage
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+# Copy the binary from builder
+COPY --from=builder /app/zagreus-notifications .
+
+# Copy the APNs key
 COPY AuthKey_7A74STAX6C.p8 /app/AuthKey_7A74STAX6C.p8
-RUN npm run build
-RUN npm prune --production
-# Add Tini
-RUN apk add --no-cache tini
-ENTRYPOINT ["/sbin/tini", "--"]
-# Start the docker version, expose port 8080
-CMD ["npm", "run", "docker"]
+
+# Expose port
 EXPOSE 8080
+
+# Run the binary
+CMD ["./zagreus-notifications"]

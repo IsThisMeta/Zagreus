@@ -2,6 +2,7 @@ import express from 'express';
 import { Environment, Logger } from '../utils';
 import { router } from '../modules';
 import { testRouter } from '../test-notification';
+import { testDirectRouter } from '../test-direct';
 
 const logger = Logger.child({ module: 'express' });
 const server = express();
@@ -23,6 +24,7 @@ export const initialize = (): void => {
   server.get('/health', health);
   server.use('/v1', router);
   server.use('/test', testRouter);
+  server.use('/direct', testDirectRouter);
 };
 
 export const start = (): void => {

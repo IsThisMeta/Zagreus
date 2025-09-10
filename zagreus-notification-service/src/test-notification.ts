@@ -42,7 +42,10 @@ testRouter.get('/test-push/:token', async (req, res) => {
         badge: notification.badge,
         topic: notification.topic,
         pushType: notification.pushType,
-        priority: notification.priority
+        priority: notification.priority,
+        // Log the full notification object
+        fullNotification: JSON.stringify(notification),
+        payload: JSON.stringify((notification as any).payload)
       }
     }, 'Notification before sending');
     

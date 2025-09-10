@@ -357,12 +357,12 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     }
   }
 
-  Future<void> _sendDirectTestNotification() async {
+  Future<void> _sendDirectTestNotification({int delay = 0}) async {
     try {
       // Get the registered device token
       String? token;
       try {
-        token = await ZagSupabaseMessaging.instance.getToken();
+        token = await ZagSupabaseMessaging().getToken();
         ZagLogger().debug('Retrieved token: ${token ?? "NULL"}');
       } catch (tokenError) {
         ZagLogger().error('Failed to get token', tokenError, null);
@@ -381,20 +381,22 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
         return;
       }
 
-      ZagLogger().debug('Sending direct test notification to token: $token');
+      ZagLogger().debug('Sending direct test notification to token: $token with delay: $delay');
 
-      // Send directly to the test endpoint
+      // Send directly to the direct test endpoint
       final dio = Dio();
-      final response = await dio.get(
-        'https://zagreus-notifications.fly.dev/test/test-push/$token',
-      );
+      final url = delay > 0 
+        ? 'https://zagreus-notifications.fly.dev/direct/test-direct/$token?delay=$delay'
+        : 'https://zagreus-notifications.fly.dev/direct/test-direct/$token';
+        
+      final response = await dio.get(url);
 
       if (response.statusCode == 200) {
         final data = response.data;
         if (data['success'] == true) {
           showZagSuccessSnackBar(
-            title: 'Direct Test Sent!',
-            message: 'Check your device now. Sent: ${data['result']['sent']}, Failed: ${data['result']['failed']?.length ?? 0}',
+            title: delay > 0 ? 'Delayed Test Queued!' : 'Direct Test Sent!',
+            message: data['message'] ?? 'Notification sent successfully',
           );
         } else {
           throw Exception('Test failed: ${data['error'] ?? 'Unknown error'}');
@@ -416,12 +418,12 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
       children: [
         ZagBlock(
           title: 'Direct APNs Test',
-          body: [TextSpan(text: 'Send notification directly via HTTP/2 (bypassing node-apn)')],
+          body: [TextSpan(text: 'Sends notification after 5 seconds - background the app to see it!')],
         ),
         ZagButton(
           type: ZagButtonType.TEXT,
-          text: 'Direct Test',
-          onTap: _sendDirectTestNotification,
+          text: 'Send Test (5s delay)',
+          onTap: () => _sendDirectTestNotification(delay: 5),
         ),
       ],
     );

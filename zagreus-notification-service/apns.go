@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,11 +42,49 @@ func initAPNs() error {
 func handleDirectTest(c *gin.Context) {
 	deviceToken := c.Param("token")
 	
+	// Check for delay query parameter
+	delayStr := c.Query("delay")
+	var delay int
+	if delayStr != "" {
+		fmt.Sscanf(delayStr, "%d", &delay)
+		if delay > 30 {
+			delay = 30 // Cap at 30 seconds
+		}
+	}
+	
 	if apnsClient == nil {
 		c.JSON(500, gin.H{
 			"success": false,
 			"error": "APNs client not initialized",
 		})
+		return
+	}
+	
+	if delay > 0 {
+		log.Printf("Will send DIRECT test notification to token %s after %d seconds", deviceToken, delay)
+		c.JSON(200, gin.H{
+			"success": true,
+			"message": fmt.Sprintf("Notification will be sent in %d seconds", delay),
+		})
+		
+		// Send notification in background after delay
+		go func() {
+			time.Sleep(time.Duration(delay) * time.Second)
+			log.Printf("Sending DELAYED test notification to token: %s", deviceToken)
+			
+			err := apnsClient.SendNotification(
+				deviceToken,
+				"Zagreus Test", 
+				fmt.Sprintf("Delayed test after %d seconds", delay),
+				false, // sandbox for testing
+			)
+			
+			if err != nil {
+				log.Printf("Failed to send delayed notification: %v", err)
+			} else {
+				log.Printf("Delayed notification sent successfully")
+			}
+		}()
 		return
 	}
 	

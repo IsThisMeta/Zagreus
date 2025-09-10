@@ -79,6 +79,9 @@ export const buildAPNSNotification = (
   // Enable content-available for background updates
   notification.contentAvailable = true;
 
+  // REQUIRED: Set the topic to the app bundle ID
+  notification.topic = 'com.zebrralabs.zagreus';
+
   return notification;
 };
 

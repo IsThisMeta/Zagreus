@@ -13,6 +13,7 @@ import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/radarr/core/webhook_manager.dart';
 import 'package:zagreus/modules/sonarr/core/webhook_manager.dart';
 import 'dart:convert';
+import 'package:dio/dio.dart';
 
 class NotificationsRoute extends StatefulWidget {
   const NotificationsRoute({
@@ -258,7 +259,86 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
             },
           ) : null,
         ),
+        ZagDivider(),
+        _testNotificationButton(),
       ],
+    );
+  }
+
+  Future<void> _sendTestNotification() async {
+    try {
+      final user = ZagSupabase.client.auth.currentUser;
+      if (user == null) {
+        showZagErrorSnackBar(
+          title: 'Error',
+          message: 'Not logged in',
+        );
+        return;
+      }
+
+      // Ensure notifications are enabled
+      const db = ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS;
+      if (!db.read()) {
+        showZagErrorSnackBar(
+          title: 'Error',
+          message: 'Please enable notifications first.',
+        );
+        return;
+      }
+
+      // Get the registered device token
+      final token = await ZagSupabaseMessaging.instance.getToken();
+      if (token == null || token.isEmpty) {
+        showZagErrorSnackBar(
+          title: 'Error',
+          message: 'No device token found. Try disabling and re-enabling notifications.',
+        );
+        return;
+      }
+
+      ZagLogger().debug('Sending test notification...');
+
+      // Send a test webhook to our notification server
+      final dio = Dio();
+      final payload = base64.encode(utf8.encode(user.id));
+      
+      final response = await dio.post(
+        'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload',
+        data: {
+          'eventType': 'Test',
+          'movie': {
+            'title': 'Zagreus Test',
+            'id': 1,
+            'tmdbId': 550, // Fight Club for a nice poster
+          },
+        },
+      );
+
+      if (response.statusCode == 200) {
+        showZagSuccessSnackBar(
+          title: 'Success',
+          message: 'Test notification sent! Check your device.',
+        );
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      ZagLogger().error('Failed to send test notification', e, null);
+      showZagErrorSnackBar(
+        title: 'Error',
+        message: 'Failed to send test notification: ${e.toString()}',
+      );
+    }
+  }
+
+  Widget _testNotificationButton() {
+    return ZagBlock(
+      title: 'Test Push Notification',
+      body: [TextSpan(text: 'Send a test notification to your device')],
+      trailing: ZagIconButton(
+        icon: Icons.notifications_active_rounded,
+        onPressed: _sendTestNotification,
+      ),
     );
   }
 

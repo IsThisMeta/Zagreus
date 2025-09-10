@@ -36,15 +36,40 @@ class RadarrWebhookManager {
       // Check if webhook already exists
       final existing = await getZagreusWebhook(api);
       
+      // Get the webhook schema
+      final schema = await api.notification.getSchema(implementation: 'Webhook');
+      
       // Build webhook URL with user_id in the path
       // Encode the user ID in base64
       final payload = base64.encode(utf8.encode(userToken));
       final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
-      // Create notification object (no auth needed since token is in URL)
-      final notification = RadarrNotification.webhook(
+      // Create fields based on schema
+      final fields = <RadarrNotificationField>[];
+      for (var schemaField in schema) {
+        if (schemaField.name == 'url') {
+          schemaField.value = webhookUrl;
+          fields.add(schemaField);
+        } else if (schemaField.name == 'method') {
+          schemaField.value = '1';
+          fields.add(schemaField);
+        } else if (schemaField.name == 'username') {
+          schemaField.value = '';
+          fields.add(schemaField);
+        } else if (schemaField.name == 'password') {
+          schemaField.value = '';
+          fields.add(schemaField);
+        }
+      }
+      
+      // Create notification object
+      final notification = RadarrNotification(
         name: webhookName,
-        url: webhookUrl,
+        implementation: 'Webhook',
+        implementationName: 'Webhook',
+        configContract: 'WebhookSettings',
+        fields: fields,
+        tags: [],
       );
       
       // Enable same notification types as Ruddarr (but disable others)
@@ -61,6 +86,9 @@ class RadarrWebhookManager {
       notification.onApplicationUpdate = false;
       notification.onManualInteractionRequired = true;
       
+      // Debug: Log the JSON we're about to send
+      final jsonData = json.encode(notification.toJson());
+      ZagLogger().debug('Sending JSON: $jsonData');
       
       if (existing != null) {
         // Update existing webhook

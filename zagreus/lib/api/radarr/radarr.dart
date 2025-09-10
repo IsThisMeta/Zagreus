@@ -71,6 +71,9 @@ class RadarrAPI {
         maxRedirects: maxRedirects,
         contentType: Headers.jsonContentType,
         responseType: ResponseType.json,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
       ),
     );
     return RadarrAPI._internal(

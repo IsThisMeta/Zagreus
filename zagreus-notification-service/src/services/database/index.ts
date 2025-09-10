@@ -178,7 +178,8 @@ export const updateTokenLastUsed = async (token: string): Promise<void> => {
 };
 
 /**
- * Log failed notification for debugging and retry
+ * Log failed notification for debugging
+ * Just logs to console since we don't have a failed_notifications table
  */
 export const logFailedNotification = async (
   userId: string,
@@ -187,57 +188,33 @@ export const logFailedNotification = async (
   errorMessage: string,
   payload: any
 ): Promise<void> => {
-  try {
-    const query = `
-      INSERT INTO failed_notifications (user_id, device_token, error_code, error_message, payload)
-      VALUES ($1, $2, $3, $4, $5)
-    `;
-    
-    await pool.query(query, [userId, deviceToken, errorCode, errorMessage, JSON.stringify(payload)]);
-  } catch (error) {
-    logger.error({ error }, 'Failed to log failed notification');
-    // Don't throw - logging failures shouldn't break the flow
-  }
+  logger.error({
+    userId,
+    deviceToken,
+    errorCode,
+    errorMessage,
+    payload
+  }, 'Failed to send notification');
 };
 
 /**
  * Get user notification settings
+ * Returns default settings since we're not storing preferences anymore
  */
 export const getUserNotificationSettings = async (userId: string): Promise<any> => {
-  try {
-    const query = 'SELECT * FROM notification_settings WHERE user_id = $1';
-    const result = await pool.query(query, [userId]);
-    
-    return result.rows[0] || {
-      sound_enabled: true,
-      interruption_level: 'active',
-    };
-  } catch (error) {
-    logger.error({ error, userId }, 'Failed to get notification settings');
-    // Return defaults on error
-    return {
-      sound_enabled: true,
-      interruption_level: 'active',
-    };
-  }
+  // Always return default settings
+  return {
+    sound_enabled: true,
+    interruption_level: 'active',
+  };
 };
 
 /**
- * Cleanup old failed notifications (older than 30 days)
+ * Cleanup old failed notifications
+ * No-op since we don't have a failed_notifications table
  */
 export const cleanupOldFailedNotifications = async (): Promise<number> => {
-  try {
-    const query = `
-      DELETE FROM failed_notifications 
-      WHERE created_at < NOW() - INTERVAL '30 days'
-    `;
-    
-    const result = await pool.query(query);
-    return result.rowCount || 0;
-  } catch (error) {
-    logger.error({ error }, 'Failed to cleanup old notifications');
-    return 0;
-  }
+  return 0;
 };
 
 /**

@@ -25,7 +25,9 @@ class RadarrWebhookManager {
   /// Check if Zagreus webhook is already configured
   static Future<RadarrNotification?> getZagreusWebhook(RadarrAPI api) async {
     try {
+      ZagLogger().debug('Fetching all Radarr notifications...');
       final notifications = await api.notification.getAll();
+      ZagLogger().debug('Found ${notifications.length} notifications');
       return notifications.firstWhereOrNull(
         (n) => n.name == webhookName && n.implementation == 'Webhook',
       );
@@ -38,6 +40,7 @@ class RadarrWebhookManager {
   /// Create or update Zagreus webhook
   static Future<bool> syncWebhook(RadarrAPI api) async {
     try {
+      ZagLogger().debug('=== Starting Radarr webhook sync ===');
       // Get user token from Supabase
       final user = ZagSupabase.client.auth.currentUser;
       if (user == null) {
@@ -47,7 +50,9 @@ class RadarrWebhookManager {
       final userToken = user.id; // Use Supabase user ID as the token
 
       // Check if webhook already exists
+      ZagLogger().debug('Checking for existing webhook...');
       final existing = await getZagreusWebhook(api);
+      ZagLogger().debug('Existing webhook: ${existing != null ? 'Found' : 'Not found'}');
       
       // Build webhook URL with user_id in the path
       // Encode the user ID in base64
@@ -87,16 +92,21 @@ class RadarrWebhookManager {
       if (existing != null && existing.id != null) {
         // Update existing webhook
         notificationData['id'] = existing.id!;
+        ZagLogger().debug('Updating existing webhook with ID: ${existing.id}');
         final response = await api.httpClient.put(
           'notification/${existing.id}',
           data: notificationData,
         );
+        ZagLogger().debug('Update response: ${response.statusCode}');
       } else {
         // Create new webhook
+        ZagLogger().debug('Creating new webhook');
+        ZagLogger().debug('Webhook data: ${json.encode(notificationData)}');
         final response = await api.httpClient.post(
           'notification',
           data: notificationData,
         );
+        ZagLogger().debug('Create response: ${response.statusCode}');
       }
       
       return true;

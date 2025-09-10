@@ -42,6 +42,9 @@ class SonarrAPI {
         headers: headers,
         followRedirects: followRedirects,
         maxRedirects: maxRedirects,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
       ),
     );
     return SonarrAPI._internal(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/supabase/core.dart';
@@ -192,6 +193,16 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
         ZagBlock(
           title: 'Radarr Webhook URL',
           body: [TextSpan(text: _radarrUrl.isEmpty ? 'Not generated' : _radarrUrl)],
+          trailing: _radarrUrl.isNotEmpty ? ZagIconButton(
+            icon: Icons.copy_rounded,
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: _radarrUrl));
+              showZagSuccessSnackBar(
+                title: 'Copied',
+                message: 'Radarr webhook URL copied to clipboard',
+              );
+            },
+          ) : null,
         ),
         ZagBlock(
           title: 'Radarr Status',

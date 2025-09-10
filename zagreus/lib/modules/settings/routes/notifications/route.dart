@@ -418,68 +418,13 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           title: 'Direct APNs Test',
           body: [TextSpan(text: 'Send notification directly via HTTP/2 (bypassing node-apn)')],
         ),
-        ZagActionButton(
-          label: 'Direct Test',
+        ZagButton(
+          type: ZagButtonType.TEXT,
+          text: 'Direct Test',
           onTap: _sendDirectTestNotification,
         ),
       ],
     );
-  }
-
-  Future<void> _sendDirectTestNotification() async {
-    try {
-      final user = ZagSupabase.client.auth.currentUser;
-      if (user == null) {
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'Not logged in',
-        );
-        return;
-      }
-
-      String? token;
-      if (Platform.isIOS) {
-        token = await FirebaseMessaging.instance.getAPNSToken();
-      } else {
-        token = await FirebaseMessaging.instance.getToken();
-      }
-
-      if (token == null) {
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'No push token available',
-        );
-        return;
-      }
-
-      ZagLogger().debug('Sending DIRECT test notification to token: $token');
-
-      // Send directly to the new direct endpoint
-      final dio = Dio();
-      final response = await dio.get(
-        'https://zagreus-notifications.fly.dev/direct/test-direct/$token',
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        if (data['success'] == true) {
-          showZagSuccessSnackBar(
-            title: 'Direct Test Sent!',
-            message: 'APNs ID: ${data['apnsId'] ?? 'unknown'}',
-          );
-        } else {
-          throw Exception('Direct test failed: ${data['error'] ?? 'Unknown error'}');
-        }
-      } else {
-        throw Exception('Server returned ${response.statusCode}');
-      }
-    } catch (e) {
-      ZagLogger().error('Failed to send direct test notification', e, null);
-      showZagErrorSnackBar(
-        title: 'Error',
-        message: 'Failed to send direct test: ${e.toString()}',
-      );
-    }
   }
 
   Widget _testNotificationButton() {

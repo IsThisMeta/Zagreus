@@ -18,6 +18,7 @@ class ConfigurationRadarrRoute extends StatefulWidget {
 class _State extends State<ConfigurationRadarrRoute>
     with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String _debugInfo = '';
 
   @override
   void initState() {
@@ -47,6 +48,11 @@ class _State extends State<ConfigurationRadarrRoute>
       controller: scrollController,
       children: [
         ZagModule.RADARR.informationBanner(),
+        if (_debugInfo.isNotEmpty) 
+          ZagBlock(
+            title: 'DEBUG: Webhook Sync',
+            body: [TextSpan(text: _debugInfo, style: TextStyle(fontFamily: 'monospace'))],
+          ),
         _enabledToggle(),
         _connectionDetailsPage(),
         ZagDivider(),
@@ -148,17 +154,42 @@ class _State extends State<ConfigurationRadarrRoute>
       // Only sync if user is authenticated
       if (ZagSupabase.isSupported && ZagSupabase.client.auth.currentUser != null) {
         final profile = ZagProfile.current;
+        setState(() {
+          _debugInfo = 'Host: ${profile.radarrHost}\n'
+              'API Key: ${profile.radarrKey.isEmpty ? "NOT SET" : "SET (${profile.radarrKey.length} chars)"}\n'
+              'Enabled: ${profile.radarrEnabled}\n'
+              'User ID: ${ZagSupabase.client.auth.currentUser?.id ?? "NO USER"}';
+        });
+        
         if (profile.radarrEnabled && profile.radarrHost.isNotEmpty && profile.radarrKey.isNotEmpty) {
-          ZagLogger().debug('Syncing Radarr webhook when configuration page loads');
+          setState(() {
+            _debugInfo += '\n\nAttempting webhook sync...';
+          });
+          
           final api = RadarrAPI(
             host: profile.radarrHost,
             apiKey: profile.radarrKey,
             headers: Map<String, dynamic>.from(profile.radarrHeaders),
           );
-          await RadarrWebhookManager.syncWebhook(api);
+          
+          final success = await RadarrWebhookManager.syncWebhook(api);
+          setState(() {
+            _debugInfo += '\nSync result: ${success ? "SUCCESS" : "FAILED"}';
+          });
+        } else {
+          setState(() {
+            _debugInfo += '\n\nSkipping sync - not fully configured';
+          });
         }
+      } else {
+        setState(() {
+          _debugInfo = 'Not authenticated or Supabase not supported';
+        });
       }
     } catch (e, stack) {
+      setState(() {
+        _debugInfo += '\n\nERROR: $e';
+      });
       ZagLogger().error('Failed to sync webhook on page load', e, stack);
     }
   }

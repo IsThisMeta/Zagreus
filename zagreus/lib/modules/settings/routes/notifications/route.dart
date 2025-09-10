@@ -11,6 +11,7 @@ import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/radarr/core/webhook_manager.dart';
 import 'package:zagreus/modules/sonarr/core/webhook_manager.dart';
+import 'dart:convert';
 
 class NotificationsRoute extends StatefulWidget {
   const NotificationsRoute({
@@ -23,11 +24,17 @@ class NotificationsRoute extends StatefulWidget {
 
 class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
+  String _debugInfo = 'Loading...';
+  String _radarrUrl = '';
+  String _sonarrUrl = '';
+  String _userId = '';
+  String _radarrStatus = '';
+  String _sonarrStatus = '';
 
   @override
   void initState() {
     super.initState();
-    // Trigger webhook sync when page loads
     _syncWebhooksInBackground();
   }
 
@@ -36,15 +43,43 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
       final profileName = ZagreusDatabase.ENABLED_PROFILE.read();
       final profile = ZagBox.profiles.read(profileName);
       
-      if (profile == null || !ZagSupabase.isSupported || ZagSupabase.client.auth.currentUser == null) {
+      setState(() {
+        _debugInfo = 'Profile: ${profileName ?? "none"}';
+      });
+      
+      if (profile == null) {
+        setState(() {
+          _debugInfo = 'No profile found';
+        });
         return;
       }
       
+      final user = ZagSupabase.client.auth.currentUser;
+      if (!ZagSupabase.isSupported || user == null) {
+        setState(() {
+          _debugInfo = 'Not logged in or Supabase not supported';
+        });
+        return;
+      }
+      
+      setState(() {
+        _userId = user.id;
+        _debugInfo = 'User ID: ${user.id}';
+      });
+      
       ZagLogger().debug('=== WEBHOOK SYNC TRIGGERED (Notifications Page) ===');
+      
+      // Build webhook URLs
+      final payload = base64.encode(utf8.encode(user.id));
+      _radarrUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
+      _sonarrUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
       // Sync Radarr if configured
       if (profile.radarrEnabled && profile.radarrHost.isNotEmpty && profile.radarrKey.isNotEmpty) {
-        ZagLogger().debug('Syncing Radarr webhook...');
+        setState(() {
+          _radarrStatus = 'Syncing...';
+        });
+        
         try {
           final api = RadarrAPI(
             host: profile.radarrHost,
@@ -52,15 +87,26 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
             headers: Map<String, dynamic>.from(profile.radarrHeaders),
           );
           final success = await RadarrWebhookManager.syncWebhook(api);
-          ZagLogger().debug('Radarr webhook sync: ${success ? "SUCCESS" : "FAILED"}');
+          setState(() {
+            _radarrStatus = success ? 'SUCCESS' : 'FAILED';
+          });
         } catch (e, stack) {
-          ZagLogger().error('Radarr webhook sync error', e, stack);
+          setState(() {
+            _radarrStatus = 'ERROR: $e';
+          });
         }
+      } else {
+        setState(() {
+          _radarrStatus = 'Not configured';
+        });
       }
       
       // Sync Sonarr if configured
       if (profile.sonarrEnabled && profile.sonarrHost.isNotEmpty && profile.sonarrKey.isNotEmpty) {
-        ZagLogger().debug('Syncing Sonarr webhook...');
+        setState(() {
+          _sonarrStatus = 'Syncing...';
+        });
+        
         try {
           final api = SonarrAPI(
             host: profile.sonarrHost,
@@ -68,15 +114,24 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
             headers: Map<String, dynamic>.from(profile.sonarrHeaders),
           );
           final success = await SonarrWebhookManager.syncWebhook(api);
-          ZagLogger().debug('Sonarr webhook sync: ${success ? "SUCCESS" : "FAILED"}');
+          setState(() {
+            _sonarrStatus = success ? 'SUCCESS' : 'FAILED';
+          });
         } catch (e, stack) {
-          ZagLogger().error('Sonarr webhook sync error', e, stack);
+          setState(() {
+            _sonarrStatus = 'ERROR: $e';
+          });
         }
+      } else {
+        setState(() {
+          _sonarrStatus = 'Not configured';
+        });
       }
       
-      ZagLogger().debug('=== WEBHOOK SYNC COMPLETE ===');
     } catch (e, stack) {
-      ZagLogger().error('Webhook sync failed', e, stack);
+      setState(() {
+        _debugInfo = 'Error: $e';
+      });
     }
   }
 
@@ -125,6 +180,31 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           },
         ),
         _enableNotifications(),
+        ZagDivider(),
+        ZagBlock(
+          title: 'Debug Info',
+          body: [TextSpan(text: _debugInfo)],
+        ),
+        ZagBlock(
+          title: 'User ID',
+          body: [TextSpan(text: _userId.isEmpty ? 'Not logged in' : _userId)],
+        ),
+        ZagBlock(
+          title: 'Radarr Webhook URL',
+          body: [TextSpan(text: _radarrUrl.isEmpty ? 'Not generated' : _radarrUrl)],
+        ),
+        ZagBlock(
+          title: 'Radarr Status',
+          body: [TextSpan(text: _radarrStatus.isEmpty ? 'Not checked' : _radarrStatus)],
+        ),
+        ZagBlock(
+          title: 'Sonarr Webhook URL',
+          body: [TextSpan(text: _sonarrUrl.isEmpty ? 'Not generated' : _sonarrUrl)],
+        ),
+        ZagBlock(
+          title: 'Sonarr Status',
+          body: [TextSpan(text: _sonarrStatus.isEmpty ? 'Not checked' : _sonarrStatus)],
+        ),
       ],
     );
   }

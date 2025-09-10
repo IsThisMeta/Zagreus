@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zagreus/core.dart';
+import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/supabase/auth.dart';
 import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/supabase/types.dart';
@@ -83,6 +84,12 @@ class ZagSupabaseDatabase {
   /// This is called automatically when the user signs in
   Future<bool> addDeviceToken() async {
     if (!ZagSupabaseAuth().isSignedIn) return false;
+    
+    // Only register device token if notifications are enabled by the user
+    if (!ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS.read()) {
+      ZagLogger().debug('Skipping device token registration - notifications not enabled');
+      return false;
+    }
     
     try {
       // Register with our notification server instead of Supabase

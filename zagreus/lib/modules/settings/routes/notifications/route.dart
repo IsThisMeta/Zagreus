@@ -35,11 +35,22 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
   String _sonarrStatus = '';
   String _radarrJson = '';
   String _sonarrJson = '';
+  bool _notificationsAuthorized = false;
 
   @override
   void initState() {
     super.initState();
     _syncWebhooksInBackground();
+    _checkNotificationStatus();
+  }
+  
+  Future<void> _checkNotificationStatus() async {
+    final authorized = await ZagSupabaseMessaging.instance.areNotificationsAllowed();
+    if (mounted) {
+      setState(() {
+        _notificationsAuthorized = authorized;
+      });
+    }
   }
 
   void _syncWebhooksInBackground() async {
@@ -177,20 +188,33 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
   }
 
   Widget _body() {
+    final user = ZagSupabase.client.auth.currentUser;
+    final isSignedIn = ZagSupabase.isSupported && user != null;
+    
     return ZagListView(
       controller: scrollController,
       children: [
-        FutureBuilder(
-          future: ZagSupabaseMessaging.instance.areNotificationsAllowed(),
-          builder: (context, AsyncSnapshot<bool> snapshot) {
-            if (snapshot.hasData && !snapshot.data!)
-              return ZagBanner(
-                headerText: 'settings.NotAuthorized'.tr(),
-                bodyText: 'settings.NotAuthorizedMessage'.tr(),
-                icon: Icons.error_outline_rounded,
-                iconColor: ZagColours.red,
-              );
-            return const SizedBox(height: 0.0, width: double.infinity);
+        // Show sign-in banner if not signed in
+        if (!isSignedIn) 
+          ZagBanner(
+            headerText: 'Sign In Required',
+            bodyText: 'Please sign in to your Zagreus account to enable push notifications',
+            icon: Icons.account_circle_outlined,
+            iconColor: ZagColours.orange,
+          ),
+        ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS.listenableBuilder(
+          builder: (context, _) {
+            // Only show banner if notifications are enabled but not authorized
+            if (!ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS.read() || _notificationsAuthorized) {
+              return const SizedBox(height: 0.0, width: double.infinity);
+            }
+            
+            return ZagBanner(
+              headerText: 'settings.NotAuthorized'.tr(),
+              bodyText: 'settings.NotAuthorizedMessage'.tr(),
+              icon: Icons.error_outline_rounded,
+              iconColor: ZagColours.red,
+            );
           },
         ),
         _enableNotifications(),
@@ -411,15 +435,21 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
 
   Widget _enableNotifications() {
     const db = ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS;
+    final user = ZagSupabase.client.auth.currentUser;
+    final isSignedIn = ZagSupabase.isSupported && user != null;
+    
     return ZagBlock(
       title: 'Enable Notifications',
       body: [TextSpan(text: 'Receive push notifications for media events')],
       trailing: db.listenableBuilder(
         builder: (context, _) => ZagSwitch(
           value: db.read(),
-          onChanged: (value) async {
+          onChanged: !isSignedIn ? null : (value) async {
             ZagLogger().debug('Notification toggle changed to: $value');
             if (value) {
+              // Clear any cached token first
+              ZagSupabaseMessaging.instance.clearCachedToken();
+              
               // Request notification permissions when enabling
               try {
                 ZagLogger().debug('Requesting notification permissions...');
@@ -434,6 +464,12 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
                   );
                   return;
                 }
+                
+                // Update authorization status
+                setState(() {
+                  _notificationsAuthorized = true;
+                });
+                
                 // Register device token when notifications are enabled
                 await _registerDeviceTokenIfNeeded();
               } catch (e) {

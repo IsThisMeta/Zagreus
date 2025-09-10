@@ -20,6 +20,12 @@ class ZagSupabaseMessaging {
   
   // Store the current APNS token
   String? _apnsToken;
+  
+  // Force clear cached token
+  void clearCachedToken() {
+    ZagLogger().debug('Clearing cached token');
+    _apnsToken = null;
+  }
   final _tokenController = StreamController<String>.broadcast();
   Stream<String> get onTokenRefresh => _tokenController.stream;
   
@@ -62,7 +68,10 @@ class ZagSupabaseMessaging {
   /// Returns the APNS device token for this device.
   Future<String?> getToken() async {
     // If we already have a token, return it
-    if (_apnsToken != null) return _apnsToken;
+    if (_apnsToken != null) {
+      ZagLogger().debug('Returning cached token: $_apnsToken');
+      return _apnsToken;
+    }
     
     // Check if running on simulator
     try {

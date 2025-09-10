@@ -26,7 +26,12 @@ const register = async (req: express.Request, res: express.Response) => {
       });
     }
     
-    logger.info({ user_id: body.user_id, email: body.email }, 'Registering device');
+    logger.info({ 
+      user_id: body.user_id, 
+      email: body.email,
+      token: body.token,
+      tokenLast4: body.token.slice(-4)
+    }, 'Registering device with token');
     
     // Create or update user
     await DatabaseService.upsertUser(body.user_id, body.email);

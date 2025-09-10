@@ -19,7 +19,7 @@ testRouter.get('/test-push/:token', async (req, res) => {
         keyId: Environment.APNS_KEY_ID.read(),
         teamId: Environment.APNS_TEAM_ID.read(),
       },
-      production: true, // Use production with production key
+      production: false, // Use sandbox for development builds
     });
 
     // Create notification

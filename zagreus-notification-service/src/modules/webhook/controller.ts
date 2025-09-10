@@ -26,6 +26,61 @@ router.post(
   handler,
 );
 
+/**
+ * Webhook endpoint with user ID in path (used by Zagreus app)
+ * Expected URL format: /v1/notifications/webhook/:payload (where payload is base64 encoded user ID)
+ */
+router.post(
+  '/webhook/:payload',
+  Middleware.startNewRequest,
+  Middleware.extractNotificationOptions,
+  extractUserFromPath,
+  Middleware.validateUser,
+  Middleware.pullUserTokens,
+  handler,
+);
+
+async function extractUserFromPath(
+  request: express.Request,
+  response: express.Response,
+  next: express.NextFunction,
+): Promise<void> {
+  try {
+    // Extract base64 encoded user ID from URL path
+    const payload = request.params.payload;
+    if (!payload) {
+      logger.warn('No payload found in URL path');
+      response.status(400).json(<ServerModels.Response>{ 
+        message: 'Missing user authentication' 
+      });
+      return;
+    }
+    
+    // Decode base64 to get user ID
+    const userId = Buffer.from(payload, 'base64').toString('utf-8');
+    
+    // Validate it looks like a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      logger.warn({ userId }, 'Invalid user ID format');
+      response.status(400).json(<ServerModels.Response>{ 
+        message: 'Invalid user authentication' 
+      });
+      return;
+    }
+    
+    // Set the user ID in params for middleware compatibility
+    request.params.id = userId;
+    logger.debug({ user_id: userId, payload }, 'Extracted user ID from URL path');
+    next();
+  } catch (error) {
+    logger.error({ error, payload: request.params.payload }, 'Failed to decode user ID from path');
+    response.status(400).json(<ServerModels.Response>{ 
+      message: 'Invalid user authentication' 
+    });
+  }
+}
+
 async function extractUserFromPayload(
   request: express.Request,
   response: express.Response,

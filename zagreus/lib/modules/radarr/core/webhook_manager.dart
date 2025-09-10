@@ -5,6 +5,19 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/supabase/core.dart';
 
+/// Simple webhook field that only serializes name and value
+class SimpleWebhookField {
+  final String name;
+  final String value;
+  
+  SimpleWebhookField({required this.name, required this.value});
+  
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'value': value,
+  };
+}
+
 /// Manages automatic webhook injection for Radarr
 class RadarrWebhookManager {
   static const String webhookName = 'Zagreus';
@@ -36,67 +49,54 @@ class RadarrWebhookManager {
       // Check if webhook already exists
       final existing = await getZagreusWebhook(api);
       
-      // Get the webhook schema
-      final schema = await api.notification.getSchema(implementation: 'Webhook');
-      
       // Build webhook URL with user_id in the path
       // Encode the user ID in base64
       final payload = base64.encode(utf8.encode(userToken));
       final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
-      // Create fields based on schema
-      final fields = <RadarrNotificationField>[];
-      for (var schemaField in schema) {
-        if (schemaField.name == 'url') {
-          schemaField.value = webhookUrl;
-          fields.add(schemaField);
-        } else if (schemaField.name == 'method') {
-          schemaField.value = '1';
-          fields.add(schemaField);
-        } else if (schemaField.name == 'username') {
-          schemaField.value = '';
-          fields.add(schemaField);
-        } else if (schemaField.name == 'password') {
-          schemaField.value = '';
-          fields.add(schemaField);
-        }
-      }
+      // Create simple fields (just name and value)
+      final simpleFields = [
+        SimpleWebhookField(name: 'url', value: webhookUrl),
+        SimpleWebhookField(name: 'method', value: '1'),
+        SimpleWebhookField(name: 'username', value: ''),
+        SimpleWebhookField(name: 'password', value: ''),
+      ];
       
-      // Create notification object
-      final notification = RadarrNotification(
-        name: webhookName,
-        implementation: 'Webhook',
-        implementationName: 'Webhook',
-        configContract: 'WebhookSettings',
-        fields: fields,
-        tags: [],
-      );
+      // Create the JSON manually with simple fields
+      final notificationData = {
+        'name': webhookName,
+        'implementation': 'Webhook',
+        'implementationName': 'Webhook',
+        'configContract': 'WebhookSettings',
+        'fields': simpleFields.map((f) => f.toJson()).toList(),
+        'tags': [],
+        'onGrab': true,
+        'onDownload': true,
+        'onUpgrade': true,
+        'onRename': false,
+        'onMovieAdded': true,
+        'onMovieDelete': false,
+        'onMovieFileDelete': false,
+        'onMovieFileDeleteForUpgrade': false,
+        'onHealthIssue': false,
+        'includeHealthWarnings': false,
+        'onApplicationUpdate': false,
+        'onManualInteractionRequired': true,
+      };
       
-      // Enable same notification types as Ruddarr (but disable others)
-      notification.onGrab = true;
-      notification.onDownload = true;
-      notification.onUpgrade = true;
-      notification.onRename = false;
-      notification.onMovieAdded = true;
-      notification.onMovieDelete = false;
-      notification.onMovieFileDelete = false;
-      notification.onMovieFileDeleteForUpgrade = false;
-      notification.onHealthIssue = false;
-      notification.includeHealthWarnings = false;
-      notification.onApplicationUpdate = false;
-      notification.onManualInteractionRequired = true;
-      
-      // Debug: Log the JSON we're about to send
-      final jsonData = json.encode(notification.toJson());
-      ZagLogger().debug('Sending JSON: $jsonData');
-      
-      if (existing != null) {
+      if (existing != null && existing.id != null) {
         // Update existing webhook
-        notification.id = existing.id;
-        await api.notification.update(notification: notification);
+        notificationData['id'] = existing.id!;
+        final response = await api.httpClient.put(
+          'notification/${existing.id}',
+          data: notificationData,
+        );
       } else {
         // Create new webhook
-        await api.notification.create(notification: notification);
+        final response = await api.httpClient.post(
+          'notification',
+          data: notificationData,
+        );
       }
       
       return true;

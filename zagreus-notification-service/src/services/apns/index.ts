@@ -129,7 +129,7 @@ export const sendNotification = async (
     const apnsSettings: APNSNotifications.APNSSettings = {
       sound: settings.sound,
       ios: {
-        interruptionLevel: settings.ios.interruptionLevel as APNSNotifications.APNSInterruptionLevel,
+        interruptionLevel: settings.ios.interruptionLevel as unknown as APNSNotifications.APNSInterruptionLevel,
       },
     };
 

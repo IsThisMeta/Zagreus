@@ -4,6 +4,13 @@ import { Logger, Constants, Environment } from '../../utils';
 const logger = Logger.child({ module: 'redis' });
 let redis: Redis | undefined;
 
+export const getRedis = (): Redis => {
+  if (!redis) {
+    throw new Error('Redis is not initialized');
+  }
+  return redis;
+};
+
 export const initialize = (): void => {
   const host = Environment.REDIS_HOST.read();
   const port = Number(Environment.REDIS_PORT.read());

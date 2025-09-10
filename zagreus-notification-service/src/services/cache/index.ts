@@ -1,4 +1,4 @@
-import { Redis } from '../redis';
+import { getRedis } from '../redis';
 import { Logger } from '../../utils';
 
 const logger = Logger.child({ module: 'cache' });
@@ -11,8 +11,9 @@ const DEVICE_LIST_TTL = 300; // 5 minutes
  */
 export async function getDeviceList(userId: string): Promise<string[] | null> {
   try {
+    const redis = getRedis();
     const key = `${DEVICE_LIST_PREFIX}${userId}`;
-    const cached = await Redis.get(key);
+    const cached = await redis.get(key);
     
     if (cached) {
       return JSON.parse(cached);
@@ -30,8 +31,9 @@ export async function getDeviceList(userId: string): Promise<string[] | null> {
  */
 export async function setDeviceList(userId: string, devices: string[]): Promise<void> {
   try {
+    const redis = getRedis();
     const key = `${DEVICE_LIST_PREFIX}${userId}`;
-    await Redis.set(key, JSON.stringify(devices), 'EX', DEVICE_LIST_TTL);
+    await redis.set(key, JSON.stringify(devices), 'EX', DEVICE_LIST_TTL);
   } catch (error) {
     logger.error({ error }, 'Failed to cache device list');
     // Don't throw - caching failures shouldn't break the flow
@@ -43,8 +45,9 @@ export async function setDeviceList(userId: string, devices: string[]): Promise<
  */
 export async function clearDeviceList(userId: string): Promise<void> {
   try {
+    const redis = getRedis();
     const key = `${DEVICE_LIST_PREFIX}${userId}`;
-    await Redis.del(key);
+    await redis.del(key);
   } catch (error) {
     logger.error({ error }, 'Failed to clear cached device list');
     // Don't throw - caching failures shouldn't break the flow

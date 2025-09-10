@@ -89,11 +89,16 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           );
           final success = await RadarrWebhookManager.syncWebhook(api);
           setState(() {
-            _radarrStatus = success ? 'SUCCESS' : 'FAILED';
+            _radarrStatus = 'SUCCESS';
           });
-        } catch (e, stack) {
+        } catch (e) {
           setState(() {
-            _radarrStatus = 'ERROR: $e';
+            // Extract just the error message without the stack trace
+            String errorMsg = e.toString();
+            if (errorMsg.startsWith('Exception: ')) {
+              errorMsg = errorMsg.substring(11);
+            }
+            _radarrStatus = 'FAILED: $errorMsg';
           });
         }
       } else {
@@ -116,11 +121,16 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           );
           final success = await SonarrWebhookManager.syncWebhook(api);
           setState(() {
-            _sonarrStatus = success ? 'SUCCESS' : 'FAILED';
+            _sonarrStatus = 'SUCCESS';
           });
-        } catch (e, stack) {
+        } catch (e) {
           setState(() {
-            _sonarrStatus = 'ERROR: $e';
+            // Extract just the error message without the stack trace
+            String errorMsg = e.toString();
+            if (errorMsg.startsWith('Exception: ')) {
+              errorMsg = errorMsg.substring(11);
+            }
+            _sonarrStatus = 'FAILED: $errorMsg';
           });
         }
       } else {

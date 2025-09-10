@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 # Copy APNS key
-COPY AuthKey_9F8X6T4P7T.p8 /app/AuthKey_9F8X6T4P7T.p8
+COPY AuthKey_7A74STAX6C.p8 /app/AuthKey_7A74STAX6C.p8
 RUN npm run build
 RUN npm prune --production
 # Add Tini

@@ -142,6 +142,7 @@ async function handler(request: express.Request, response: express.Response): Pr
     }
     
     if (payload) {
+      logger.info({ payload, settings }, 'Sending notification with payload');
       await APNS.sendNotification(devices, payload, settings);
     }
   } catch (error) {

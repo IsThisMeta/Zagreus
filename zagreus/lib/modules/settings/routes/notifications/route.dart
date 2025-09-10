@@ -331,14 +331,81 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     }
   }
 
+  Future<void> _sendDirectTestNotification() async {
+    try {
+      // Get the registered device token
+      String? token;
+      try {
+        token = await ZagSupabaseMessaging.instance.getToken();
+        ZagLogger().debug('Retrieved token: ${token ?? "NULL"}');
+      } catch (tokenError) {
+        ZagLogger().error('Failed to get token', tokenError, null);
+        showZagErrorSnackBar(
+          title: 'Error',
+          message: 'Failed to get device token: ${tokenError.toString()}',
+        );
+        return;
+      }
+      
+      if (token == null || token.isEmpty) {
+        showZagErrorSnackBar(
+          title: 'Error',
+          message: 'No device token found. Try disabling and re-enabling notifications.',
+        );
+        return;
+      }
+
+      ZagLogger().debug('Sending direct test notification to token: $token');
+
+      // Send directly to the test endpoint
+      final dio = Dio();
+      final response = await dio.get(
+        'https://zagreus-notifications.fly.dev/test/test-push/$token',
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['success'] == true) {
+          showZagSuccessSnackBar(
+            title: 'Direct Test Sent!',
+            message: 'Check your device now. Sent: ${data['result']['sent']}, Failed: ${data['result']['failed']?.length ?? 0}',
+          );
+        } else {
+          throw Exception('Test failed: ${data['error'] ?? 'Unknown error'}');
+        }
+      } else {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      ZagLogger().error('Failed to send direct test notification', e, null);
+      showZagErrorSnackBar(
+        title: 'Error',
+        message: 'Failed to send direct test: ${e.toString()}',
+      );
+    }
+  }
+
   Widget _testNotificationButton() {
-    return ZagBlock(
-      title: 'Test Push Notification',
-      body: [TextSpan(text: 'Send a test notification to your device')],
-      trailing: ZagIconButton(
-        icon: Icons.notifications_active_rounded,
-        onPressed: _sendTestNotification,
-      ),
+    return Column(
+      children: [
+        ZagBlock(
+          title: 'Test Push Notification',
+          body: [TextSpan(text: 'Send a test notification to your device')],
+          trailing: ZagIconButton(
+            icon: Icons.notifications_active_rounded,
+            onPressed: _sendTestNotification,
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        ZagBlock(
+          title: 'Direct Test (Debug)',
+          body: [TextSpan(text: 'Send notification directly to your device token (bypasses database)')],
+          trailing: ZagIconButton(
+            icon: Icons.bug_report_rounded,
+            onPressed: _sendDirectTestNotification,
+          ),
+        ),
+      ],
     );
   }
 
@@ -351,19 +418,32 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
         builder: (context, _) => ZagSwitch(
           value: db.read(),
           onChanged: (value) async {
+            ZagLogger().debug('Notification toggle changed to: $value');
             if (value) {
               // Request notification permissions when enabling
-              bool granted = await ZagSupabaseMessaging.instance.requestNotificationPermissions();
-              if (!granted) {
-                // If permissions denied, don't enable the toggle
+              try {
+                ZagLogger().debug('Requesting notification permissions...');
+                bool granted = await ZagSupabaseMessaging.instance.requestNotificationPermissions();
+                ZagLogger().debug('Permissions granted: $granted');
+                
+                if (!granted) {
+                  // If permissions denied, don't enable the toggle
+                  showZagErrorSnackBar(
+                    title: 'Permission Denied',
+                    message: 'Please enable notifications in Settings',
+                  );
+                  return;
+                }
+                // Register device token when notifications are enabled
+                await _registerDeviceTokenIfNeeded();
+              } catch (e) {
+                ZagLogger().error('Failed to request permissions', e, null);
                 showZagErrorSnackBar(
-                  title: 'Permission Denied',
-                  message: 'Please enable notifications in Settings',
+                  title: 'Error',
+                  message: 'Failed to enable notifications: $e',
                 );
                 return;
               }
-              // Register device token when notifications are enabled
-              await _registerDeviceTokenIfNeeded();
             }
             db.update(value);
           },

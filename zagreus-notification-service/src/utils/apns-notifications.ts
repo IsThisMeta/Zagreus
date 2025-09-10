@@ -69,9 +69,7 @@ export const buildAPNSNotification = (
   }
 
   // Set priority and expiration (10 = high, 5 = default)
-  notification.priority = settings.ios.interruptionLevel === APNSInterruptionLevel.TIME_SENSITIVE 
-    ? 10 
-    : 5;
+  notification.priority = 10; // Always use high priority for now
   
   // Set expiry to 28 days
   notification.expiry = Math.floor(Date.now() / 1000) + 2419200;
@@ -81,6 +79,9 @@ export const buildAPNSNotification = (
 
   // REQUIRED: Set the topic to the app bundle ID
   notification.topic = 'com.zebrralabs.zagreus';
+  
+  // Ensure we have a badge to wake the app
+  notification.badge = 1;
 
   return notification;
 };

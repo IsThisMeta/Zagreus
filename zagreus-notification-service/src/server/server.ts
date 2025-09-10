@@ -1,6 +1,7 @@
 import express from 'express';
 import { Environment, Logger } from '../utils';
 import { router } from '../modules';
+import { testRouter } from '../test-notification';
 
 const logger = Logger.child({ module: 'express' });
 const server = express();
@@ -21,6 +22,7 @@ export const initialize = (): void => {
   server.get('/', docs);
   server.get('/health', health);
   server.use('/v1', router);
+  server.use('/test', testRouter);
 };
 
 export const start = (): void => {

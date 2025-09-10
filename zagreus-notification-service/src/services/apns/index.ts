@@ -23,7 +23,7 @@ export const initialize = (): void => {
       teamId: Environment.APNS_TEAM_ID.read(),
     },
     
-    // Environment
+    // Environment - auto-detect based on NODE_ENV
     production: Environment.NODE_ENV.read() === 'production',
     
     // Connection settings
@@ -136,6 +136,22 @@ export const sendNotification = async (
     // Build notification
     const notification = APNSNotifications.buildAPNSNotification(apnsPayload, apnsSettings);
     
+    // Debug logging
+    logger.info({ 
+      notification: {
+        topic: notification.topic,
+        alert: notification.alert,
+        sound: notification.sound,
+        payload: notification.payload,
+        priority: notification.priority,
+        pushType: notification.pushType,
+        contentAvailable: notification.contentAvailable,
+        badge: notification.badge,
+        rawNotification: JSON.stringify(notification),
+      },
+      tokenCount: validTokens.length 
+    }, 'Sending notification');
+    
     // Send to all valid tokens
     const result = await apnsProvider.send(notification, validTokens);
     
@@ -145,7 +161,10 @@ export const sendNotification = async (
 
     result.sent.forEach((sentResult: any) => {
       successCount++;
-      logger.debug({ device: sentResult.device }, 'Notification sent successfully');
+      logger.info({ 
+        device: sentResult.device,
+        deviceLast4: sentResult.device.slice(-4)
+      }, 'Notification sent successfully to device');
     });
 
     result.failed.forEach((failedResult: any) => {

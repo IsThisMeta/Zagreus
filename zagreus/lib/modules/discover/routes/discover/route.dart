@@ -845,12 +845,28 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
   
   Widget _buildPosterImage(BuildContext context, RadarrMovie movie) {
-    final posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
-    final headers = context.read<RadarrState>().headers;
+    // Try to get poster URL - either from movie ID (if in library) or from images array
+    String? posterUrl;
+    
+    if (movie.id != null) {
+      // Movie is in library, use standard poster URL
+      posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
+    } else if (movie.images?.isNotEmpty == true) {
+      // Movie not in library but has images, extract poster URL from images array
+      final posterImage = movie.images!.firstWhere(
+        (img) => img.coverType?.toLowerCase().contains('poster') == true,
+        orElse: () => movie.images!.first,
+      );
+      
+      // Use remoteUrl if available, otherwise use url
+      posterUrl = posterImage.remoteUrl ?? posterImage.url;
+    }
     
     if (posterUrl == null) {
       return _posterPlaceholder(movie);
     }
+    
+    final headers = context.read<RadarrState>().headers;
     
     // Convert headers to Map<String, String>
     final stringHeaders = <String, String>{};

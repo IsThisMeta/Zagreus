@@ -345,52 +345,159 @@ func handleWebhookWithPayload(c *gin.Context) {
 	
 	var title, body string
 	
-	// Extract movie info from the webhook
-	movieTitle := "Unknown Movie"
-	movieYear := 0
+	// Check if this is a movie event (Radarr) or series event (Sonarr)
+	isMovieEvent := genericWebhook["movie"] != nil
+	isSeriesEvent := genericWebhook["series"] != nil
 	
-	if movie, ok := genericWebhook["movie"].(map[string]interface{}); ok {
-		if t, ok := movie["title"].(string); ok {
-			movieTitle = t
+	if isMovieEvent {
+		// Extract movie info from the webhook
+		movieTitle := "Unknown Movie"
+		movieYear := 0
+		
+		if movie, ok := genericWebhook["movie"].(map[string]interface{}); ok {
+			if t, ok := movie["title"].(string); ok {
+				movieTitle = t
+			}
+			if y, ok := movie["year"].(float64); ok {
+				movieYear = int(y)
+			}
 		}
-		if y, ok := movie["year"].(float64); ok {
-			movieYear = int(y)
+		
+		// Handle Radarr events
+		switch eventType {
+		case "Test":
+			title = "Radarr Test"
+			body = "Test notification from Radarr"
+			
+		case "MovieAdded":
+			title = "Movie Added"
+			body = fmt.Sprintf("%s (%d) has been added to your library", movieTitle, movieYear)
+			
+		case "Grab":
+			title = "Movie Grabbed"
+			body = fmt.Sprintf("%s (%d) has been grabbed", movieTitle, movieYear)
+			
+		case "Download":
+			title = "Movie Downloaded"
+			body = fmt.Sprintf("%s (%d) is ready to watch", movieTitle, movieYear)
+			
+		case "Rename":
+			title = "Movie Renamed"
+			body = fmt.Sprintf("%s has been renamed", movieTitle)
+			
+		case "MovieDelete":
+			title = "Movie Deleted"
+			body = fmt.Sprintf("%s has been removed from your library", movieTitle)
+			
+		case "MovieFileDelete":
+			title = "Movie File Deleted"
+			body = fmt.Sprintf("File deleted for %s", movieTitle)
+			
+		default:
+			log.Printf("Unknown Radarr event type: %s", eventType)
+			c.JSON(200, gin.H{"success": true, "message": "Event type not handled: " + eventType})
+			return
 		}
-	}
-	
-	switch eventType {
-	case "Test":
-		title = "Zagreus Test"
-		body = "Test notification from Zagreus"
 		
-	case "MovieAdded":
-		title = "Movie Added"
-		body = fmt.Sprintf("%s (%d) has been added to your library", movieTitle, movieYear)
+	} else if isSeriesEvent {
+		// Extract series info
+		seriesTitle := "Unknown Series"
+		if series, ok := genericWebhook["series"].(map[string]interface{}); ok {
+			if t, ok := series["title"].(string); ok {
+				seriesTitle = t
+			}
+		}
 		
-	case "Grab":
-		title = "Movie Grabbed"
-		body = fmt.Sprintf("%s (%d) has been grabbed", movieTitle, movieYear)
+		// Extract episodes info
+		var episodes []map[string]interface{}
+		if eps, ok := genericWebhook["episodes"].([]interface{}); ok {
+			for _, ep := range eps {
+				if episode, ok := ep.(map[string]interface{}); ok {
+					episodes = append(episodes, episode)
+				}
+			}
+		}
 		
-	case "Download":
-		title = "Movie Downloaded"
-		body = fmt.Sprintf("%s (%d) is ready to watch", movieTitle, movieYear)
+		// Handle Sonarr events
+		switch eventType {
+		case "Test":
+			title = "Sonarr Test"
+			body = "Test notification from Sonarr"
+			
+		case "Grab":
+			if len(episodes) > 0 {
+				seasonNum := 0
+				episodeNum := 0
+				if s, ok := episodes[0]["seasonNumber"].(float64); ok {
+					seasonNum = int(s)
+				}
+				if e, ok := episodes[0]["episodeNumber"].(float64); ok {
+					episodeNum = int(e)
+				}
+				title = "Episode Grabbed"
+				body = fmt.Sprintf("%s S%02dE%02d has been grabbed", 
+					seriesTitle, seasonNum, episodeNum)
+			}
+			
+		case "Download":
+			if len(episodes) > 0 {
+				seasonNum := 0
+				episodeNum := 0
+				if s, ok := episodes[0]["seasonNumber"].(float64); ok {
+					seasonNum = int(s)
+				}
+				if e, ok := episodes[0]["episodeNumber"].(float64); ok {
+					episodeNum = int(e)
+				}
+				title = "Episode Downloaded"
+				body = fmt.Sprintf("%s S%02dE%02d is ready to watch", 
+					seriesTitle, seasonNum, episodeNum)
+			}
+			
+		case "Rename":
+			title = "Episodes Renamed"
+			body = fmt.Sprintf("%d episodes of %s have been renamed", 
+				len(episodes), seriesTitle)
+			
+		case "SeriesDelete":
+			title = "Series Deleted"
+			body = fmt.Sprintf("%s has been removed from your library", seriesTitle)
+			
+		case "SeriesAdd":
+			title = "Series Added"
+			body = fmt.Sprintf("%s has been added to your library", seriesTitle)
+			
+		case "EpisodeFileDelete":
+			if len(episodes) > 0 {
+				seasonNum := 0
+				episodeNum := 0
+				if s, ok := episodes[0]["seasonNumber"].(float64); ok {
+					seasonNum = int(s)
+				}
+				if e, ok := episodes[0]["episodeNumber"].(float64); ok {
+					episodeNum = int(e)
+				}
+				title = "Episode File Deleted"
+				body = fmt.Sprintf("File deleted for %s S%02dE%02d", 
+					seriesTitle, seasonNum, episodeNum)
+			}
+			
+		default:
+			log.Printf("Unknown Sonarr event type: %s", eventType)
+			c.JSON(200, gin.H{"success": true, "message": "Event type not handled: " + eventType})
+			return
+		}
 		
-	case "Rename":
-		title = "Movie Renamed"
-		body = fmt.Sprintf("%s has been renamed", movieTitle)
-		
-	case "MovieDelete":
-		title = "Movie Deleted"
-		body = fmt.Sprintf("%s has been removed from your library", movieTitle)
-		
-	case "MovieFileDelete":
-		title = "Movie File Deleted"
-		body = fmt.Sprintf("File deleted for %s", movieTitle)
-		
-	default:
-		log.Printf("Unknown event type: %s", eventType)
-		c.JSON(200, gin.H{"success": true, "message": "Event type not handled: " + eventType})
-		return
+	} else {
+		// Generic test notification fallback
+		if eventType == "Test" {
+			title = "Test Notification"
+			body = "Test notification from Zagreus"
+		} else {
+			log.Printf("Unknown webhook format for event: %s", eventType)
+			c.JSON(200, gin.H{"success": true, "message": "Unknown webhook format"})
+			return
+		}
 	}
 	
 	// Send the notification

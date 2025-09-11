@@ -20,6 +20,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   
   List<RadarrMovie> _recentlyDownloaded = [];
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
+  List<RadarrMovie> _recommendedMovies = [];
   bool _isLoading = true;
   String? _error;
   
@@ -36,6 +37,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _pageController = ZagPageController(initialPage: 0);
     _loadRecentlyDownloaded();
     _loadRecentlyDownloadedShows();
+    _loadRecommendedMovies();
     _loadMockTrendingData();
     _startAutoScroll();
   }
@@ -181,6 +183,42 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+  
+  Future<void> _loadRecommendedMovies() async {
+    try {
+      final radarrState = context.read<RadarrState>();
+      if (!radarrState.enabled) {
+        return;
+      }
+      
+      final api = radarrState.api;
+      if (api == null) {
+        return;
+      }
+      
+      // Fetch recommended movies from import lists
+      final recommendedMovies = await api.importList.getMovies(
+        includeRecommendations: true,
+      );
+      
+      // Remove duplicates and limit
+      final Set<int> tmdbIds = {};
+      final uniqueMovies = <RadarrMovie>[];
+      for (final movie in recommendedMovies) {
+        if (movie.tmdbId != null && !tmdbIds.contains(movie.tmdbId)) {
+          tmdbIds.add(movie.tmdbId!);
+          uniqueMovies.add(movie);
+        }
+      }
+      
+      setState(() {
+        _recommendedMovies = uniqueMovies.take(10).toList();
+      });
+    } catch (e) {
+      // Silently fail - recommendations are optional
+      print('Failed to load recommendations: $e');
     }
   }
   
@@ -663,20 +701,33 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
             ),
           ),
         ),
-        // Placeholder content - you can add actual recommendations preview here
-        Container(
-          height: 180,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Center(
-            child: Text(
-              'Tap to view recommended movies',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 14,
+        // Movie list or placeholder
+        _recommendedMovies.isNotEmpty
+            ? SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _recommendedMovies.length,
+                  itemBuilder: (context, index) {
+                    final movie = _recommendedMovies[index];
+                    return _movieCard(movie);
+                  },
+                ),
+              )
+            : Container(
+                height: 180,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: Text(
+                    'Tap to view recommended movies',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
       ],
     );
   }

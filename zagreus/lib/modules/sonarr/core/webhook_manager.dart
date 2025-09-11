@@ -1,9 +1,23 @@
 import 'dart:convert';
 import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
+
+/// Simple webhook field that only serializes name and value
+class SimpleWebhookField {
+  final String name;
+  final String value;
+  
+  SimpleWebhookField({required this.name, required this.value});
+  
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'value': value,
+  };
+}
 
 /// Manages automatic webhook injection for Sonarr
 class SonarrWebhookManager {
@@ -25,40 +39,72 @@ class SonarrWebhookManager {
   /// Create or update Zagreus webhook
   static Future<bool> syncWebhook(SonarrAPI api) async {
     try {
+      ZagLogger().debug('=== Starting Sonarr webhook sync ===');
       // Get user token from Supabase
       final user = ZagSupabase.client.auth.currentUser;
       if (user == null) {
-        ZagLogger().warning('No authenticated user for webhook');
-        return false;
+        throw Exception('No authenticated user');
       }
       
       final userToken = user.id; // Use Supabase user ID as the token
 
       // Check if webhook already exists
+      ZagLogger().debug('Checking for existing webhook...');
       final existing = await getZagreusWebhook(api);
+      ZagLogger().debug('Existing webhook: ${existing != null ? 'Found' : 'Not found'}');
       
       // Build webhook URL with user_id in the path
       // Encode the user ID in base64
       final payload = base64.encode(utf8.encode(userToken));
       final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
       
-      // Create notification object (no auth needed since token is in URL)
-      final notification = SonarrNotification.webhook(
-        name: webhookName,
-        url: webhookUrl,
-        username: '', // No username needed
-        password: '', // No password needed
-      );
+      // Create simple fields (just name and value)
+      final simpleFields = [
+        SimpleWebhookField(name: 'url', value: webhookUrl),
+        SimpleWebhookField(name: 'method', value: '1'),
+        SimpleWebhookField(name: 'username', value: ''),
+        SimpleWebhookField(name: 'password', value: ''),
+      ];
       
-      if (existing != null) {
+      // Create the JSON manually with simple fields and specific events enabled
+      final notificationData = {
+        'name': webhookName,
+        'implementation': 'Webhook',
+        'implementationName': 'Webhook',
+        'configContract': 'WebhookSettings',
+        'fields': simpleFields.map((f) => f.toJson()).toList(),
+        'tags': [],
+        'onGrab': true,           // Episode grabbed
+        'onDownload': true,        // Episode downloaded
+        'onUpgrade': true,         // Episode upgraded
+        'onRename': false,         // Don't notify on renames
+        'onSeriesAdd': true,       // Series added
+        'onSeriesDelete': true,    // Series deleted
+        'onEpisodeFileDelete': false,  // Episode file deleted
+        'onEpisodeFileDeleteForUpgrade': false,  // Episode deleted for upgrade
+        'onHealthIssue': false,    // Health issues
+        'includeHealthWarnings': false,
+        'onApplicationUpdate': false,  // App updates
+        'onManualInteractionRequired': true,  // Manual intervention needed
+      };
+      
+      if (existing != null && existing.id != null) {
         // Update existing webhook
-        notification.id = existing.id;
-        await api.notification.update(notification: notification);
-        ZagLogger().debug('Updated Sonarr webhook');
+        notificationData['id'] = existing.id!;
+        ZagLogger().debug('Updating existing webhook with ID: ${existing.id}');
+        final response = await api.httpClient.put(
+          'notification/${existing.id}',
+          data: notificationData,
+        );
+        ZagLogger().debug('Update response: ${response.statusCode}');
       } else {
         // Create new webhook
-        await api.notification.create(notification: notification);
-        ZagLogger().debug('Created Sonarr webhook');
+        ZagLogger().debug('Creating new webhook');
+        final response = await api.httpClient.post(
+          'notification',
+          data: notificationData,
+        );
+        ZagLogger().debug('Create response: ${response.statusCode}');
       }
       
       return true;

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
-import 'package:zagreus/config/encryption_config_private.dart';
 import 'package:zagreus/database/config.dart';
 import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/storage.dart';
-import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/settings.dart';
-import 'package:zagreus/utils/encryption.dart';
 import 'package:zagreus/utils/uuid.dart';
 
 class SettingsAccountBackupConfigurationTile extends StatefulWidget {
@@ -43,17 +40,8 @@ class _State extends State<SettingsAccountBackupConfigurationTile> {
     updateState(ZagLoadingState.ACTIVE);
 
     try {
-      // Auto-generate encryption key from user ID
-      final user = ZagSupabase.client.auth.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
-      
-      // Use encryption pattern from private config
-      String encryptionKey = EncryptionConfig.getBackupEncryptionKey(user.id, user.email ?? '');
-      
-      String decrypted = ZagConfig().export();
-      String encrypted = ZagEncryption().encrypt(encryptionKey, decrypted);
+      // No encryption - just store the raw config
+      String configData = ZagConfig().export();
       int timestamp = DateTime.now().millisecondsSinceEpoch;
       String id = ZagUUID().generate();
       String format = 'MMMM dd, yyyy\nhh:mm:ss a';
@@ -61,7 +49,7 @@ class _State extends State<SettingsAccountBackupConfigurationTile> {
 
       await ZagSupabaseDatabase()
           .addBackupEntry(id, timestamp, title: title)
-          .then((_) => ZagSupabaseStorage().uploadBackup(encrypted, id))
+          .then((_) => ZagSupabaseStorage().uploadBackup(configData, id))
           .then((_) {
         updateState(ZagLoadingState.INACTIVE);
         showZagSuccessSnackBar(

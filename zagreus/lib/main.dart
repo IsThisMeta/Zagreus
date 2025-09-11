@@ -84,6 +84,7 @@ class _ZagBIOSState extends State<ZagBIOS> {
             builder: (context, _) {
               final brightness = MediaQuery.of(context).platformBrightness;
               return MaterialApp.router(
+                debugShowCheckedModeBanner: false,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
                 locale: context.locale,

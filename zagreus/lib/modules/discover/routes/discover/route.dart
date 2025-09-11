@@ -21,6 +21,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   List<RadarrMovie> _recentlyDownloaded = [];
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
   List<RadarrMovie> _recommendedMovies = [];
+  List<RadarrMovie> _missingMovies = [];
   bool _isLoading = true;
   String? _error;
   
@@ -38,6 +39,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadRecentlyDownloaded();
     _loadRecentlyDownloadedShows();
     _loadRecommendedMovies();
+    _loadMissingMovies();
     _loadMockTrendingData();
     _startAutoScroll();
   }
@@ -222,6 +224,31 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
   
+  Future<void> _loadMissingMovies() async {
+    try {
+      final radarrState = context.read<RadarrState>();
+      if (!radarrState.enabled) {
+        return;
+      }
+      
+      // Fetch movies if not already cached
+      if (radarrState.movies == null) {
+        radarrState.fetchMovies();
+      }
+      
+      // Get missing movies from state
+      if (radarrState.missing != null) {
+        final missingMovies = await radarrState.missing!;
+        setState(() {
+          _missingMovies = missingMovies.take(10).toList();
+        });
+      }
+    } catch (e) {
+      // Silently fail - missing movies are optional
+      print('Failed to load missing movies: $e');
+    }
+  }
+  
   Future<void> _loadRecentlyDownloadedShows() async {
     // For now, we'll use mock data since Sonarr integration isn't set up yet
     // In a real implementation, this would fetch from SonarrState similar to RadarrState
@@ -342,6 +369,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
           const SizedBox(height: 32),
           _recommendedMoviesSection(),
+          const SizedBox(height: 32),
+          if (_missingMovies.isNotEmpty) _missingMoviesSection(),
           const SizedBox(height: 32),
         ],
       ),
@@ -729,6 +758,161 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 ),
               ),
       ],
+    );
+  }
+  
+  Widget _missingMoviesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: GestureDetector(
+            onTap: () {
+              DiscoverRoutes.MISSING.go();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  ZagIcons.RADARR,
+                  color: const Color(0xFFFEC333),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Radarr',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFFEC333),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Missing',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.5),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Movie list
+        SizedBox(
+          height: 220,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _missingMovies.length,
+            itemBuilder: (context, index) {
+              final movie = _missingMovies[index];
+              return _missingMovieCard(movie);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _missingMovieCard(RadarrMovie movie) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to movie detail
+          RadarrRoutes.MOVIE.go(
+            params: {
+              'movie': movie.id.toString(),
+            },
+          );
+        },
+        child: Container(
+          width: 140,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Movie poster with missing indicator
+              Stack(
+                children: [
+                  Container(
+                    height: 180,
+                    width: 140,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey.shade800,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Stack(
+                        children: [
+                          _buildPosterImage(context, movie),
+                          // Orange overlay
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.orange.withOpacity(0.2),
+                                  Colors.transparent,
+                                ],
+                                stops: [0.0, 0.5],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Missing badge
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'MISSING',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Movie title
+              Text(
+                movie.title ?? 'Unknown',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
   

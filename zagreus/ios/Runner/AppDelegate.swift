@@ -10,6 +10,9 @@ import UserNotifications
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     
+    // Clear badge on app launch
+    UIApplication.shared.applicationIconBadgeNumber = 0
+    
     // Set up method channel for notification permissions
     if let controller = window?.rootViewController as? FlutterViewController {
       let channel = FlutterMethodChannel(name: "app.zagreus/notifications",
@@ -105,5 +108,10 @@ import UserNotifications
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
     print("Failed to register for remote notifications: \(error)")
+  }
+  
+  // Clear badge when app becomes active
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    UIApplication.shared.applicationIconBadgeNumber = 0
   }
 }

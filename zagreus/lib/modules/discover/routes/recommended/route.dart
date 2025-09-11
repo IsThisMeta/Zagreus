@@ -217,12 +217,12 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       onRefresh: _loadRecommendedMovies,
       child: GridView.builder(
         controller: scrollController,
-        padding: EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 2/3,
+        padding: const EdgeInsets.all(8),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 2 / 3,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
         ),
         itemCount: _movies.length,
         itemBuilder: (context, index) => _movieTile(_movies[index]),
@@ -231,7 +231,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
   }
   
   Widget _movieTile(RadarrMovie movie) {
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         // Navigate to movie details if in library
         if (movie.id != null) {
@@ -252,105 +252,116 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: Colors.grey.shade900,
+          color: Colors.grey.shade800,
         ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Movie poster
-            if (movie.id != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: ZagNetworkImage(
-                  context: context,
-                  url: context.read<RadarrState>().getPosterURL(movie.id),
-                  height: double.infinity,
-                  width: double.infinity,
-                ),
-              )
-            else
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey.shade800,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.movie,
-                    size: 40,
-                    color: Colors.white.withOpacity(0.3),
-                  ),
-                ),
-              ),
-            
-            // Gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.8),
-                  ],
-                  stops: [0.6, 1.0],
-                ),
-              ),
-            ),
-            
-            // Movie info
-            Positioned(
-              left: 8,
-              right: 8,
-              bottom: 8,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    movie.title ?? 'Unknown',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (movie.year != null)
-                    Text(
-                      movie.year.toString(),
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 10,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            
-            // Status indicator
-            if (movie.hasFile == false)
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Poster
+              _buildPosterImage(context, movie),
+              // Gradient for text readability
               Positioned(
-                top: 8,
-                right: 8,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'MISSING',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.8),
+                      ],
                     ),
                   ),
                 ),
               ),
+              // Title
+              Positioned(
+                bottom: 8,
+                left: 8,
+                right: 8,
+                child: Text(
+                  movie.title ?? 'Unknown',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black,
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildPosterImage(BuildContext context, RadarrMovie movie) {
+    // Try to get poster URL - either from movie ID (if in library) or from images array
+    String? posterUrl;
+    
+    if (movie.id != null) {
+      // Movie is in library, use standard poster URL
+      posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
+    } else if (movie.images?.isNotEmpty == true) {
+      // Movie not in library but has images, extract poster URL from images array
+      final posterImage = movie.images!.firstWhere(
+        (img) => img.coverType?.toLowerCase().contains('poster') == true,
+        orElse: () => movie.images!.first,
+      );
+      
+      // Use remoteUrl if available, otherwise use url
+      posterUrl = posterImage.remoteUrl ?? posterImage.url;
+    }
+    
+    if (posterUrl == null) {
+      return _posterPlaceholder(movie);
+    }
+    
+    final headers = context.read<RadarrState>().headers;
+    
+    // Convert headers to Map<String, String>
+    final stringHeaders = <String, String>{};
+    headers.forEach((key, value) {
+      stringHeaders[key.toString()] = value.toString();
+    });
+    
+    return Image.network(
+      posterUrl,
+      fit: BoxFit.cover,
+      headers: stringHeaders.isNotEmpty ? stringHeaders : null,
+      errorBuilder: (context, error, stackTrace) {
+        return _posterPlaceholder(movie);
+      },
+    );
+  }
+  
+  Widget _posterPlaceholder(RadarrMovie movie) {
+    return Container(
+      color: Colors.grey.shade800,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.movie_rounded,
+              size: 40,
+              color: Colors.grey.shade600,
+            ),
           ],
         ),
       ),

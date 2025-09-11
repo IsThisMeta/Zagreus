@@ -513,7 +513,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              item['rating'].toString(),
+                              (item['rating'] as num).toStringAsFixed(1),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,

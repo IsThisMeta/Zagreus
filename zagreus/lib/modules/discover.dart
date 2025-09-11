@@ -1,2 +1,3 @@
 export 'discover/routes/discover/route.dart';
 export 'discover/routes/recently_downloaded/route.dart';
+export 'discover/routes/recommended/route.dart';

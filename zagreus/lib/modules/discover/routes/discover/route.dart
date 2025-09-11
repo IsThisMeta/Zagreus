@@ -303,6 +303,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           // Content sections
           if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
           const SizedBox(height: 32),
+          _recommendedMoviesSection(),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -611,6 +613,71 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           ),
         ),
       ),
+    );
+  }
+  
+  Widget _recommendedMoviesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: GestureDetector(
+            onTap: () {
+              DiscoverRoutes.RECOMMENDED.go();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  ZagIcons.RADARR,
+                  color: const Color(0xFFFEC333),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Radarr',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFFEC333),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Recommended',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.5),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Placeholder content - you can add actual recommendations preview here
+        Container(
+          height: 180,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+            child: Text(
+              'Tap to view recommended movies',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
   

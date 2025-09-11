@@ -903,10 +903,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               Text(
                 movie.title ?? 'Unknown',
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -1015,10 +1015,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               Text(
                 movie.title ?? 'Unknown',
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],

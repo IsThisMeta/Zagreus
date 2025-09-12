@@ -95,8 +95,8 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       body: [
         TextSpan(
           text: isPro 
-            ? 'Active • ${ZagreusPro.subscriptionType == "monthly" ? "Monthly" : "Yearly"} subscription'
-            : 'Unlock premium features • \$0.79/mo or \$3.99/yr'
+            ? 'Active • Monthly subscription'
+            : 'Unlock premium features • \$0.79/mo'
         )
       ],
       trailing: ZagIconButton(

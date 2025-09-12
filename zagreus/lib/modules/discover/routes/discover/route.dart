@@ -5,6 +5,7 @@ import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
 import 'package:zagreus/router/routes/discover.dart';
+import 'package:zagreus/router/routes/search.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
@@ -1347,11 +1348,13 @@ class _DiscoverNavigationBar extends StatelessWidget {
   static const List<IconData> icons = [
     Icons.movie_rounded,
     Icons.tv_rounded,
+    Icons.search_rounded,
   ];
 
   static const List<String> titles = [
     'Movies',
     'TV Shows',
+    'Search',
   ];
 
   const _DiscoverNavigationBar({
@@ -1366,6 +1369,12 @@ class _DiscoverNavigationBar extends StatelessWidget {
       scrollControllers: scrollControllers,
       icons: icons,
       titles: titles,
+      onTabChange: (index) {
+        if (index == 2) {
+          // Search tab
+          SearchRoutes.SEARCH.go();
+        }
+      },
     );
   }
 }

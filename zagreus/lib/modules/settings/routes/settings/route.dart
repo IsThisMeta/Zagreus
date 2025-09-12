@@ -68,24 +68,10 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
         ),
         ZagDivider(),
         ZagBlock(
-          title: 'settings.Donations'.tr(),
-          body: [TextSpan(text: 'settings.DonationsDescription'.tr())],
-          trailing: const ZagIconButton(icon: Icons.attach_money_rounded),
-          onTap: () {
-            'https://buymeacoffee.com/isthismeta'.openLink();
-          },
-        ),
-        ZagBlock(
           title: 'settings.Resources'.tr(),
           body: [TextSpan(text: 'settings.ResourcesDescription'.tr())],
           trailing: const ZagIconButton(icon: Icons.help_outline_rounded),
-          onTap: () {
-            // TODO: Implement resources route
-            showZagInfoSnackBar(
-              title: 'Coming Soon',
-              message: 'Resources will be available soon',
-            );
-          },
+          onTap: SettingsRoutes.RESOURCES.go,
         ),
         ZagBlock(
           title: 'settings.System'.tr(),

@@ -38,7 +38,11 @@ class _State extends State<SonarrSeriesAddSearchResultTile> {
       posterHeaders: context.watch<SonarrState>().headers,
       posterPlaceholderIcon: ZagIcons.VIDEO_CAM,
       title: widget.series.title,
-      titleColor: widget.isExcluded ? ZagColours.red : Colors.white,
+      titleColor: widget.isExcluded 
+          ? ZagColours.red 
+          : (Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : Colors.black87),
       disabled: widget.exists,
       body: [_subtitle1()],
       bottom: _subtitle2(),
@@ -61,19 +65,23 @@ class _State extends State<SonarrSeriesAddSearchResultTile> {
   Widget _subtitle2() {
     return SizedBox(
       height: ZagBlock.SUBTITLE_HEIGHT * 2,
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(
-            fontStyle: FontStyle.italic,
-            fontSize: ZagUI.FONT_SIZE_H3,
-            color: ZagColours.grey,
+      child: Builder(
+        builder: (context) => RichText(
+          text: TextSpan(
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
+              fontSize: ZagUI.FONT_SIZE_H3,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? ZagColours.grey
+                  : Colors.grey.shade700,
+            ),
+            children: [
+              ZagTextSpan.extended(text: widget.series.zagOverview),
+            ],
           ),
-          children: [
-            ZagTextSpan.extended(text: widget.series.zagOverview),
-          ],
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
         ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2,
       ),
     );
   }

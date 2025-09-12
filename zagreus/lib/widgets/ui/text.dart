@@ -29,7 +29,7 @@ class ZagText extends Text {
     bool softWrap = false,
     TextAlign textAlign = TextAlign.start,
     TextOverflow overflow = TextOverflow.fade,
-    Color color = Colors.white,
+    Color? color,
   }) =>
       ZagText(
         text: text,

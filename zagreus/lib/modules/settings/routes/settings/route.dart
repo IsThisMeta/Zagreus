@@ -156,6 +156,17 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
               },
             ),
           ],
+          // Debug only - cancel subscription button
+          if (isPro && const bool.fromEnvironment('dart.vm.product') == false)
+            ZagDialog.tile(
+              icon: Icons.cancel_rounded,
+              iconColor: ZagColours.red,
+              text: '[DEBUG] Cancel Subscription',
+              onTap: () {
+                Navigator.of(context).pop();
+                _cancelPro();
+              },
+            ),
         ],
       ),
       contentPadding: ZagDialog.listDialogContentPadding(),
@@ -169,6 +180,18 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
     showZagInfoSnackBar(
       title: 'Welcome to Zagreus Pro!',
       message: 'Premium features are now unlocked',
+    );
+  }
+  
+  void _cancelPro() {
+    // Debug only - reset Pro status
+    ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(false);
+    ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update('');
+    ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update('');
+    setState(() {});
+    showZagInfoSnackBar(
+      title: '[DEBUG] Subscription Cancelled',
+      message: 'Zagreus Pro has been disabled',
     );
   }
 }

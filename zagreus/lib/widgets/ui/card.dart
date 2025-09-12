@@ -20,7 +20,9 @@ class ZagCard extends Card {
             width: width,
           ),
           margin: margin,
-          color: color ?? Theme.of(context).primaryColor,
+          color: color ?? (Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).primaryColor
+              : Theme.of(context).cardColor),
           shape: ZagUI.shapeBorder,
           elevation: 0.0,
           clipBehavior: Clip.antiAlias,

@@ -106,11 +106,15 @@ class _State extends State<ZagBottomNavigationBar> {
                       padding: const EdgeInsets.all(10.0).add(EdgeInsets.only(
                         left: _index == index ? ZagUI.MARGIN_SIZE_HALF : 0.0,
                       )),
-                      iconColor: Colors.white,
-                      textStyle: const TextStyle(
+                      iconColor: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                      textStyle: TextStyle(
                         fontWeight: ZagUI.FONT_WEIGHT_BOLD,
                         fontSize: ZagUI.FONT_SIZE_H3,
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87,
                       ),
                       iconActiveColor: ZagColours.accent,
                       leading: widget.leadingOnTab == null

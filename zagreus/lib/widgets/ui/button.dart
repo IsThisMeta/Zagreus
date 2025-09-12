@@ -175,25 +175,35 @@ class ZagButton extends Card {
           children: [
             if (icon != null)
               Padding(
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: iconSize,
+                child: Builder(
+                  builder: (context) => Icon(
+                    icon,
+                    color: color == ZagColours.accent 
+                        ? color 
+                        : (Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87),
+                    size: iconSize,
+                  ),
                 ),
                 padding: const EdgeInsets.only(
                     right: ZagUI.DEFAULT_MARGIN_SIZE / 2),
               ),
             Flexible(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: ZagUI.FONT_WEIGHT_BOLD,
-                  fontSize: ZagUI.FONT_SIZE_H3,
+              child: Builder(
+                builder: (context) => Text(
+                  text,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black87,
+                    fontWeight: ZagUI.FONT_WEIGHT_BOLD,
+                    fontSize: ZagUI.FONT_SIZE_H3,
+                  ),
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                  maxLines: 1,
                 ),
-                overflow: TextOverflow.fade,
-                softWrap: false,
-                maxLines: 1,
               ),
             ),
           ],

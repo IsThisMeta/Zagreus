@@ -7,7 +7,7 @@ import 'package:zagreus/widgets/ui.dart';
 
 class ZagMessage extends StatelessWidget {
   final String text;
-  final Color textColor;
+  final Color? textColor;
   final String? buttonText;
   final Function? onTap;
   final bool useSafeArea;
@@ -15,7 +15,7 @@ class ZagMessage extends StatelessWidget {
   const ZagMessage({
     Key? key,
     required this.text,
-    this.textColor = Colors.white,
+    this.textColor,
     this.buttonText,
     this.onTap,
     this.useSafeArea = true,
@@ -110,7 +110,9 @@ class ZagMessage extends StatelessWidget {
                       text,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: textColor,
+                        color: textColor ?? (Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black87),
                         fontWeight: ZagUI.FONT_WEIGHT_BOLD,
                         fontSize: ZagUI.FONT_SIZE_MESSAGES,
                       ),

@@ -7,7 +7,7 @@ class ZagIconButton extends StatelessWidget {
   final double iconSize;
   final String? text;
   final double textSize;
-  final Color color;
+  final Color? color;
   final Function? onPressed;
   final Function? onLongPress;
   final ZagLoadingState? loadingState;
@@ -21,7 +21,7 @@ class ZagIconButton extends StatelessWidget {
     this.icon = ZagIcons.ARROW_RIGHT,
     this.iconSize = ZagUI.ICON_SIZE,
     this.alignment = Alignment.center,
-    this.color = Colors.white,
+    this.color,
     this.onPressed,
     this.onLongPress,
     this.loadingState,
@@ -35,7 +35,7 @@ class ZagIconButton extends StatelessWidget {
     this.icon,
     this.iconSize = ZagUI.ICON_SIZE,
     this.alignment = Alignment.center,
-    this.color = Colors.white,
+    this.color,
     this.onPressed,
     this.onLongPress,
     this.loadingState,
@@ -49,7 +49,7 @@ class ZagIconButton extends StatelessWidget {
     this.icon,
     this.iconSize = ZagUI.ICON_SIZE,
     this.alignment = Alignment.center,
-    this.color = Colors.white,
+    this.color,
     this.onPressed,
     this.onLongPress,
     this.loadingState,
@@ -94,35 +94,47 @@ class ZagIconButton extends StatelessWidget {
   }
 
   Widget _loader() {
-    return ZagLoader(
-      size: ZagUI.FONT_SIZE_H4,
-      color: color,
-      useSafeArea: false,
+    return Builder(
+      builder: (context) => ZagLoader(
+        size: ZagUI.FONT_SIZE_H4,
+        color: color ?? (Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black87),
+        useSafeArea: false,
+      ),
     );
   }
 
   Widget _icon() {
     assert((text != null || icon != null), 'both text and icon cannot be null');
-    if (loadingState == ZagLoadingState.ERROR) {
-      return Icon(
-        Icons.error_rounded,
-        color: color,
-      );
-    } else if (icon != null) {
-      return Icon(
-        icon,
-        color: color,
-      );
-    } else {
-      return Text(
-        text!,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: color,
-          fontWeight: ZagUI.FONT_WEIGHT_BOLD,
-          fontSize: textSize,
-        ),
-      );
-    }
+    return Builder(
+      builder: (context) {
+        final effectiveColor = color ?? (Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black87);
+        
+        if (loadingState == ZagLoadingState.ERROR) {
+          return Icon(
+            Icons.error_rounded,
+            color: effectiveColor,
+          );
+        } else if (icon != null) {
+          return Icon(
+            icon,
+            color: effectiveColor,
+          );
+        } else {
+          return Text(
+            text!,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: effectiveColor,
+              fontWeight: ZagUI.FONT_WEIGHT_BOLD,
+              fontSize: textSize,
+            ),
+          );
+        }
+      },
+    );
   }
 }

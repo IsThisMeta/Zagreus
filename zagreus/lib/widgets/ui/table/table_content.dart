@@ -73,21 +73,23 @@ class ZagTableContent extends StatelessWidget {
     if (type == _Type.SPACER) return SizedBox(height: spacerSize);
     return Row(
       children: [
-        if (title != null) _title(),
-        _subtitle(),
+        if (title != null) _title(context),
+        _subtitle(context),
       ],
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
 
-  Widget _title() {
+  Widget _title(BuildContext context) {
     return Expanded(
       child: Padding(
         child: Text(
           title?.toUpperCase() ?? ZagUI.TEXT_EMDASH,
           textAlign: titleAlign,
-          style: const TextStyle(
-            color: ZagColours.grey,
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.white.withOpacity(0.5)
+                : Colors.black.withOpacity(0.5),
             fontSize: ZagUI.FONT_SIZE_H3,
           ),
         ),
@@ -101,15 +103,17 @@ class ZagTableContent extends StatelessWidget {
     );
   }
 
-  Widget _subtitle() {
+  Widget _subtitle(BuildContext context) {
     return Expanded(
       child: InkWell(
         child: Padding(
           child: Text(
             body ?? ZagUI.TEXT_EMDASH,
             textAlign: bodyAlign,
-            style: const TextStyle(
-              color: ZagColours.white,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.white.withOpacity(0.9)
+                  : Colors.black.withOpacity(0.9),
               fontSize: ZagUI.FONT_SIZE_H3,
             ),
           ),

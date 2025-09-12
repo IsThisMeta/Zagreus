@@ -141,6 +141,25 @@ class ZagBlock extends StatelessWidget {
           children: [
             if (backgroundUrl?.isNotEmpty ?? false)
               _fadeInBackground(context, _height),
+            if (backgroundUrl?.isNotEmpty ?? false)
+              Container(
+                height: _height,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: Theme.of(context).brightness == Brightness.dark
+                        ? [
+                            Colors.black.withOpacity(0.5),
+                            Colors.black.withOpacity(0.2),
+                          ]
+                        : [
+                            Colors.black.withOpacity(0.15),
+                            Colors.transparent,
+                          ],
+                  ),
+                ),
+              ),
             Opacity(
               opacity: disabled! ? ZagUI.OPACITY_DISABLED : 1.0,
               child: Row(
@@ -159,7 +178,9 @@ class ZagBlock extends StatelessWidget {
         onLongPress: onLongPress as void Function()?,
       ),
       height: _height,
-      color: backgroundColor,
+      color: backgroundColor ?? (backgroundUrl?.isNotEmpty ?? false 
+          ? Colors.transparent 
+          : null),
     );
   }
 

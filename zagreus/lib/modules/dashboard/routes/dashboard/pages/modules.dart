@@ -7,6 +7,7 @@ import 'package:zagreus/vendor.dart';
 import 'package:zagreus/widgets/ui.dart';
 import 'package:zagreus/api/wake_on_lan/wake_on_lan.dart';
 import 'package:zagreus/modules/dashboard/routes/dashboard/widgets/navigation_bar.dart';
+import 'package:zagreus/utils/zagreus_pro.dart';
 
 class ModulesPage extends StatefulWidget {
   const ModulesPage({
@@ -52,6 +53,11 @@ class _State extends State<ModulesPage> with AutomaticKeepAliveClientMixin {
             b.title.toLowerCase(),
           ))
       ..forEach((module) {
+        // Skip Discover if not Pro
+        if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
+          return;
+        }
+        
         if (module.isEnabled) {
           if (module == ZagModule.WAKE_ON_LAN) {
             modules.add(_buildWakeOnLAN(context, index));
@@ -69,6 +75,11 @@ class _State extends State<ModulesPage> with AutomaticKeepAliveClientMixin {
     List<Widget> modules = [];
     int index = 0;
     ZagDrawer.moduleOrderedList().forEach((module) {
+      // Skip Discover if not Pro
+      if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
+        return;
+      }
+      
       if (module.isEnabled) {
         if (module == ZagModule.WAKE_ON_LAN) {
           modules.add(_buildWakeOnLAN(context, index));

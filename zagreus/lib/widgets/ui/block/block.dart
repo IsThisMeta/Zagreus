@@ -343,17 +343,21 @@ class ZagBlock extends StatelessWidget {
               child: _scrollableText(
                 scrollDirection: maxLines > 1 ? Axis.vertical : Axis.horizontal,
                 child: Container(
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontSize: ZagUI.FONT_SIZE_H3,
-                        color: ZagColours.grey,
+                  child: Builder(
+                    builder: (context) => RichText(
+                      text: TextSpan(
+                        style: TextStyle(
+                          fontSize: ZagUI.FONT_SIZE_H3,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? ZagColours.grey
+                              : Colors.grey.shade700,
+                        ),
+                        children: [textSpan],
                       ),
-                      children: [textSpan],
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: maxLines == 1 ? false : true,
+                      maxLines: maxLines,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: maxLines == 1 ? false : true,
-                    maxLines: maxLines,
                   ),
                   alignment: Alignment.centerLeft,
                 ),

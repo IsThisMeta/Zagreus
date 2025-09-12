@@ -85,15 +85,19 @@ class _State extends State<ZagTextInputBar> {
         color: Theme.of(context).canvasColor,
       );
 
-  TextStyle get _sharedTextStyle => const TextStyle(
-        color: ZagColours.white,
+  TextStyle get _sharedTextStyle => TextStyle(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? ZagColours.white
+            : Colors.black87,
         fontSize: ZagUI.FONT_SIZE_H3,
       );
 
   InputDecoration get _sharedInputDecoration => InputDecoration(
         labelText: widget.labelText ?? 'zagreus.SearchTextBar'.tr(),
-        labelStyle: const TextStyle(
-          color: ZagColours.grey,
+        labelStyle: TextStyle(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? ZagColours.grey
+              : Colors.grey.shade600,
           decoration: TextDecoration.none,
           fontSize: ZagUI.FONT_SIZE_H3,
         ),

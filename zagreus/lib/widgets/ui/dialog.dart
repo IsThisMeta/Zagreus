@@ -213,7 +213,6 @@ abstract class ZagDialog {
           text,
           style: const TextStyle(
             fontSize: ZagDialog.BODY_SIZE,
-            color: Colors.white,
           ),
         ),
         subtitle: subtitle,

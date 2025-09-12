@@ -69,11 +69,17 @@ Future<void> showZagSnackBar({
         text: title,
         maxLines: 4,
         overflow: TextOverflow.ellipsis,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black87,
       ),
       content: ZagText.subtitle(
         text: message,
         maxLines: 8,
         overflow: TextOverflow.ellipsis,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? ZagColours.grey
+            : Colors.black54,
       ),
       shouldIconPulse: false,
       icon: Padding(

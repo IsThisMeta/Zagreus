@@ -102,9 +102,11 @@ class ZagActionBarCard extends StatelessWidget {
       margin: ZagUI.MARGIN_HALF,
       color: backgroundColor != null
           ? backgroundColor!.withOpacity(ZagUI.OPACITY_DIMMED)
-          : ZagTheme.isAMOLEDTheme
-              ? Colors.black.withOpacity(ZagUI.OPACITY_DIMMED)
-              : ZagColours.primary.withOpacity(ZagUI.OPACITY_DIMMED),
+          : Theme.of(context).brightness == Brightness.dark
+              ? (ZagTheme.isAMOLEDTheme
+                  ? Colors.black.withOpacity(ZagUI.OPACITY_DIMMED)
+                  : ZagColours.primary.withOpacity(ZagUI.OPACITY_DIMMED))
+              : Colors.grey.shade200,
     );
   }
 

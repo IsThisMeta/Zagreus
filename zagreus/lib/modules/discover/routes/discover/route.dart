@@ -651,6 +651,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   
   Widget _toggleButton(String label, String value) {
     final isSelected = _trendingTimeWindow == value;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -664,17 +666,23 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+          color: isSelected 
+              ? (isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.white : Colors.grey,
+            color: isSelected 
+                ? (isDark ? Colors.white : Colors.black87)
+                : (isDark ? Colors.grey : Colors.grey.shade600),
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey,
+            color: isSelected 
+                ? (isDark ? Colors.white : Colors.black87)
+                : (isDark ? Colors.grey : Colors.grey.shade600),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 16,
           ),

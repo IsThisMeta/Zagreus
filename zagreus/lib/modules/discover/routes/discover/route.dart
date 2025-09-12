@@ -291,6 +291,18 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       appBar: ZagAppBar(
         title: 'Discover',
         useDrawer: true,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: Row(
+              children: [
+                _appBarToggleButton('Today', 'day'),
+                const SizedBox(width: 8),
+                _appBarToggleButton('This Week', 'week'),
+              ],
+            ),
+          ),
+        ],
       ),
       body: _body(),
       bottomNavigationBar: _DiscoverNavigationBar(
@@ -367,8 +379,6 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         children: [
           // Hero carousel
           _heroCarousel(),
-          // Today/This Week toggle
-          _timeWindowToggle(),
           // Content sections
           if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
           const SizedBox(height: 12),
@@ -390,8 +400,6 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         children: [
           // Hero carousel (could be TV shows specific)
           _heroCarousel(),
-          // Today/This Week toggle
-          _timeWindowToggle(),
           // TV shows sections
           if (_recentlyDownloadedShows.isNotEmpty) _recentlyDownloadedShowsSection(),
           const SizedBox(height: 32),
@@ -653,6 +661,45 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
   
+  Widget _appBarToggleButton(String label, String value) {
+    final isSelected = _trendingTimeWindow == value;
+    
+    return TextButton(
+      onPressed: () {
+        setState(() {
+          _trendingTimeWindow = value;
+          _currentHeroIndex = 0;
+        });
+        _heroPageController.jumpToPage(0);
+        _loadTrendingData();
+        _restartAutoScroll();
+      },
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        minimumSize: Size.zero,
+        backgroundColor: isSelected 
+            ? (Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05))
+            : Colors.transparent,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isSelected
+              ? (Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87)
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white70
+                  : Colors.black54),
+          fontSize: 14,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
   Widget _toggleButton(String label, String value) {
     final isSelected = _trendingTimeWindow == value;
     final isDark = Theme.of(context).brightness == Brightness.dark;

@@ -147,15 +147,16 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                 _purchasePro(true);
               },
             ),
-            ZagDialog.tile(
-              icon: Icons.star_rounded,
-              iconColor: ZagColours.orange,
-              text: 'Yearly • \$3.99/year (Save 58%!)',
-              onTap: () {
-                Navigator.of(context).pop();
-                _purchasePro(false);
-              },
-            ),
+            // TODO: Enable yearly subscription when available in App Store
+            // ZagDialog.tile(
+            //   icon: Icons.star_rounded,
+            //   iconColor: ZagColours.orange,
+            //   text: 'Yearly • \$3.99/year (Save 58%!)',
+            //   onTap: () {
+            //     Navigator.of(context).pop();
+            //     _purchasePro(false);
+            //   },
+            // ),
           ],
           // Debug only - cancel subscription button
           if (isPro && const bool.fromEnvironment('dart.vm.product') == false)

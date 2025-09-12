@@ -156,21 +156,20 @@ class _State extends State<ConfigurationRoute> with ZagScrollControllerMixin {
             iconColor: ZagColours.accent,
             text: 'Monthly • \$0.79/month',
             onTap: () {
-              // TODO: Implement monthly subscription
               Navigator.of(context).pop();
               _mockPurchase(true);
             },
           ),
-          ZagDialog.tile(
-            icon: Icons.star_rounded,
-            iconColor: ZagColours.orange,
-            text: 'Yearly • \$3.99/year (Save 58%!)',
-            onTap: () {
-              // TODO: Implement yearly subscription
-              Navigator.of(context).pop();
-              _mockPurchase(false);
-            },
-          ),
+          // TODO: Enable yearly subscription when available in App Store
+          // ZagDialog.tile(
+          //   icon: Icons.star_rounded,
+          //   iconColor: ZagColours.orange,
+          //   text: 'Yearly • \$3.99/year (Save 58%!)',
+          //   onTap: () {
+          //     Navigator.of(context).pop();
+          //     _mockPurchase(false);
+          //   },
+          // ),
         ],
       ),
       contentPadding: ZagDialog.listDialogContentPadding(),

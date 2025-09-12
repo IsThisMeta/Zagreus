@@ -57,9 +57,11 @@ class ZagActionBarCard extends StatelessWidget {
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.fade,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: ZagUI.FONT_SIZE_SUBHEADER,
-                            color: ZagColours.grey,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? ZagColours.grey
+                                : Colors.grey.shade600,
                           ),
                         ),
                     ],

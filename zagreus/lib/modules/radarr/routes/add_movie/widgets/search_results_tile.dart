@@ -32,7 +32,11 @@ class _State extends State<RadarrAddMovieSearchResultTile> {
       posterHeaders: context.watch<RadarrState>().headers,
       posterPlaceholderIcon: ZagIcons.VIDEO_CAM,
       title: widget.movie.title,
-      titleColor: widget.isExcluded ? ZagColours.red : Colors.white,
+      titleColor: widget.isExcluded 
+          ? ZagColours.red 
+          : (Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : Colors.black87),
       disabled: widget.exists,
       body: [_subtitle1()],
       bottom: _subtitle2(),
@@ -65,10 +69,12 @@ class _State extends State<RadarrAddMovieSearchResultTile> {
       height: ZagBlock.SUBTITLE_HEIGHT * 2,
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(
+          style: TextStyle(
             fontStyle: FontStyle.italic,
             fontSize: ZagUI.FONT_SIZE_H3,
-            color: ZagColours.grey,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? ZagColours.grey
+                : Colors.grey.shade600,
           ),
           children: [
             ZagTextSpan.extended(text: summary),

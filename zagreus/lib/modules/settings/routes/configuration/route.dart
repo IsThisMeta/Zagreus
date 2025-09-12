@@ -4,6 +4,9 @@ import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/router/routes/settings.dart';
 import 'package:zagreus/system/quick_actions/quick_actions.dart';
 import 'package:zagreus/utils/profile_tools.dart';
+import 'package:zagreus/database/tables/zagreus.dart';
+import 'package:zagreus/modules.dart';
+import 'package:zagreus/utils/zagreus_pro.dart';
 
 class ConfigurationRoute extends StatefulWidget {
   const ConfigurationRoute({
@@ -104,13 +107,82 @@ class _State extends State<ConfigurationRoute> with ZagScrollControllerMixin {
   }
 
   Widget _tileFromModuleMap(ZagModule module) {
+    final bool isDiscoverModule = module == ZagModule.DISCOVER;
+    final bool isPro = ZagreusPro.isEnabled;
+    final bool isLocked = isDiscoverModule && !isPro;
+    
     return ZagBlock(
       title: module.title,
       body: [
-        TextSpan(text: 'settings.ConfigureModule'.tr(args: [module.title]))
+        TextSpan(
+          text: isLocked 
+            ? 'Zagreus Pro • \$0.79/mo or \$3.99/yr'
+            : 'settings.ConfigureModule'.tr(args: [module.title])
+        )
       ],
-      trailing: ZagIconButton(icon: module.icon),
-      onTap: module.settingsRoute!.go,
+      trailing: ZagIconButton(
+        icon: isLocked ? Icons.lock_rounded : module.icon,
+        color: isLocked ? ZagColours.orange : null,
+      ),
+      onTap: isLocked 
+        ? () => _showProPurchaseDialog(context)
+        : module.settingsRoute!.go,
+    );
+  }
+  
+  void _showProPurchaseDialog(BuildContext context) {
+    ZagDialog.dialog(
+      context: context,
+      title: 'Zagreus Pro',
+      customContent: ZagDialog.content(
+        children: [
+          Padding(
+            padding: ZagDialog.textDialogContentPadding(),
+            child: Text(
+              'Unlock the Discover module and support Zagreus development!\n\n'
+              '• Beautiful movie & TV discovery\n'
+              '• Trending & popular content\n'
+              '• Recommended based on your library\n'
+              '• Missing movies from collections\n\n'
+              'Choose your plan:',
+              style: const TextStyle(
+                fontSize: ZagUI.FONT_SIZE_H2,
+              ),
+            ),
+          ),
+          ZagDialog.tile(
+            icon: Icons.calendar_month_rounded,
+            iconColor: ZagColours.accent,
+            text: 'Monthly • \$0.79/month',
+            onTap: () {
+              // TODO: Implement monthly subscription
+              Navigator.of(context).pop();
+              _mockPurchase(true);
+            },
+          ),
+          ZagDialog.tile(
+            icon: Icons.star_rounded,
+            iconColor: ZagColours.orange,
+            text: 'Yearly • \$3.99/year (Save 58%!)',
+            onTap: () {
+              // TODO: Implement yearly subscription
+              Navigator.of(context).pop();
+              _mockPurchase(false);
+            },
+          ),
+        ],
+      ),
+      contentPadding: ZagDialog.listDialogContentPadding(),
+    );
+  }
+  
+  void _mockPurchase(bool isMonthly) {
+    // Mock purchase for testing - replace with actual IAP
+    ZagreusPro.enablePro(isMonthly: isMonthly);
+    setState(() {});
+    showZagInfoSnackBar(
+      title: 'Welcome to Zagreus Pro!',
+      message: 'Discover module is now unlocked',
     );
   }
 }

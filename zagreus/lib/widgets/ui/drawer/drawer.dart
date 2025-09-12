@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/api/wake_on_lan/wake_on_lan.dart';
+import 'package:zagreus/utils/zagreus_pro.dart';
 
 class ZagDrawer extends StatelessWidget {
   final String page;
@@ -77,6 +78,11 @@ class ZagDrawer extends StatelessWidget {
     return <Widget>[
       ..._sharedHeader(context),
       ...modules.map((module) {
+        // Hide Discover module if not Pro
+        if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
+          return const SizedBox(height: 0.0);
+        }
+        
         if (module.isEnabled) {
           return _buildEntry(
             context: context,

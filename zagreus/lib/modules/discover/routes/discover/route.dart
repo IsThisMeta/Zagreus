@@ -722,16 +722,20 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 Expanded(
                   child: Text(
                     'Recommended',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white.withOpacity(0.5),
+                  color: (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black).withOpacity(0.5),
                   size: 16,
                 ),
               ],
@@ -759,7 +763,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   child: Text(
                     'Tap to view recommended movies',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black).withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -800,16 +806,20 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 Expanded(
                   child: Text(
                     'Missing',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white.withOpacity(0.5),
+                  color: (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black).withOpacity(0.5),
                   size: 16,
                 ),
               ],

@@ -339,7 +339,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey
+                    : Colors.grey.shade600,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

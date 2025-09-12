@@ -371,11 +371,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _timeWindowToggle(),
           // Content sections
           if (_recentlyDownloaded.isNotEmpty) _recentlyDownloadedSection(),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
           _recommendedMoviesSection(),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
           if (_missingMovies.isNotEmpty) _missingMoviesSection(),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
         ],
       ),
     );

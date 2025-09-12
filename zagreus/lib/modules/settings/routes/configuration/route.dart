@@ -7,6 +7,7 @@ import 'package:zagreus/utils/profile_tools.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/modules.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
+import 'package:zagreus/services/in_app_purchase_service.dart';
 
 class ConfigurationRoute extends StatefulWidget {
   const ConfigurationRoute({
@@ -176,13 +177,40 @@ class _State extends State<ConfigurationRoute> with ZagScrollControllerMixin {
     );
   }
   
-  void _mockPurchase(bool isMonthly) {
-    // Mock purchase for testing - replace with actual IAP
-    ZagreusPro.enablePro(isMonthly: isMonthly);
-    setState(() {});
+  void _mockPurchase(bool isMonthly) async {
+    final iapService = InAppPurchaseService();
+    
+    // Check if IAP is available
+    if (!iapService.isAvailable) {
+      // Fallback to mock purchase in debug/TestFlight
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
+        ZagreusPro.enablePro(isMonthly: isMonthly);
+        setState(() {});
+        showZagInfoSnackBar(
+          title: '[DEBUG] Welcome to Zagreus Pro!',
+          message: 'Discover module is now unlocked (Test Mode)',
+        );
+      } else {
+        showZagInfoSnackBar(
+          title: 'Unavailable',
+          message: 'In-app purchases are not available',
+        );
+      }
+      return;
+    }
+    
+    // Attempt real purchase
     showZagInfoSnackBar(
-      title: 'Welcome to Zagreus Pro!',
-      message: 'Discover module is now unlocked',
+      title: 'Processing',
+      message: 'Connecting to App Store...',
     );
+    
+    final bool success = isMonthly 
+      ? await iapService.purchaseMonthly()
+      : await iapService.purchaseYearly();
+    
+    if (success) {
+      setState(() {});
+    }
   }
 }

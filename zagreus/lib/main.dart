@@ -13,6 +13,7 @@ import 'package:zagreus/system/window_manager/window_manager.dart';
 import 'package:zagreus/system/platform.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/services/webhook_sync_service.dart';
+import 'package:zagreus/services/in_app_purchase_service.dart';
 
 /// Zagreus Entry Point: Bootstrap & Run Application
 ///
@@ -48,6 +49,8 @@ Future<void> bootstrap() async {
   await ZagMemoryStore().initialize();
   // Initialize webhook sync service for 24-hour checks
   WebhookSyncService.initialize();
+  // Initialize in-app purchases for iOS
+  if (ZagPlatform.isIOS) await InAppPurchaseService().initialize();
 }
 
 class ZagBIOS extends StatefulWidget {

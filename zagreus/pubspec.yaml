@@ -51,6 +51,8 @@ dependencies:
   xml: ^6.3.0
   # Supabase for auth and storage
   supabase_flutter: ^2.0.0
+  # In-app purchases
+  in_app_purchase: ^3.2.0
 dev_dependencies:
   # Generators
   build_runner: ^2.4.13

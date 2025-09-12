@@ -236,7 +236,6 @@ abstract class ZagDialog {
           title,
           style: const TextStyle(
             fontSize: BODY_SIZE,
-            color: Colors.white,
           ),
         ),
         value: value,

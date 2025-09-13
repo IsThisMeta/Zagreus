@@ -16,20 +16,22 @@ class InAppPurchaseService {
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   
   // Product IDs - these must match exactly what you create in App Store Connect
-  static const String monthlyProductId = 'com.zagreus.pro.monthly';
+  static const String monthlyProductId = 'com.zagreus.pro.monthlyrenewing';
   static const String yearlyProductId = 'com.zagreus.pro.yearly';
   
   static const Set<String> _productIds = {
     monthlyProductId,
-    yearlyProductId,
+    // yearlyProductId,  // Commented out - not in StoreKit file
   };
   
   bool _isAvailable = false;
   List<ProductDetails> _products = [];
   
   Future<void> initialize() async {
+    print('DEBUG: IAP initialize called');
     // Check if IAP is available
     _isAvailable = await _inAppPurchase.isAvailable();
+    print('DEBUG: IAP available: $_isAvailable');
     if (!_isAvailable) {
       ZagLogger().warning('In-app purchases not available');
       return;
@@ -53,7 +55,9 @@ class InAppPurchaseService {
   Future<void> loadProducts() async {
     if (!_isAvailable) return;
     
+    print('DEBUG: Attempting to load products: $_productIds');
     final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(_productIds);
+    print('DEBUG: Response received');
     
     if (response.error != null) {
       ZagLogger().error('Error loading products', response.error, null);
@@ -61,10 +65,15 @@ class InAppPurchaseService {
     }
     
     if (response.notFoundIDs.isNotEmpty) {
+      print('DEBUG: Products not found: ${response.notFoundIDs}');
       ZagLogger().warning('Products not found: ${response.notFoundIDs}');
     }
     
     _products = response.productDetails;
+    print('DEBUG: Found ${_products.length} products');
+    for (var p in _products) {
+      print('DEBUG: - ${p.id}');
+    }
   }
   
   Future<bool> purchaseMonthly() async {

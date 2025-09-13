@@ -23,6 +23,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
   List<RadarrMovie> _recommendedMovies = [];
   List<RadarrMovie> _missingMovies = [];
+  List<Map<String, dynamic>> _popularMovies = [];
   bool _isLoading = true;
   String? _error;
   
@@ -41,8 +42,16 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadRecentlyDownloadedShows();
     _loadRecommendedMovies();
     _loadMissingMovies();
+    // Don't load popular movies here - will do it in didChangeDependencies
     _loadMockTrendingData();
     _startAutoScroll();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load popular movies here where we can access Localizations
+    _loadPopularMovies();
   }
   
   @override
@@ -250,6 +259,38 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
   
+  Future<void> _loadPopularMovies() async {
+    print('🎬 Loading popular movies...');
+    try {
+      // Get user's region from locale
+      final locale = Localizations.localeOf(context);
+      final region = locale.countryCode ?? 'US';
+      print('🎬 Using region: $region');
+      
+      final movies = await TMDBApi.getPopularMovies(region: region);
+      print('🎬 Got ${movies.length} popular movies from TMDB');
+      
+      // Check against Radarr library if available
+      final radarrState = context.read<RadarrState>();
+      if (radarrState.enabled && radarrState.movies != null) {
+        final radarrMovies = await radarrState.movies!;
+        for (final movie in movies) {
+          final tmdbId = movie['tmdbId'] as int;
+          movie['inLibrary'] = radarrMovies.any((m) => m.tmdbId == tmdbId);
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _popularMovies = movies.take(10).toList(); // Limit to 10 for the section
+        });
+        print('🎬 Set ${_popularMovies.length} popular movies in state');
+      }
+    } catch (e) {
+      print('❌ Error loading popular movies: $e');
+    }
+  }
+  
   Future<void> _loadRecentlyDownloadedShows() async {
     // For now, we'll use mock data since Sonarr integration isn't set up yet
     // In a real implementation, this would fetch from SonarrState similar to RadarrState
@@ -386,6 +427,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _recommendedMoviesSection(),
           const SizedBox(height: 12),
           if (_missingMovies.isNotEmpty) _missingMoviesSection(),
+          const SizedBox(height: 12),
+          _popularMoviesSection(), // Always show section, even while loading
           const SizedBox(height: 12),
         ],
       ),
@@ -892,6 +935,205 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           ),
         ),
       ],
+    );
+  }
+  
+  Widget _popularMoviesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.local_fire_department_rounded,
+                color: const Color(0xFF6688FF),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'TMDB',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF6688FF),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Popular Movies',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Movie list or loading placeholder
+        _popularMovies.isNotEmpty
+            ? SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _popularMovies.length,
+                  itemBuilder: (context, index) {
+                    final movie = _popularMovies[index];
+                    return _popularMovieCard(movie);
+                  },
+                ),
+              )
+            : Container(
+                height: 180,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: Text(
+                    'Loading popular movies...',
+                    style: TextStyle(
+                      color: (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black).withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+      ],
+    );
+  }
+  
+  Widget _popularMovieCard(Map<String, dynamic> movie) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
+          // Could navigate to a detail view or add to Radarr
+          _handlePopularMovieTap(movie);
+        },
+        child: Container(
+          width: 140,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Movie poster
+              Stack(
+                children: [
+                  Container(
+                    height: 180,
+                    width: 140,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey.shade800,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        movie['poster'] ?? '',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.movie_rounded,
+                              size: 40,
+                              color: Colors.grey.shade600,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  // In library badge
+                  if (movie['inLibrary'] == true)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  // Rating badge
+                  if (movie['rating'] != null && movie['rating'] > 0)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 12,
+                              color: Colors.yellow,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              (movie['rating'] as num).toStringAsFixed(1),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Title
+              Text(
+                movie['title'] ?? '',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  void _handlePopularMovieTap(Map<String, dynamic> movie) {
+    // For now, just show a snackbar
+    // Could implement adding to Radarr or showing details
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${movie['title']} - TMDB ID: ${movie['tmdbId']}'),
+        action: movie['inLibrary'] != true
+            ? SnackBarAction(
+                label: 'Add to Radarr',
+                onPressed: () {
+                  // Implement add to Radarr functionality
+                },
+              )
+            : null,
+      ),
     );
   }
   

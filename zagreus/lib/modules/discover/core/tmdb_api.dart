@@ -55,6 +55,71 @@ class TMDBApi {
     }
   }
   
+  static Future<List<Map<String, dynamic>>> getPopularMovies({
+    int page = 1,
+    String? region,
+  }) async {
+    try {
+      String url = '$_baseUrl/movie/popular?api_key=$_apiKey&page=$page';
+      if (region != null) {
+        url += '&region=$region';
+      }
+      
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final results = data['results'] as List;
+        
+        // Transform the data to match our UI needs
+        return results.map((item) {
+          return {
+            'id': item['id'],
+            'title': item['title'] ?? 'Unknown',
+            'backdrop': getImageUrl(item['backdrop_path']),
+            'poster': getImageUrl(item['poster_path'], size: 'w500'),
+            'rating': (item['vote_average'] ?? 0).toDouble(),
+            'overview': item['overview'] ?? '',
+            'releaseDate': item['release_date'],
+            'mediaType': 'movie',
+            'tmdbId': item['id'],
+            'popularity': item['popularity'] ?? 0,
+            'inLibrary': false,
+          };
+        }).toList();
+      }
+      
+      throw Exception('Failed to load popular movies: ${response.statusCode}');
+    } catch (e) {
+      print('TMDB API Error (Popular Movies): $e');
+      // Return mock data as fallback
+      return _getMockPopularMovies();
+    }
+  }
+  
+  static List<Map<String, dynamic>> _getMockPopularMovies() {
+    return [
+      {
+        'id': 939243,
+        'title': 'Sonic the Hedgehog 3',
+        'poster': 'https://image.tmdb.org/t/p/w500/d8Ryb8AunYAuycVKDp5HpdWPKgC.jpg',
+        'rating': 7.8,
+        'tmdbId': 939243,
+        'mediaType': 'movie',
+        'inLibrary': false,
+      },
+      {
+        'id': 1184918,
+        'title': 'The Wild Robot',
+        'poster': 'https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg',
+        'rating': 8.5,
+        'tmdbId': 1184918,
+        'mediaType': 'movie',
+        'inLibrary': false,
+      },
+    ];
+  }
+  
   static List<Map<String, dynamic>> _getMockData() {
     return [
       {

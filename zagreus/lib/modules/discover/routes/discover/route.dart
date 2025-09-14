@@ -1157,35 +1157,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               // Movie poster with missing indicator
               Stack(
                 children: [
-                  Container(
-                    height: 180,
-                    width: 140,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
+                  // Simplified poster container to match regular movie cards
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      height: 180,
+                      width: 140,
                       color: Colors.grey.shade800,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Stack(
-                        children: [
-                          _buildPosterImage(context, movie),
-                          // Orange overlay
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.orange.withOpacity(0.2),
-                                  Colors.transparent,
-                                ],
-                                stops: [0.0, 0.5],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: _buildPosterImage(context, movie),
                     ),
                   ),
                   // Missing badge

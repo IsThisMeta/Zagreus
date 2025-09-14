@@ -3,3 +3,4 @@ export 'discover/routes/recently_downloaded/route.dart';
 export 'discover/routes/recommended/route.dart';
 export 'discover/routes/missing/route.dart';
 export 'discover/routes/downloading_soon/route.dart';
+export 'discover/routes/sonarr_recently_downloaded/route.dart';

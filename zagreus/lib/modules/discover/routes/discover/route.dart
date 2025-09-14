@@ -10,6 +10,7 @@ import 'package:zagreus/modules/discover/core/tmdb_api.dart';
 import 'package:zagreus/modules/discover/routes/person_details/route.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/sonarr.dart';
+import 'package:zagreus/modules/discover/routes/sonarr_recently_downloaded/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -2434,53 +2435,112 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
   
   Widget _recentlyDownloadedShowsSection() {
+    // Limit to 3 items for the home view
+    final displayItems = _recentlyDownloadedShows.take(3).toList();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section title
+        // Section title with navigation
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Row(
-            children: [
-              Icon(
-                ZagIcons.SONARR,
-                color: const Color(0xFF35C5F4),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'From Sonarr',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF35C5F4),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SonarrRecentlyDownloadedRoute(),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  'Recently Downloaded',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+              );
+            },
+            child: Row(
+              children: [
+                Icon(
+                  ZagIcons.SONARR,
+                  color: const Color(0xFF35C5F4),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'From Sonarr',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF35C5F4),
                   ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey,
-                size: 24,
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Recently Downloaded',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.grey.withOpacity(0.7),
+                  size: 16,
+                ),
+              ],
+            ),
           ),
         ),
-        // TV show list with thin cards
+        // TV show list with thin cards (limited to 3)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
-            children: _recentlyDownloadedShows.map((episode) {
-              return _tvShowCard(episode);
-            }).toList(),
+            children: [
+              ...displayItems.map((episode) => _tvShowCard(episode)).toList(),
+              if (_recentlyDownloadedShows.length > 3)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SonarrRecentlyDownloadedRoute(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF35C5F4).withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'View All',
+                              style: TextStyle(
+                                color: const Color(0xFF35C5F4),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: const Color(0xFF35C5F4),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ],

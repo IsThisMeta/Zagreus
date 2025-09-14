@@ -9,7 +9,8 @@ enum DiscoverRoutes with ZagRoutesMixin {
   HOME('/discover'),
   RECENTLY_DOWNLOADED('recently_downloaded'),
   RECOMMENDED('recommended'),
-  MISSING('missing');
+  MISSING('missing'),
+  DOWNLOADING_SOON('downloading_soon');
 
   @override
   final String path;
@@ -33,6 +34,8 @@ enum DiscoverRoutes with ZagRoutesMixin {
         return route(widget: const DiscoverRecommendedRoute());
       case DiscoverRoutes.MISSING:
         return route(widget: const DiscoverMissingRoute());
+      case DiscoverRoutes.DOWNLOADING_SOON:
+        return route(widget: DiscoverDownloadingSoonRoute());
     }
   }
   
@@ -44,12 +47,15 @@ enum DiscoverRoutes with ZagRoutesMixin {
           DiscoverRoutes.RECENTLY_DOWNLOADED.routes,
           DiscoverRoutes.RECOMMENDED.routes,
           DiscoverRoutes.MISSING.routes,
+          DiscoverRoutes.DOWNLOADING_SOON.routes,
         ];
       case DiscoverRoutes.RECENTLY_DOWNLOADED:
         return [];
       case DiscoverRoutes.RECOMMENDED:
         return [];
       case DiscoverRoutes.MISSING:
+        return [];
+      case DiscoverRoutes.DOWNLOADING_SOON:
         return [];
     }
   }

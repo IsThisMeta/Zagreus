@@ -24,6 +24,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
   List<RadarrMovie> _recommendedMovies = [];
   List<RadarrMovie> _missingMovies = [];
+  List<RadarrMovie> _downloadingSoon = [];
   List<Map<String, dynamic>> _popularMovies = [];
   bool _isLoading = true;
   String? _error;
@@ -50,6 +51,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadRecentlyDownloadedShows();
     _loadRecommendedMovies();
     _loadMissingMovies();
+    _loadDownloadingSoon();
     // Don't load popular movies here - will do it in didChangeDependencies
     _loadMockTrendingData();
     _startAutoScroll();
@@ -267,6 +269,105 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
   
+  Future<void> _loadDownloadingSoon() async {
+    try {
+      print('📅 [DOWNLOADING SOON] Starting to load...');
+      final radarrState = context.read<RadarrState>();
+      if (!radarrState.enabled) {
+        print('📅 [DOWNLOADING SOON] Radarr not enabled, skipping');
+        return;
+      }
+      
+      // Fetch movies if not already cached
+      if (radarrState.movies == null) {
+        print('📅 [DOWNLOADING SOON] Movies cache is null, fetching...');
+        radarrState.fetchMovies();
+      }
+      
+      // Wait for movies to load
+      print('📅 [DOWNLOADING SOON] Waiting for movies to load...');
+      final allMovies = await radarrState.movies!;
+      print('📅 [DOWNLOADING SOON] Loaded ${allMovies.length} total movies from Radarr');
+      
+      final downloadingSoon = <RadarrMovie>[];
+      final now = DateTime.now();
+      const lookAheadDays = 28;
+      
+      int monitoredCount = 0;
+      int notDownloadedCount = 0;
+      int monitoredNotDownloaded = 0;
+      
+      for (final movie in allMovies) {
+        final isMonitored = movie.monitored == true;
+        final hasFile = movie.hasFile == true;
+        
+        if (isMonitored) monitoredCount++;
+        if (!hasFile) notDownloadedCount++;
+        if (isMonitored && !hasFile) monitoredNotDownloaded++;
+        
+        // Skip if not monitored or already downloaded
+        if (!isMonitored || hasFile) {
+          continue;
+        }
+        
+        // Check if movie has a release date coming soon
+        DateTime? releaseDate;
+        String releaseDateSource = '';
+        
+        if (movie.digitalRelease != null) {
+          releaseDate = movie.digitalRelease;
+          releaseDateSource = 'digital';
+        } else if (movie.physicalRelease != null) {
+          releaseDate = movie.physicalRelease;
+          releaseDateSource = 'physical';
+        } else if (movie.inCinemas != null) {
+          // Use in cinemas date + 90 days as estimated digital release
+          releaseDate = movie.inCinemas!.add(const Duration(days: 90));
+          releaseDateSource = 'cinema+90';
+        }
+        
+        if (releaseDate != null) {
+          final daysUntil = releaseDate.difference(now).inDays;
+          if (daysUntil >= 0 && daysUntil <= lookAheadDays) {
+            downloadingSoon.add(movie);
+            print('📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - releases in $daysUntil days (${releaseDateSource})');
+          }
+        } else if (movie.status == 'announced' || movie.status == 'inCinemas') {
+          // Include announced/in-cinema movies without specific release dates
+          downloadingSoon.add(movie);
+          print('📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - status: ${movie.status}');
+        }
+      }
+      
+      print('📅 [DOWNLOADING SOON] Summary:');
+      print('📅 [DOWNLOADING SOON]   Total movies: ${allMovies.length}');
+      print('📅 [DOWNLOADING SOON]   Monitored: $monitoredCount');
+      print('📅 [DOWNLOADING SOON]   Not downloaded: $notDownloadedCount');
+      print('📅 [DOWNLOADING SOON]   Monitored & not downloaded: $monitoredNotDownloaded');
+      print('📅 [DOWNLOADING SOON]   Downloading soon: ${downloadingSoon.length}');
+      
+      // Sort by release date (closest first)
+      downloadingSoon.sort((a, b) {
+        final aDate = a.digitalRelease ?? a.physicalRelease ?? 
+                      (a.inCinemas?.add(const Duration(days: 90)));
+        final bDate = b.digitalRelease ?? b.physicalRelease ?? 
+                      (b.inCinemas?.add(const Duration(days: 90)));
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return aDate.compareTo(bDate);
+      });
+      
+      setState(() {
+        _downloadingSoon = downloadingSoon.take(10).toList();
+        print('📅 [DOWNLOADING SOON] Set ${_downloadingSoon.length} movies in state');
+      });
+    } catch (e) {
+      print('📅 [DOWNLOADING SOON] ERROR: $e');
+      print('📅 [DOWNLOADING SOON] Stack trace: ${StackTrace.current}');
+    }
+  }
+  
   Future<void> _loadPopularMovies() async {
     print('🎬 Loading popular movies...');
     try {
@@ -437,6 +538,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _recommendedMoviesSection(),
           const SizedBox(height: 12),
           if (_missingMovies.isNotEmpty) _missingMoviesSection(),
+          const SizedBox(height: 12),
+          _downloadingSoonSection(), // Always show section, even when empty
           const SizedBox(height: 12),
           _popularMoviesSection(), // Always show section, even while loading
           const SizedBox(height: 12),
@@ -1420,6 +1523,107 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
   
+  Widget _downloadingSoonSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: GestureDetector(
+            onTap: () {
+              DiscoverRoutes.DOWNLOADING_SOON.go();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  Icons.schedule_rounded,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Radarr',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFFEC333),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Downloading Soon',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black).withOpacity(0.5),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Movie list
+        SizedBox(
+          height: 220,
+          child: _downloadingSoon.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 48,
+                          color: Colors.grey.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No movies downloading soon',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Monitored movies releasing within 28 days will appear here',
+                          style: TextStyle(
+                            color: Colors.grey.withOpacity(0.7),
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _downloadingSoon.length,
+                  itemBuilder: (context, index) {
+                    final movie = _downloadingSoon[index];
+                    return _downloadingSoonCard(movie);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+  
   Widget _popularMoviesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1669,6 +1873,128 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Movie title
+              Text(
+                movie.title ?? 'Unknown',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _downloadingSoonCard(RadarrMovie movie) {
+    // Format release date
+    String releaseText = '';
+    DateTime? releaseDate = movie.digitalRelease ?? movie.physicalRelease;
+    
+    // If no digital/physical release, try to estimate from cinema date
+    if (releaseDate == null && movie.inCinemas != null) {
+      releaseDate = movie.inCinemas!.add(const Duration(days: 90));
+    }
+    
+    if (releaseDate != null) {
+      final now = DateTime.now();
+      final daysUntil = releaseDate.difference(now).inDays;
+      
+      if (daysUntil < 0) {
+        releaseText = 'TBA';
+      } else if (daysUntil == 0) {
+        releaseText = 'TODAY';
+      } else if (daysUntil == 1) {
+        releaseText = 'TOMORROW';
+      } else if (daysUntil < 7) {
+        releaseText = '$daysUntil DAYS';
+      } else {
+        releaseText = '${(daysUntil / 7).round()} WEEKS';
+      }
+    } else if (movie.status == 'announced') {
+      releaseText = 'ANNOUNCED';
+    } else if (movie.status == 'inCinemas') {
+      releaseText = 'IN CINEMAS';
+    } else {
+      releaseText = 'TBA';
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to movie detail
+          RadarrRoutes.MOVIE.go(
+            params: {
+              'movie': movie.id.toString(),
+            },
+          );
+        },
+        child: Container(
+          width: 140,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Movie poster with release date indicator
+              Stack(
+                children: [
+                  // Poster container
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      height: 180,
+                      width: 140,
+                      color: Colors.grey.shade800,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildPosterImage(context, movie),
+                          // Orange gradient overlay
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.orange.withOpacity(0.3),
+                                  Colors.transparent,
+                                ],
+                                stops: [0.0, 0.5],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Release date badge
+                  if (releaseText.isNotEmpty)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          releaseText,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),

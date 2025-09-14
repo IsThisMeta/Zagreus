@@ -1102,15 +1102,15 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 ],
               ),
               const SizedBox(height: 8),
-              // Title
+              // Movie title
               Text(
                 movie['title'] ?? '',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ],
           ),

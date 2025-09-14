@@ -173,12 +173,12 @@ class _State extends State<DiscoverMissingRoute> with ZagScrollControllerMixin {
       onRefresh: _loadMissingMovies,
       child: GridView.builder(
         controller: scrollController,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(20),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 2 / 3,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
         ),
         itemCount: _movies.length,
         itemBuilder: (context, index) => _movieTile(_movies[index]),
@@ -198,11 +198,11 @@ class _State extends State<DiscoverMissingRoute> with ZagScrollControllerMixin {
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           color: Colors.grey.shade800,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           child: Stack(
             fit: StackFit.expand,
             children: [

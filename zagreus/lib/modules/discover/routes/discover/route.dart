@@ -503,7 +503,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       children: [
         // Search bar
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
           child: TextField(
             controller: _searchController,
             autofocus: true,

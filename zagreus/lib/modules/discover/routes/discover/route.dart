@@ -492,42 +492,436 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
   
+  // Search state
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
+  Timer? _searchDebounce;
+
   Widget _searchPage() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_rounded,
-            size: 80,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.3)
-                : Colors.black.withOpacity(0.3),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Search',
+    return Column(
+      children: [
+        // Search bar
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+          child: TextField(
+            controller: _searchController,
+            autofocus: true,
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.white
                   : Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Search across all your media',
-            style: TextStyle(
               fontSize: 16,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.black.withOpacity(0.5),
+            ),
+            decoration: InputDecoration(
+              hintText: 'Search movies, TV shows, and people...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.3),
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.5)
+                    : Colors.black.withOpacity(0.5),
+              ),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.5)
+                            : Colors.black.withOpacity(0.5),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchResults.clear();
+                        });
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: ZagColours.accent,
+                  width: 2,
+                ),
+              ),
+            ),
+            onChanged: (query) {
+              // Debounce search
+              _searchDebounce?.cancel();
+              if (query.isEmpty) {
+                setState(() {
+                  _searchResults.clear();
+                });
+                return;
+              }
+              _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+                _performSearch(query);
+              });
+            },
+          ),
+        ),
+        // Search results
+        Expanded(
+          child: _isSearching
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(ZagColours.accent),
+                  ),
+                )
+              : _searchResults.isEmpty
+                  ? _searchController.text.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_rounded,
+                                size: 60,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white.withOpacity(0.2)
+                                    : Colors.black.withOpacity(0.2),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Search for movies, TV shows, and people',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.4)
+                                      : Colors.black.withOpacity(0.4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off_rounded,
+                                size: 60,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white.withOpacity(0.2)
+                                    : Colors.black.withOpacity(0.2),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No results found',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.4)
+                                      : Colors.black.withOpacity(0.4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                  : _buildSearchResults(),
+        ),
+      ],
+    );
+  }
+  
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty) return;
+    
+    setState(() {
+      _isSearching = true;
+    });
+    
+    try {
+      print('🔍 Searching for: $query');
+      final tmdbApi = TMDBApi();
+      final results = await tmdbApi.searchMulti(query);
+      
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+      
+      print('🔍 Found ${results.length} results');
+    } catch (e) {
+      print('❌ Search error: $e');
+      setState(() {
+        _isSearching = false;
+        _searchResults = [];
+      });
+      showZagSnackBar(
+        title: 'Search Error',
+        message: 'Failed to search. Please try again.',
+        type: ZagSnackbarType.ERROR,
+      );
+    }
+  }
+  
+  Widget _buildSearchResults() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final item = _searchResults[index];
+        final mediaType = item['media_type'] as String?;
+        final title = item['title'] ?? item['name'] ?? 'Unknown';
+        final overview = item['overview'] ?? '';
+        final posterPath = item['poster_path'] as String?;
+        final profilePath = item['profile_path'] as String?;
+        final releaseDate = item['release_date'] ?? item['first_air_date'] ?? '';
+        final voteAverage = (item['vote_average'] ?? 0).toDouble();
+        
+        // Get appropriate image path
+        String? imagePath;
+        if (mediaType == 'person') {
+          imagePath = profilePath;
+        } else {
+          imagePath = posterPath;
+        }
+        
+        final imageUrl = imagePath != null 
+            ? 'https://image.tmdb.org/t/p/w185$imagePath'
+            : null;
+        
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.05)
+              : Colors.black.withOpacity(0.03),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              _handleSearchResultTap(item);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Poster/Profile image
+                  Container(
+                    width: 80,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey.shade800,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: imageUrl != null
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _searchResultPlaceholder(mediaType);
+                              },
+                            )
+                          : _searchResultPlaceholder(mediaType),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Media type badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _getMediaTypeColor(mediaType),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _getMediaTypeLabel(mediaType),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        // Title
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (releaseDate.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            releaseDate.split('-').first,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white.withOpacity(0.5)
+                                  : Colors.black.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                        if (mediaType != 'person' && voteAverage > 0) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                size: 14,
+                                color: Colors.yellow,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                voteAverage.toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.7)
+                                      : Colors.black.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (overview.isNotEmpty && mediaType != 'person') ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            overview,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white.withOpacity(0.6)
+                                  : Colors.black.withOpacity(0.6),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+  
+  Widget _searchResultPlaceholder(String? mediaType) {
+    IconData icon;
+    if (mediaType == 'person') {
+      icon = Icons.person_rounded;
+    } else if (mediaType == 'tv') {
+      icon = Icons.tv_rounded;
+    } else {
+      icon = Icons.movie_rounded;
+    }
+    
+    return Center(
+      child: Icon(
+        icon,
+        size: 40,
+        color: Colors.grey.shade600,
       ),
     );
+  }
+  
+  Color _getMediaTypeColor(String? mediaType) {
+    switch (mediaType) {
+      case 'movie':
+        return Colors.blue;
+      case 'tv':
+        return Colors.green;
+      case 'person':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+  
+  String _getMediaTypeLabel(String? mediaType) {
+    switch (mediaType) {
+      case 'movie':
+        return 'MOVIE';
+      case 'tv':
+        return 'TV SHOW';
+      case 'person':
+        return 'PERSON';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+  
+  void _handleSearchResultTap(Map<String, dynamic> item) {
+    final mediaType = item['media_type'] as String?;
+    final tmdbId = item['id'] as int;
+    final title = item['title'] ?? item['name'] ?? 'Unknown';
+    
+    if (mediaType == 'movie') {
+      // Try to find in Radarr first
+      final radarrState = context.read<RadarrState>();
+      if (radarrState.enabled && radarrState.movies != null) {
+        radarrState.movies!.then((movies) {
+          final movie = movies.firstWhere(
+            (m) => m.tmdbId == tmdbId,
+            orElse: () => RadarrMovie(),
+          );
+          
+          if (movie.id != null) {
+            // Movie is in library, navigate to details
+            RadarrRoutes.MOVIE.go(
+              params: {
+                'movie': movie.id.toString(),
+              },
+            );
+          } else {
+            // Movie not in library, navigate to add movie with TMDB ID
+            RadarrRoutes.ADD_MOVIE.go(
+              queryParams: {
+                'query': 'tmdb:$tmdbId',
+              },
+            );
+          }
+        });
+      }
+    } else if (mediaType == 'tv') {
+      // TV show handling would go here with Sonarr
+      showZagSnackBar(
+        title: title,
+        message: 'TV show support coming soon',
+        type: ZagSnackbarType.INFO,
+      );
+    } else if (mediaType == 'person') {
+      // Person details
+      showZagSnackBar(
+        title: title,
+        message: 'Person details coming soon',
+        type: ZagSnackbarType.INFO,
+      );
+    }
   }
   
   Widget _emptyState() {

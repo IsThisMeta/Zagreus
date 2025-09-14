@@ -14,6 +14,28 @@ class TMDBApi {
     return '$_imageBaseUrl/$size$path';
   }
   
+  // Multi-search across movies, TV shows, and people
+  Future<List<Map<String, dynamic>>> searchMulti(String query, {int page = 1}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/search/multi?api_key=$_apiKey&query=${Uri.encodeComponent(query)}&page=$page&include_adult=false'),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final results = data['results'] as List;
+        
+        // Return raw results for the search UI to process
+        return List<Map<String, dynamic>>.from(results);
+      }
+      
+      throw Exception('Failed to search: ${response.statusCode}');
+    } catch (e) {
+      print('TMDB Search Error: $e');
+      return [];
+    }
+  }
+  
   static Future<List<Map<String, dynamic>>> getTrending({
     String mediaType = 'all',
     String timeWindow = 'day',

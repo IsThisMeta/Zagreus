@@ -4,6 +4,7 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
+import 'package:zagreus/router/routes/sonarr.dart';
 import 'package:zagreus/router/routes/discover.dart';
 import 'package:zagreus/router/routes/search.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
@@ -11,6 +12,7 @@ import 'package:zagreus/modules/discover/routes/person_details/route.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/modules/discover/routes/sonarr_recently_downloaded/route.dart';
+import 'package:zagreus/modules/discover/routes/sonarr_airing_next/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -26,6 +28,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   
   List<RadarrMovie> _recentlyDownloaded = [];
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
+  List<Map<String, dynamic>> _airingNextShows = []; // Sonarr airing next
   List<RadarrMovie> _recommendedMovies = [];
   List<RadarrMovie> _missingMovies = [];
   List<RadarrMovie> _downloadingSoon = [];
@@ -68,6 +71,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     // Load popular movies and people here where we can access Localizations
     _loadPopularMovies();
     _loadPopularPeople();
+    _loadSonarrAiringNext();
   }
   
   @override
@@ -490,6 +494,128 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
   
+  Future<void> _loadSonarrAiringNext() async {
+    try {
+      final sonarrState = context.read<SonarrState>();
+      if (!sonarrState.enabled || sonarrState.api == null) {
+        setState(() {
+          _airingNextShows = [];
+        });
+        return;
+      }
+      
+      final api = sonarrState.api!;
+      
+      // Get episodes airing in the next 7 days
+      final now = DateTime.now();
+      final endDate = now.add(const Duration(days: 7));
+      
+      final calendar = await api.calendar.get(
+        start: now,
+        end: endDate,
+        unmonitored: false, // Only get monitored episodes
+        includeSeries: true,
+        includeEpisodeFile: true,
+      );
+      
+      // Filter to only monitored episodes that haven't aired yet and don't have files
+      final upcomingEpisodes = calendar.where((episode) {
+        return episode.monitored == true && 
+               episode.hasFile != true &&
+               episode.airDateUtc != null &&
+               episode.airDateUtc!.isAfter(now);
+      }).toList();
+      
+      // Sort by air date
+      upcomingEpisodes.sort((a, b) => 
+        a.airDateUtc!.compareTo(b.airDateUtc!));
+      
+      // Map to UI format
+      final shows = <Map<String, dynamic>>[];
+      for (final episode in upcomingEpisodes.take(10)) { // Limit to 10 items
+        final series = episode.series;
+        
+        if (series != null) {
+          // Get fanart or poster image
+          String? imageUrl;
+          for (final image in series.images ?? []) {
+            if (image.coverType == 'fanart') {
+              imageUrl = image.remoteUrl ?? image.url;
+              break;
+            }
+          }
+          // Fallback to poster if no fanart
+          if (imageUrl == null) {
+            for (final image in series.images ?? []) {
+              if (image.coverType == 'poster') {
+                imageUrl = image.remoteUrl ?? image.url;
+                break;
+              }
+            }
+          }
+          
+          shows.add({
+            'seriesTitle': series.title ?? 'Unknown Series',
+            'episodeTitle': episode.title ?? 'Episode ${episode.episodeNumber}',
+            'seasonNumber': episode.seasonNumber ?? 0,
+            'episodeNumber': episode.episodeNumber ?? 0,
+            'network': series.network ?? 'Network',
+            'thumbnail': imageUrl,
+            'airDateUtc': episode.airDateUtc,
+            'seriesId': series.id,
+            'episodeId': episode.id,
+          });
+        }
+      }
+      
+      setState(() {
+        _airingNextShows = shows;
+      });
+    } catch (e) {
+      print('Error loading Sonarr airing next: $e');
+      setState(() {
+        _airingNextShows = [];
+      });
+    }
+  }
+  
+  String _formatAiringTime(DateTime? airDateUtc, String? network) {
+    if (airDateUtc == null) return '';
+    
+    // Convert UTC to local time
+    final localTime = airDateUtc.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final episodeDay = DateTime(localTime.year, localTime.month, localTime.day);
+    
+    String dayLabel;
+    if (episodeDay == today) {
+      dayLabel = 'Today';
+    } else if (episodeDay == tomorrow) {
+      dayLabel = 'Tomorrow';
+    } else {
+      // Format as "Mon, Jan 15"
+      final weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      dayLabel = '${weekdays[localTime.weekday % 7]}, ${months[localTime.month - 1]} ${localTime.day}';
+    }
+    
+    // Format time as "3:00 PM"
+    final hour = localTime.hour;
+    final minute = localTime.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    
+    // Truncate network name if too long
+    final networkName = network ?? '';
+    final truncatedNetwork = networkName.length > 12 
+        ? '${networkName.substring(0, 12)}...' 
+        : networkName;
+    
+    return '$dayLabel • $displayHour:$minute $period${truncatedNetwork.isNotEmpty ? ' on $truncatedNetwork' : ''}';
+  }
+  
   Future<void> _loadPopularPeople() async {
     print('👥 Loading popular people...');
     try {
@@ -639,6 +765,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _heroCarousel(),
           // TV shows sections
           if (_recentlyDownloadedShows.isNotEmpty) _recentlyDownloadedShowsSection(),
+          if (_airingNextShows.isNotEmpty) _airingNextSection(),
           const SizedBox(height: 32),
         ],
       ),
@@ -2544,6 +2671,232 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           ),
         ),
       ],
+    );
+  }
+  
+  Widget _airingNextSection() {
+    // Limit to 3 items for the home view
+    final displayItems = _airingNextShows.take(3).toList();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title with navigation
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SonarrAiringNextRoute(),
+                ),
+              );
+            },
+            child: Row(
+              children: [
+                Icon(
+                  ZagIcons.SONARR,
+                  color: const Color(0xFF35C5F4),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'From Sonarr',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF35C5F4),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Airing Next',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.grey.withOpacity(0.7),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+        // TV show list with thin cards (limited to 3)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              ...displayItems.map((episode) => _airingNextCard(episode)).toList(),
+              if (_airingNextShows.length > 3)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SonarrAiringNextRoute(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF35C5F4).withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'View All',
+                              style: TextStyle(
+                                color: const Color(0xFF35C5F4),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: const Color(0xFF35C5F4),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _airingNextCard(Map<String, dynamic> episode) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              if (episode['seriesId'] != null) {
+                SonarrRoutes.SERIES.go(
+                  params: {
+                    'series': episode['seriesId'].toString(),
+                  },
+                );
+              }
+            },
+            child: Row(
+              children: [
+                // Thumbnail
+                Container(
+                  width: 120,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    color: Colors.grey.shade800,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    child: episode['thumbnail'] != null
+                        ? Image.network(
+                            episode['thumbnail'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.tv_rounded,
+                                  size: 30,
+                                  color: Colors.grey.shade600,
+                                ),
+                              );
+                            },
+                          )
+                        : Center(
+                            child: Icon(
+                              Icons.tv_rounded,
+                              size: 30,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                  ),
+                ),
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          episode['seriesTitle'],
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${episode['seasonNumber']}x${episode['episodeNumber'].toString().padLeft(2, '0')} • ${episode['episodeTitle']}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatAiringTime(episode['airDateUtc'], episode['network']),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: ZagColours.accent,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
   

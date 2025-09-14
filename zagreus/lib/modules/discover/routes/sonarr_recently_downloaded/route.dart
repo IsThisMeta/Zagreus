@@ -211,7 +211,7 @@ class _State extends State<SonarrRecentlyDownloadedRoute> with ZagScrollControll
       onRefresh: _loadRecentlyDownloadedShows,
       child: ListView.builder(
         controller: scrollController,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: _recentlyDownloadedShows.length,
         itemBuilder: (context, index) {
           final episode = _recentlyDownloadedShows[index];
@@ -225,18 +225,10 @@ class _State extends State<SonarrRecentlyDownloadedRoute> with ZagScrollControll
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
-        height: 100,
+        height: 80,
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey.shade900
-              : Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey.shade800
-                : Colors.grey.shade200,
-            width: 1,
-          ),
         ),
         child: Material(
           color: Colors.transparent,
@@ -255,8 +247,8 @@ class _State extends State<SonarrRecentlyDownloadedRoute> with ZagScrollControll
               children: [
                 // Thumbnail
                 Container(
-                  width: 140,
-                  height: 100,
+                  width: 120,
+                  height: 80,
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
@@ -291,75 +283,45 @@ class _State extends State<SonarrRecentlyDownloadedRoute> with ZagScrollControll
                         Text(
                           episode['seriesTitle'],
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text(
-                              '${episode['seasonNumber']}x${episode['episodeNumber'].toString().padLeft(2, '0')}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: ZagColours.accent,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '•',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                episode['episodeTitle'],
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '${episode['seasonNumber']}x${episode['episodeNumber'].toString().padLeft(2, '0')} • ${episode['episodeTitle']}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Row(
                           children: [
                             Icon(
-                              Icons.schedule_rounded,
-                              size: 12,
-                              color: Colors.grey.shade600,
+                              Icons.access_time_rounded,
+                              size: 10,
+                              color: Colors.grey,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _formatDate(episode['date']),
                               style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600,
+                                fontSize: 10,
+                                color: Colors.grey,
                               ),
                             ),
                             const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: ZagColours.accent.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Downloaded',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: ZagColours.accent,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            Text(
+                              'Downloaded',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: ZagColours.accent,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],

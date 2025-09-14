@@ -99,14 +99,17 @@ abstract class ZagDialog {
   static Widget textContent({
     required String text,
     TextAlign textAlign = TextAlign.center,
+    Color? color,
   }) =>
-      Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: ZagDialog.BODY_SIZE,
+      Builder(
+        builder: (context) => Text(
+          text,
+          style: TextStyle(
+            color: color ?? Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            fontSize: ZagDialog.BODY_SIZE,
+          ),
+          textAlign: textAlign,
         ),
-        textAlign: textAlign,
       );
 
   static TextSpan textSpanContent({

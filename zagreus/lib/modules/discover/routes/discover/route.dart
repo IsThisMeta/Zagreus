@@ -7,6 +7,7 @@ import 'package:zagreus/router/routes/radarr.dart';
 import 'package:zagreus/router/routes/discover.dart';
 import 'package:zagreus/router/routes/search.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
+import 'package:zagreus/modules/discover/routes/person_details/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -1923,8 +1924,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       padding: const EdgeInsets.only(right: 16),
       child: GestureDetector(
         onTap: () {
-          // TODO: Navigate to person detail page
-          print('Tapped on ${person['name']}');
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PersonDetailsRoute(
+                personId: person['id'],
+                personName: person['name'],
+              ),
+            ),
+          );
         },
         child: Column(
           children: [

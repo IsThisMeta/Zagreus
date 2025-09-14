@@ -165,6 +165,111 @@ class TMDBApi {
     }
   }
   
+  static Future<Map<String, dynamic>> getPersonDetails(int personId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/person/$personId?api_key=$_apiKey'),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // Calculate age
+        int? age;
+        if (data['birthday'] != null) {
+          final birthDate = DateTime.parse(data['birthday']);
+          final deathDate = data['deathday'] != null 
+              ? DateTime.parse(data['deathday'])
+              : DateTime.now();
+          age = deathDate.year - birthDate.year;
+        }
+        
+        return {
+          'id': data['id'],
+          'name': data['name'],
+          'biography': data['biography'],
+          'birthday': data['birthday'],
+          'deathday': data['deathday'],
+          'placeOfBirth': data['place_of_birth'],
+          'profilePath': data['profile_path'] != null
+              ? getImageUrl(data['profile_path'], size: 'w500')
+              : null,
+          'age': age,
+          'knownForDepartment': data['known_for_department'],
+        };
+      }
+      
+      throw Exception('Failed to load person details: ${response.statusCode}');
+    } catch (e) {
+      print('TMDB API Error (Person Details): $e');
+      throw e;
+    }
+  }
+  
+  static Future<List<Map<String, dynamic>>> getPersonCombinedCredits(int personId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/person/$personId/combined_credits?api_key=$_apiKey'),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final cast = data['cast'] as List;
+        final crew = data['crew'] as List;
+        
+        final List<Map<String, dynamic>> credits = [];
+        
+        // Process cast credits
+        for (final credit in cast) {
+          final year = _extractYear(credit['release_date'] ?? credit['first_air_date']);
+          credits.add({
+            'id': credit['id'],
+            'title': credit['title'] ?? credit['name'] ?? 'Unknown',
+            'posterPath': credit['poster_path'] != null
+                ? getImageUrl(credit['poster_path'], size: 'w342')
+                : null,
+            'mediaType': credit['media_type'],
+            'creditType': 'cast',
+            'role': credit['character'] ?? 'Actor',
+            'rating': (credit['vote_average'] ?? 0).toDouble(),
+            'releaseDate': credit['release_date'] ?? credit['first_air_date'],
+            'year': year,
+          });
+        }
+        
+        // Process crew credits
+        for (final credit in crew) {
+          final year = _extractYear(credit['release_date'] ?? credit['first_air_date']);
+          credits.add({
+            'id': credit['id'],
+            'title': credit['title'] ?? credit['name'] ?? 'Unknown',
+            'posterPath': credit['poster_path'] != null
+                ? getImageUrl(credit['poster_path'], size: 'w342')
+                : null,
+            'mediaType': credit['media_type'],
+            'creditType': 'crew',
+            'role': credit['job'] ?? credit['department'] ?? 'Crew',
+            'rating': (credit['vote_average'] ?? 0).toDouble(),
+            'releaseDate': credit['release_date'] ?? credit['first_air_date'],
+            'year': year,
+          });
+        }
+        
+        return credits;
+      }
+      
+      throw Exception('Failed to load person credits: ${response.statusCode}');
+    } catch (e) {
+      print('TMDB API Error (Person Credits): $e');
+      return [];
+    }
+  }
+  
+  static String? _extractYear(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return null;
+    return dateString.split('-').first;
+  }
+  
   static List<Map<String, dynamic>> _getMockPopularPeople() {
     return [
       {

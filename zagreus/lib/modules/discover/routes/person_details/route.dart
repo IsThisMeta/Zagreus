@@ -455,7 +455,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 2 / 3.5,
+          childAspectRatio: 2 / 3,
           crossAxisSpacing: 12,
           mainAxisSpacing: 10,
         ),

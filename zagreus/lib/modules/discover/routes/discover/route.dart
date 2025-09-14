@@ -1078,7 +1078,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              (item['rating'] as num).toStringAsFixed(1),
+                              (item['rating'] as num) > 0 
+                                  ? (item['rating'] as num).toStringAsFixed(1)
+                                  : 'N/A',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,

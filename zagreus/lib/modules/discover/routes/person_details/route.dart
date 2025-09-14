@@ -455,9 +455,9 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 2 / 3.5,
+          childAspectRatio: 2 / 3,
           crossAxisSpacing: 12,
-          mainAxisSpacing: 16,
+          mainAxisSpacing: 10,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -481,9 +481,9 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Poster with shadow
-            Container(
-              height: 140,
-              decoration: BoxDecoration(
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
@@ -576,6 +576,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
                       ),
                     ),
                 ],
+              ),
               ),
             ),
             const SizedBox(height: 6),

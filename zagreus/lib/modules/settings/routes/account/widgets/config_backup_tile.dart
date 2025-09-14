@@ -4,6 +4,7 @@ import 'package:zagreus/database/config.dart';
 import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/storage.dart';
 import 'package:zagreus/modules/settings.dart';
+import 'package:zagreus/utils/encryption.dart';
 import 'package:zagreus/utils/uuid.dart';
 
 class SettingsAccountBackupConfigurationTile extends StatefulWidget {
@@ -40,16 +41,21 @@ class _State extends State<SettingsAccountBackupConfigurationTile> {
     updateState(ZagLoadingState.ACTIVE);
 
     try {
-      // No encryption - just store the raw config
-      String configData = ZagConfig().export();
-      int timestamp = DateTime.now().millisecondsSinceEpoch;
-      String id = ZagUUID().generate();
-      String format = 'MMMM dd, yyyy\nhh:mm:ss a';
-      String title = DateFormat(format).format(DateTime.now());
+      // Ask for encryption password
+      Tuple2<bool, String> _values = 
+          await SettingsDialogs().backupConfiguration(context);
+      
+      if (_values.item1) {
+        String decrypted = ZagConfig().export();
+        String encrypted = ZagEncryption().encrypt(_values.item2, decrypted);
+        int timestamp = DateTime.now().millisecondsSinceEpoch;
+        String id = ZagUUID().generate();
+        String format = 'MMMM dd, yyyy\nhh:mm:ss a';
+        String title = DateFormat(format).format(DateTime.now());
 
-      await ZagSupabaseDatabase()
-          .addBackupEntry(id, timestamp, title: title)
-          .then((_) => ZagSupabaseStorage().uploadBackup(configData, id))
+        await ZagSupabaseDatabase()
+            .addBackupEntry(id, timestamp, title: title)
+            .then((_) => ZagSupabaseStorage().uploadBackup(encrypted, id))
           .then((_) {
         updateState(ZagLoadingState.INACTIVE);
         showZagSuccessSnackBar(
@@ -67,6 +73,7 @@ class _State extends State<SettingsAccountBackupConfigurationTile> {
           error: error,
         );
       });
+      }
     } catch (error, stack) {
       ZagLogger().error('Backup Failed', error, stack);
       showZagErrorSnackBar(

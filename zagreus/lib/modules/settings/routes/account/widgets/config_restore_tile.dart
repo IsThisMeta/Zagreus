@@ -4,6 +4,7 @@ import 'package:zagreus/database/config.dart';
 import 'package:zagreus/supabase/database.dart';
 import 'package:zagreus/supabase/storage.dart';
 import 'package:zagreus/modules/settings.dart';
+import 'package:zagreus/utils/encryption.dart';
 
 class SettingsAccountRestoreConfigurationTile extends StatefulWidget {
   const SettingsAccountRestoreConfigurationTile({
@@ -43,9 +44,9 @@ class _State extends State<SettingsAccountRestoreConfigurationTile> {
 
       if (result.item1) {
         String? id = result.item2!.id;
-        String? configData = await ZagSupabaseStorage().downloadBackup(id);
-        if (configData != null) {
-          await _restoreBackup(context, configData);
+        String? encrypted = await ZagSupabaseStorage().downloadBackup(id);
+        if (encrypted != null) {
+          await _decryptBackup(context, encrypted);
         }
       }
     } catch (error, stack) {
@@ -58,20 +59,25 @@ class _State extends State<SettingsAccountRestoreConfigurationTile> {
     updateState(ZagLoadingState.INACTIVE);
   }
 
-  Future<void> _restoreBackup(BuildContext context, String configData) async {
-    try {
-      // No decryption needed - just import the raw config
-      await ZagConfig().import(context, configData);
-      showZagSuccessSnackBar(
-        title: 'settings.RestoreFromCloudSuccess'.tr(),
-        message: 'settings.RestoreFromCloudSuccessMessage'.tr(),
-      );
-    } catch (error, stack) {
-      ZagLogger().error('Failed to restore backup', error, stack);
-      showZagErrorSnackBar(
-        title: 'settings.RestoreFromCloudFailure'.tr(),
-        message: 'Failed to restore backup configuration.',
-      );
+  Future<void> _decryptBackup(BuildContext context, String encrypted) async {
+    Tuple2<bool, String> _key = await SettingsDialogs().decryptBackup(context);
+    if (_key.item1) {
+      try {
+        String decrypted = ZagEncryption().decrypt(_key.item2, encrypted);
+        await ZagConfig().import(context, decrypted);
+        showZagSuccessSnackBar(
+          title: 'settings.RestoreFromCloudSuccess'.tr(),
+          message: 'settings.RestoreFromCloudSuccessMessage'.tr(),
+        );
+      } catch (_) {
+        showZagErrorSnackBar(
+          title: 'settings.RestoreFromCloudFailure'.tr(),
+          message: 'zagreus.IncorrectEncryptionKey'.tr(),
+          showButton: true,
+          buttonText: 'zagreus.Retry'.tr(),
+          buttonOnPressed: () async => _decryptBackup(context, encrypted),
+        );
+      }
     }
   }
 }

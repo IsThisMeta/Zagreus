@@ -18,6 +18,7 @@ class DiscoverHomeRoute extends StatefulWidget {
 class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late ZagPageController _pageController;
+  int _currentPageIndex = 0;
   
   List<RadarrMovie> _recentlyDownloaded = [];
   List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
@@ -38,6 +39,13 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   void initState() {
     super.initState();
     _pageController = ZagPageController(initialPage: 0);
+    _pageController.addListener(() {
+      if (_pageController.hasClients && _pageController.page != null) {
+        setState(() {
+          _currentPageIndex = _pageController.page!.round();
+        });
+      }
+    });
     _loadRecentlyDownloaded();
     _loadRecentlyDownloadedShows();
     _loadRecommendedMovies();
@@ -333,7 +341,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       appBar: ZagAppBar(
         title: 'Discover',
         useDrawer: true,
-        actions: [
+        actions: _currentPageIndex != 3 ? [
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: Row(
@@ -344,7 +352,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               ],
             ),
           ),
-        ],
+        ] : null,
       ),
       body: _body(),
       bottomNavigationBar: _DiscoverNavigationBar(

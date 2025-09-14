@@ -10,8 +10,9 @@ class ZagEncryption {
   }
 
   IV _generateIV() {
-    const _length = 16;
-    return IV.fromLength(_length);
+    // Use a fixed IV (all zeros) for consistent encryption/decryption
+    // This matches LunaSea's behavior
+    return IV.allZerosOfLength(16);
   }
 
   /// Encrypt the unencrypted string [data] using the given encryption [key]

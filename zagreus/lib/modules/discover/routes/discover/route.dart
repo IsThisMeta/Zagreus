@@ -360,6 +360,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         _moviesPage(),
         _tvShowsPage(),
         _calendarPage(),
+        _searchPage(),
       ],
     );
   }
@@ -479,6 +480,44 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           const SizedBox(height: 12),
           Text(
             'Release calendar will be available here',
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.5)
+                  : Colors.black.withOpacity(0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _searchPage() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_rounded,
+            size: 80,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.3)
+                : Colors.black.withOpacity(0.3),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Search',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Search across all your media',
             style: TextStyle(
               fontSize: 16,
               color: Theme.of(context).brightness == Brightness.dark
@@ -1632,11 +1671,7 @@ class _DiscoverNavigationBar extends StatelessWidget {
       icons: icons,
       titles: titles,
       onTabChange: (index) {
-        if (index == 3) {
-          // Search tab
-          SearchRoutes.SEARCH.go();
-        }
-        // Calendar (index 2) will navigate normally within the PageView
+        // All tabs navigate normally within the PageView
       },
     );
   }

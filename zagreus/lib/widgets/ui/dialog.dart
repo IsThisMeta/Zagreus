@@ -164,35 +164,37 @@ abstract class ZagDialog {
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
   }) =>
-      TextFormField(
-        autofocus: true,
-        autocorrect: false,
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: title,
-          labelStyle: const TextStyle(
-            color: ZagColours.grey,
-            decoration: TextDecoration.none,
+      Builder(
+        builder: (context) => TextFormField(
+          autofocus: true,
+          autocorrect: false,
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            labelText: title,
+            labelStyle: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+              decoration: TextDecoration.none,
+              fontSize: ZagDialog.BODY_SIZE,
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: ZagColours.accent),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                  color: ZagColours.accent.withOpacity(ZagUI.OPACITY_SPLASH)),
+            ),
+          ),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontSize: ZagDialog.BODY_SIZE,
           ),
-          focusedBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(color: ZagColours.accent),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-                color: ZagColours.accent.withOpacity(ZagUI.OPACITY_SPLASH)),
-          ),
+          cursorColor: ZagColours.accent,
+          textInputAction: TextInputAction.done,
+          validator: validator,
+          onFieldSubmitted: onSubmitted,
         ),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: ZagDialog.BODY_SIZE,
-        ),
-        cursorColor: ZagColours.accent,
-        textInputAction: TextInputAction.done,
-        validator: validator,
-        onFieldSubmitted: onSubmitted,
       );
 
   static Widget tile({

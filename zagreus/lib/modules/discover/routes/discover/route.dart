@@ -53,17 +53,17 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadRecommendedMovies();
     _loadMissingMovies();
     _loadDownloadingSoon();
-    // Don't load popular movies here - will do it in didChangeDependencies
+    // Don't load popular movies or people here - will do it in didChangeDependencies
     _loadMockTrendingData();
-    _loadPopularPeople();
     _startAutoScroll();
   }
   
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Load popular movies here where we can access Localizations
+    // Load popular movies and people here where we can access Localizations
     _loadPopularMovies();
+    _loadPopularPeople();
   }
   
   @override

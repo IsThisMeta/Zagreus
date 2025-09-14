@@ -8,6 +8,8 @@ import 'package:zagreus/router/routes/discover.dart';
 import 'package:zagreus/router/routes/search.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
 import 'package:zagreus/modules/discover/routes/person_details/route.dart';
+import 'package:zagreus/api/sonarr/sonarr.dart';
+import 'package:zagreus/modules/sonarr.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -402,36 +404,89 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
   
   Future<void> _loadRecentlyDownloadedShows() async {
-    // For now, we'll use mock data since Sonarr integration isn't set up yet
-    // In a real implementation, this would fetch from SonarrState similar to RadarrState
-    setState(() {
-      _recentlyDownloadedShows = [
-        {
-          'seriesTitle': 'The Paper (2025)',
-          'episodeTitle': 'The Ohio Journalism Awards',
-          'seasonNumber': 1,
-          'episodeNumber': 10,
-          'network': 'Downloaded',
-          'thumbnail': 'https://image.tmdb.org/t/p/w300/vLZK0kNRE5lqVVyeuqPS1XcMYqR.jpg',
-        },
-        {
-          'seriesTitle': 'The Paper (2025)',
-          'episodeTitle': 'Matching Ponchos',
-          'seasonNumber': 1,
-          'episodeNumber': 9,
-          'network': 'Downloaded',
-          'thumbnail': 'https://image.tmdb.org/t/p/w300/vLZK0kNRE5lqVVyeuqPS1XcMYqR.jpg',
-        },
-        {
-          'seriesTitle': 'The Paper (2025)',
-          'episodeTitle': 'Church and State',
-          'seasonNumber': 1,
-          'episodeNumber': 8,
-          'network': 'Downloaded',
-          'thumbnail': 'https://image.tmdb.org/t/p/w300/vLZK0kNRE5lqVVyeuqPS1XcMYqR.jpg',
-        },
-      ];
-    });
+    try {
+      final sonarrState = context.read<SonarrState>();
+      if (!sonarrState.enabled || sonarrState.api == null) {
+        // Use empty list if Sonarr is not enabled
+        setState(() {
+          _recentlyDownloadedShows = [];
+        });
+        return;
+      }
+      
+      final api = sonarrState.api!;
+      
+      // Fetch history sorted by date descending
+      final history = await api.history.get(
+        page: 1,
+        pageSize: 100,
+        sortKey: SonarrHistorySortKey.DATE,
+        sortDirection: SonarrSortDirection.DESCENDING,
+        includeEpisode: true,
+        includeSeries: true,
+      );
+      
+      // Filter to only downloadFolderImported events and dedupe by episodeId
+      final downloadedRecords = <SonarrHistoryRecord>[];
+      final seenEpisodeIds = <int>{};
+      
+      for (final record in history.records ?? []) {
+        if (record.eventType == SonarrEventType.DOWNLOAD_FOLDER_IMPORTED &&
+            record.episodeId != null &&
+            !seenEpisodeIds.contains(record.episodeId)) {
+          seenEpisodeIds.add(record.episodeId!);
+          downloadedRecords.add(record);
+          if (downloadedRecords.length >= 10) break; // Limit to 10 items
+        }
+      }
+      
+      // Map to UI format
+      final shows = <Map<String, dynamic>>[];
+      for (final record in downloadedRecords) {
+        final episode = record.episode;
+        final series = record.series;
+        
+        if (episode != null && series != null) {
+          // Get fanart or poster image
+          String? imageUrl;
+          for (final image in series.images ?? []) {
+            if (image.coverType == 'fanart') {
+              imageUrl = image.remoteUrl ?? image.url;
+              break;
+            }
+          }
+          // Fallback to poster if no fanart
+          if (imageUrl == null) {
+            for (final image in series.images ?? []) {
+              if (image.coverType == 'poster') {
+                imageUrl = image.remoteUrl ?? image.url;
+                break;
+              }
+            }
+          }
+          
+          shows.add({
+            'seriesTitle': series.title ?? 'Unknown Series',
+            'episodeTitle': episode.title ?? 'Episode ${episode.episodeNumber}',
+            'seasonNumber': episode.seasonNumber ?? 0,
+            'episodeNumber': episode.episodeNumber ?? 0,
+            'network': 'Downloaded',
+            'thumbnail': imageUrl,
+            'airDateUtc': episode.airDateUtc,
+          });
+        }
+      }
+      
+      setState(() {
+        _recentlyDownloadedShows = shows;
+      });
+    } catch (e) {
+      print('Error loading Sonarr history: $e');
+      // Fallback to empty list on error
+      setState(() {
+        _recentlyDownloadedShows = [];
+      });
+    }
   }
   
   Future<void> _loadPopularPeople() async {

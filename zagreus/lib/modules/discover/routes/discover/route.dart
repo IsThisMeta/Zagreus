@@ -359,6 +359,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       children: [
         _moviesPage(),
         _tvShowsPage(),
+        _calendarPage(),
       ],
     );
   }
@@ -447,6 +448,44 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           // TV shows sections
           if (_recentlyDownloadedShows.isNotEmpty) _recentlyDownloadedShowsSection(),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+  
+  Widget _calendarPage() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today_rounded,
+            size: 80,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.3)
+                : Colors.black.withOpacity(0.3),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Coming Soon',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Release calendar will be available here',
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.5)
+                  : Colors.black.withOpacity(0.5),
+            ),
+          ),
         ],
       ),
     );
@@ -1593,18 +1632,11 @@ class _DiscoverNavigationBar extends StatelessWidget {
       icons: icons,
       titles: titles,
       onTabChange: (index) {
-        if (index == 2) {
-          // Calendar tab
-          // TODO: Navigate to calendar view when implemented
-          showZagSnackBar(
-            title: 'Coming Soon',
-            message: 'Calendar view will be available soon',
-            type: ZagSnackbarType.INFO,
-          );
-        } else if (index == 3) {
+        if (index == 3) {
           // Search tab
           SearchRoutes.SEARCH.go();
         }
+        // Calendar (index 2) will navigate normally within the PageView
       },
     );
   }

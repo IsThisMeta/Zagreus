@@ -1071,7 +1071,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // Rating badge
                   if (movie['rating'] != null && movie['rating'] > 0)
                     Positioned(
-                      bottom: 8,
+                      top: 8,
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

@@ -119,6 +119,71 @@ class TMDBApi {
     }
   }
   
+  static Future<List<Map<String, dynamic>>> getPopularPeople({
+    int page = 1,
+    String? region,
+  }) async {
+    try {
+      String url = '$_baseUrl/person/popular?api_key=$_apiKey&page=$page';
+      if (region != null) {
+        url += '&language=en-$region';
+      }
+      
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final results = data['results'] as List;
+        
+        // Transform the data to match our UI needs
+        return results.map((person) {
+          return {
+            'id': person['id'],
+            'name': person['name'],
+            'profilePath': person['profile_path'] != null 
+                ? getImageUrl(person['profile_path'], size: 'w185')
+                : null,
+            'knownForDepartment': person['known_for_department'],
+            'popularity': person['popularity'],
+            'knownFor': (person['known_for'] as List?)?.map((item) {
+              return {
+                'id': item['id'],
+                'title': item['title'] ?? item['name'] ?? 'Unknown',
+                'poster': getImageUrl(item['poster_path'], size: 'w185'),
+                'mediaType': item['media_type'],
+              };
+            }).toList() ?? [],
+          };
+        }).toList();
+      }
+      
+      throw Exception('Failed to load popular people: ${response.statusCode}');
+    } catch (e) {
+      print('TMDB API Error (Popular People): $e');
+      // Return mock data as fallback
+      return _getMockPopularPeople();
+    }
+  }
+  
+  static List<Map<String, dynamic>> _getMockPopularPeople() {
+    return [
+      {
+        'id': 1245,
+        'name': 'Scarlett Johansson',
+        'profilePath': 'https://image.tmdb.org/t/p/w185/6NsMbJXRlDZuDzatN2akFdGuTvx.jpg',
+        'knownForDepartment': 'Acting',
+        'popularity': 98.5,
+      },
+      {
+        'id': 2888,
+        'name': 'Will Smith',
+        'profilePath': 'https://image.tmdb.org/t/p/w185/j1VdmftAir0hdeWKadDuIpfmWFd.jpg',
+        'knownForDepartment': 'Acting',
+        'popularity': 87.3,
+      },
+    ];
+  }
+  
   static List<Map<String, dynamic>> _getMockPopularMovies() {
     return [
       {

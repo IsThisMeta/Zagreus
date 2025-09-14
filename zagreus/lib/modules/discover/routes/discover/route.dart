@@ -26,6 +26,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   List<RadarrMovie> _missingMovies = [];
   List<RadarrMovie> _downloadingSoon = [];
   List<Map<String, dynamic>> _popularMovies = [];
+  List<Map<String, dynamic>> _popularPeople = [];
   bool _isLoading = true;
   String? _error;
   
@@ -54,6 +55,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadDownloadingSoon();
     // Don't load popular movies here - will do it in didChangeDependencies
     _loadMockTrendingData();
+    _loadPopularPeople();
     _startAutoScroll();
   }
   
@@ -431,6 +433,27 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     });
   }
   
+  Future<void> _loadPopularPeople() async {
+    print('👥 Loading popular people...');
+    try {
+      // Get user's region from locale
+      final locale = Localizations.localeOf(context);
+      final region = locale.countryCode ?? 'US';
+      
+      final people = await TMDBApi.getPopularPeople(region: region);
+      print('👥 Got ${people.length} popular people from TMDB');
+      
+      if (mounted) {
+        setState(() {
+          _popularPeople = people.take(10).toList(); // Limit to 10 for the section
+        });
+        print('👥 Set ${_popularPeople.length} popular people in state');
+      }
+    } catch (e) {
+      print('❌ Error loading popular people: $e');
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return ZagScaffold(
@@ -540,6 +563,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           _downloadingSoonSection(), // Always show section, even when empty
           const SizedBox(height: 12),
           _popularMoviesSection(), // Always show section, even while loading
+          const SizedBox(height: 12),
+          _popularPeopleSection(), // Popular people section
           const SizedBox(height: 12),
         ],
       ),
@@ -1817,6 +1842,160 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 },
               )
             : null,
+      ),
+    );
+  }
+  
+  Widget _popularPeopleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.people_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'TMDB',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF6688FF),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Popular People',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // People list or loading placeholder
+        _popularPeople.isNotEmpty
+            ? SizedBox(
+                height: 150,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _popularPeople.length,
+                  itemBuilder: (context, index) {
+                    final person = _popularPeople[index];
+                    return _popularPersonCard(person);
+                  },
+                ),
+              )
+            : Container(
+                height: 150,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: Text(
+                    'Loading popular people...',
+                    style: TextStyle(
+                      color: (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black).withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+      ],
+    );
+  }
+  
+  Widget _popularPersonCard(Map<String, dynamic> person) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: GestureDetector(
+        onTap: () {
+          // TODO: Navigate to person detail page
+          print('Tapped on ${person['name']}');
+        },
+        child: Column(
+          children: [
+            // Circular avatar
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey.shade800,
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.1),
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: person['profilePath'] != null
+                    ? Image.network(
+                        person['profilePath'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _personPlaceholder();
+                        },
+                      )
+                    : _personPlaceholder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Name
+            Container(
+              width: 90,
+              child: Text(
+                person['name'] ?? 'Unknown',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black87,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            // Known for (department)
+            if (person['knownForDepartment'] != null)
+              Text(
+                person['knownForDepartment'],
+                style: TextStyle(
+                  fontSize: 10,
+                  color: (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black).withOpacity(0.5),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _personPlaceholder() {
+    return Container(
+      color: Colors.grey.shade700,
+      child: Icon(
+        Icons.person_rounded,
+        size: 40,
+        color: Colors.grey.shade500,
       ),
     );
   }

@@ -70,29 +70,24 @@ class _State extends State<DiscoverDownloadingSoonRoute> with ZagScrollControlle
           continue;
         }
         
-        // Check if movie has a release date coming soon
-        DateTime? releaseDate;
-        
-        // Try digital release first, then physical release
-        if (movie.digitalRelease != null) {
-          releaseDate = movie.digitalRelease;
-        } else if (movie.physicalRelease != null) {
-          releaseDate = movie.physicalRelease;
-        } else if (movie.inCinemas != null) {
-          // Use in cinemas date + 90 days as estimated digital release
-          releaseDate = movie.inCinemas!.add(const Duration(days: 90));
-        }
+        // Try digital release first, then physical release (matching Zebrra logic)
+        final releaseDate = movie.digitalRelease ?? movie.physicalRelease;
         
         if (releaseDate != null) {
-          final daysUntil = releaseDate.difference(now).inDays;
+          // Calculate days using UTC dates (matching Zebrra)
+          final nowUtc = now.toUtc();
+          final releaseDateUtc = releaseDate.toUtc();
+          
+          // Compare start of days in UTC
+          final startOfTodayUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
+          final startOfReleaseUtc = DateTime.utc(releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
+          
+          final daysUntil = startOfReleaseUtc.difference(startOfTodayUtc).inDays;
           
           // Check if within look-ahead window
           if (daysUntil >= 0 && daysUntil <= _lookAheadDays) {
             comingSoonMovies.add(movie);
           }
-        } else if (movie.status == 'announced' || movie.status == 'inCinemas') {
-          // Include announced/in-cinema movies without specific release dates
-          comingSoonMovies.add(movie);
         }
       }
       

@@ -310,32 +310,30 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           continue;
         }
         
-        // Check if movie has a release date coming soon
-        DateTime? releaseDate;
-        String releaseDateSource = '';
-        
-        if (movie.digitalRelease != null) {
-          releaseDate = movie.digitalRelease;
-          releaseDateSource = 'digital';
-        } else if (movie.physicalRelease != null) {
-          releaseDate = movie.physicalRelease;
-          releaseDateSource = 'physical';
-        } else if (movie.inCinemas != null) {
-          // Use in cinemas date + 90 days as estimated digital release
-          releaseDate = movie.inCinemas!.add(const Duration(days: 90));
-          releaseDateSource = 'cinema+90';
-        }
+        // Try digital release first, then physical release (matching Zebrra logic)
+        final releaseDate = movie.digitalRelease ?? movie.physicalRelease;
         
         if (releaseDate != null) {
-          final daysUntil = releaseDate.difference(now).inDays;
+          // Calculate days using UTC dates (matching Zebrra)
+          final nowUtc = now.toUtc();
+          final releaseDateUtc = releaseDate.toUtc();
+          
+          // Compare start of days in UTC
+          final startOfTodayUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
+          final startOfReleaseUtc = DateTime.utc(releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
+          
+          final daysUntil = startOfReleaseUtc.difference(startOfTodayUtc).inDays;
+          
+          print('📅 [DOWNLOADING SOON] Movie "${movie.title}":');
+          print('📅   - Digital: ${movie.digitalRelease}');
+          print('📅   - Physical: ${movie.physicalRelease}');
+          print('📅   - Days until: $daysUntil');
+          
+          // Check if within look-ahead window
           if (daysUntil >= 0 && daysUntil <= lookAheadDays) {
             downloadingSoon.add(movie);
-            print('📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - releases in $daysUntil days (${releaseDateSource})');
+            print('📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - releases in $daysUntil days');
           }
-        } else if (movie.status == 'announced' || movie.status == 'inCinemas') {
-          // Include announced/in-cinema movies without specific release dates
-          downloadingSoon.add(movie);
-          print('📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - status: ${movie.status}');
         }
       }
       
@@ -1894,34 +1892,29 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
   
   Widget _downloadingSoonCard(RadarrMovie movie) {
-    // Format release date
+    // Format release date (matching Zebrra logic)
     String releaseText = '';
     DateTime? releaseDate = movie.digitalRelease ?? movie.physicalRelease;
     
-    // If no digital/physical release, try to estimate from cinema date
-    if (releaseDate == null && movie.inCinemas != null) {
-      releaseDate = movie.inCinemas!.add(const Duration(days: 90));
-    }
-    
     if (releaseDate != null) {
+      // Calculate days using UTC dates (matching Zebrra)
       final now = DateTime.now();
-      final daysUntil = releaseDate.difference(now).inDays;
+      final nowUtc = now.toUtc();
+      final releaseDateUtc = releaseDate.toUtc();
       
-      if (daysUntil < 0) {
-        releaseText = 'TBA';
-      } else if (daysUntil == 0) {
+      // Compare start of days in UTC
+      final startOfTodayUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
+      final startOfReleaseUtc = DateTime.utc(releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
+      
+      final daysUntil = startOfReleaseUtc.difference(startOfTodayUtc).inDays;
+      
+      if (daysUntil == 0) {
         releaseText = 'TODAY';
       } else if (daysUntil == 1) {
         releaseText = 'TOMORROW';
-      } else if (daysUntil < 7) {
-        releaseText = '$daysUntil DAYS';
       } else {
-        releaseText = '${(daysUntil / 7).round()} WEEKS';
+        releaseText = 'IN $daysUntil DAYS';
       }
-    } else if (movie.status == 'announced') {
-      releaseText = 'ANNOUNCED';
-    } else if (movie.status == 'inCinemas') {
-      releaseText = 'IN CINEMAS';
     } else {
       releaseText = 'TBA';
     }

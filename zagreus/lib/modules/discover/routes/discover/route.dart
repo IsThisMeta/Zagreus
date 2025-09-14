@@ -1569,12 +1569,14 @@ class _DiscoverNavigationBar extends StatelessWidget {
   static const List<IconData> icons = [
     Icons.movie_rounded,
     Icons.tv_rounded,
+    Icons.calendar_today_rounded,
     Icons.search_rounded,
   ];
 
   static const List<String> titles = [
     'Movies',
     'TV Shows',
+    'Calendar',
     'Search',
   ];
 
@@ -1592,6 +1594,14 @@ class _DiscoverNavigationBar extends StatelessWidget {
       titles: titles,
       onTabChange: (index) {
         if (index == 2) {
+          // Calendar tab
+          // TODO: Navigate to calendar view when implemented
+          showZagSnackBar(
+            title: 'Coming Soon',
+            message: 'Calendar view will be available soon',
+            type: ZagSnackbarType.INFO,
+          );
+        } else if (index == 3) {
           // Search tab
           SearchRoutes.SEARCH.go();
         }

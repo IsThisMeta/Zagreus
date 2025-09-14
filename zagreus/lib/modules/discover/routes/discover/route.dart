@@ -445,7 +445,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       
       if (mounted) {
         setState(() {
-          _popularPeople = people.take(10).toList(); // Limit to 10 for the section
+          _popularPeople = people.take(20).toList(); // Show 20 people in the row
         });
         print('👥 Set ${_popularPeople.length} popular people in state');
       }

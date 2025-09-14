@@ -508,7 +508,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       
       // Get episodes airing in the next 7 days
       final now = DateTime.now();
-      final endDate = now.add(const Duration(days: 7));
+      final endDate = now.add(const Duration(days: 14)); // Look 14 days ahead
       
       final calendar = await api.calendar.get(
         start: now,

@@ -17,7 +17,7 @@ class _State extends State<SonarrAiringNextRoute> with ZagScrollControllerMixin 
   List<Map<String, dynamic>> _airingNextShows = [];
   bool _isLoading = true;
   String? _error;
-  int _daysAhead = 7; // Default to 7 days
+  int _daysAhead = 14; // Default to 14 days (2 weeks)
   
   @override
   void initState() {

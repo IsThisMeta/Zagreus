@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '.trakt_config.dart';
 
 class TraktApi {
   static const String _baseUrl = 'https://api.trakt.tv';
-  static const String _clientId = '0f1d48eb94803507ca6622c41ed0f609995329bfd06fb17b1c1860da68a52ccb';
+  static const String _clientId = TraktConfig.clientId;
   static const String _apiVersion = '2';
   
   static Future<List<Map<String, dynamic>>> getAnticipatedShows({

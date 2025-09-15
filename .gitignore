@@ -4,3 +4,4 @@
 **/api_keys.dart
 lib/modules/discover/core/api_keys.dart
 zagreus/lib/config/encryption_config_private.dart
+zagreus/lib/modules/discover/core/.trakt_config.dart

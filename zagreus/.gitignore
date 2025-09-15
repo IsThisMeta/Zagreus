@@ -87,3 +87,7 @@ debian/usr/share/lunasea
 
 # Private encryption configuration
 lib/config/encryption_config_private.dart
+
+# API Keys and sensitive configs
+lib/modules/discover/core/.trakt_config.dart
+lib/modules/discover/core/api_keys.dart

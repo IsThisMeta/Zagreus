@@ -38,6 +38,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   List<RadarrMovie> _downloadingSoon = [];
   List<Map<String, dynamic>> _popularMovies = [];
   List<Map<String, dynamic>> _popularTVShows = [];
+  List<Map<String, dynamic>> _trendingNewTVShows = [];
   List<Map<String, dynamic>> _popularPeople = [];
   bool _isLoading = true;
   String? _error;
@@ -76,6 +77,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     // Load popular movies and people here where we can access Localizations
     _loadPopularMovies();
     _loadPopularTVShows();
+    _loadTrendingNewTVShows();
     _loadPopularPeople();
     _loadSonarrAiringNext();
   }
@@ -674,6 +676,56 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
   
+  Future<void> _loadTrendingNewTVShows() async {
+    print('🆕 Loading trending new TV shows...');
+    try {
+      // Get user's region from locale
+      final locale = Localizations.localeOf(context);
+      final region = locale.countryCode ?? 'US';
+      print('🆕 Using region: $region');
+      
+      final shows = await TMDBApi.getTrendingNewTVShows(region: region);
+      print('🆕 Got ${shows.length} trending new TV shows from TMDB');
+      
+      // Check against Sonarr library if available
+      final sonarrState = context.read<SonarrState>();
+      if (sonarrState.enabled && sonarrState.api != null) {
+        try {
+          final sonarrSeries = await sonarrState.api!.series.getAll();
+          print('🆕 Checking against ${sonarrSeries.length} Sonarr series');
+          
+          for (final show in shows) {
+            final tmdbId = show['tmdbId'] as int;
+            // Check if this show is in Sonarr library by TMDB ID
+            final inLibrary = sonarrSeries.any((series) {
+              // Using title match as fallback for now
+              return series.title?.toLowerCase() == (show['title'] as String).toLowerCase();
+            });
+            show['inLibrary'] = inLibrary;
+            
+            if (inLibrary) {
+              final series = sonarrSeries.firstWhere(
+                (s) => s.title?.toLowerCase() == (show['title'] as String).toLowerCase(),
+              );
+              show['serviceItemId'] = series.id;
+            }
+          }
+        } catch (e) {
+          print('🆕 Error checking Sonarr library: $e');
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _trendingNewTVShows = shows.take(10).toList(); // Limit to 10 for the section
+        });
+        print('🆕 Set ${_trendingNewTVShows.length} trending new TV shows in state');
+      }
+    } catch (e) {
+      print('❌ Error loading trending new TV shows: $e');
+    }
+  }
+  
   Future<void> _loadPopularPeople() async {
     print('👥 Loading popular people...');
     try {
@@ -826,6 +878,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           if (_airingNextShows.isNotEmpty) _airingNextSection(),
           const SizedBox(height: 12),
           _popularTVShowsSection(), // Popular TV shows from TMDB
+          const SizedBox(height: 12),
+          _trendingNewTVShowsSection(), // Trending new TV shows from TMDB
           const SizedBox(height: 32),
         ],
       ),
@@ -2308,6 +2362,214 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   void _handlePopularTVShowTap(Map<String, dynamic> show) {
     // TODO: Navigate to TV show details or add to Sonarr
     print('Tapped on TV show: ${show['title']}');
+  }
+  
+  Widget _trendingNewTVShowsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.trending_up_rounded,
+                color: const Color(0xFF6688FF),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'TMDB',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF6688FF),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Trending New TV Shows',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // TV show list or loading placeholder
+        _trendingNewTVShows.isNotEmpty
+            ? SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _trendingNewTVShows.length,
+                  itemBuilder: (context, index) {
+                    final show = _trendingNewTVShows[index];
+                    return _trendingNewTVShowCard(show);
+                  },
+                ),
+              )
+            : Container(
+                height: 180,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Center(
+                  child: Text(
+                    'Loading trending new TV shows...',
+                    style: TextStyle(
+                      color: (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black).withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+      ],
+    );
+  }
+  
+  Widget _trendingNewTVShowCard(Map<String, dynamic> show) {
+    final bool inLibrary = show['inLibrary'] ?? false;
+    final double rating = (show['rating'] ?? 0.0).toDouble();
+    final bool isNew = show['isNew'] ?? false;
+    
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
+          // Could navigate to a detail view or add to Sonarr
+          _handleTrendingNewTVShowTap(show);
+        },
+        child: Container(
+          width: 140,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // TV show poster
+              Stack(
+                children: [
+                  Container(
+                    height: 180,
+                    width: 140,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey.shade800,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: show['poster'] != null && show['poster'] != ''
+                          ? Image.network(
+                              show['poster'],
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _tvShowPosterPlaceholder();
+                              },
+                            )
+                          : _tvShowPosterPlaceholder(),
+                    ),
+                  ),
+                  // NEW badge
+                  if (isNew)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'NEW',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // Rating badge (bottom right if NEW badge present)
+                  if (rating > 0)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // In-library indicator
+                  if (inLibrary)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF35C5F4),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // TV show title
+              Text(
+                show['title'] ?? 'Unknown',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  void _handleTrendingNewTVShowTap(Map<String, dynamic> show) {
+    // TODO: Navigate to TV show details or add to Sonarr
+    print('Tapped on trending new TV show: ${show['title']}');
   }
   
   Widget _popularPeopleSection() {

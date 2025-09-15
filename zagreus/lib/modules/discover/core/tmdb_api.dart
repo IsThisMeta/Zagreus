@@ -167,6 +167,64 @@ class TMDBApi {
     }
   }
   
+  static Future<List<Map<String, dynamic>>> getTrendingNewTVShows({
+    String? region,
+  }) async {
+    try {
+      // Fetch multiple pages for more results (like nzb360)
+      List<Map<String, dynamic>> allShows = [];
+      
+      for (int p = 1; p <= 2; p++) {
+        // Using discover endpoint to get new shows (first_air_date recent)
+        final now = DateTime.now();
+        final threeMonthsAgo = now.subtract(const Duration(days: 90));
+        final oneMonthFromNow = now.add(const Duration(days: 30));
+        
+        String url = '$_baseUrl/discover/tv?api_key=$_apiKey&page=$p';
+        url += '&sort_by=popularity.desc';
+        url += '&first_air_date.gte=${threeMonthsAgo.toIso8601String().split('T')[0]}';
+        url += '&first_air_date.lte=${oneMonthFromNow.toIso8601String().split('T')[0]}';
+        url += '&with_original_language=en';
+        
+        if (region != null) {
+          url += '&region=$region';
+        }
+        
+        final response = await http.get(Uri.parse(url));
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final results = data['results'] as List;
+          
+          // Transform the data to match our UI needs
+          final shows = results.map((item) {
+            return {
+              'id': item['id'],
+              'title': item['name'] ?? 'Unknown',
+              'backdrop': getImageUrl(item['backdrop_path']),
+              'poster': getImageUrl(item['poster_path'], size: 'w500'),
+              'rating': (item['vote_average'] ?? 0).toDouble(),
+              'overview': item['overview'] ?? '',
+              'firstAirDate': item['first_air_date'],
+              'mediaType': 'tv',
+              'tmdbId': item['id'],
+              'popularity': item['popularity'] ?? 0,
+              'inLibrary': false,
+              'isNew': true,
+            };
+          }).toList();
+          
+          allShows.addAll(shows);
+        }
+      }
+      
+      return allShows;
+    } catch (e) {
+      print('TMDB API Error (Trending New TV Shows): $e');
+      return [];
+    }
+  }
+  
   static Future<List<Map<String, dynamic>>> getPopularPeople({
     int page = 1,
     String? region,

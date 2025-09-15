@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:collection/collection.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
 
 class InAppPurchaseService {
   static final InAppPurchaseService _instance = InAppPurchaseService._internal();
@@ -153,22 +156,110 @@ class InAppPurchaseService {
     }
   }
   
-  void _deliverProduct(PurchaseDetails purchaseDetails) {
+  void _deliverProduct(PurchaseDetails purchaseDetails) async {
     // Determine if monthly or yearly
     final bool isMonthly = purchaseDetails.productID == monthlyProductId;
-    
-    // Enable Pro
+
+    // Validate receipt with server
+    await _validateAndStoreReceipt(purchaseDetails);
+
+    // Enable Pro locally (as backup)
     ZagreusPro.enablePro(isMonthly: isMonthly);
-    
+
     showZagInfoSnackBar(
       title: 'Welcome to Zagreus Pro!',
       message: 'Premium features are now unlocked',
     );
   }
+
+  Future<void> _validateAndStoreReceipt(PurchaseDetails purchaseDetails) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+
+      if (user == null) {
+        // If no user, just store locally
+        print('No authenticated user, storing locally only');
+        return;
+      }
+
+      // For iOS, get the receipt data
+      String? receiptData;
+      if (Platform.isIOS) {
+        receiptData = purchaseDetails.verificationData.localVerificationData;
+      }
+
+      if (receiptData == null) {
+        print('No receipt data available');
+        return;
+      }
+
+      // Call Supabase Edge Function to validate receipt
+      final response = await supabase.functions.invoke(
+        'validate-receipt',
+        body: {
+          'receipt_data': receiptData,
+          'user_id': user.id,
+        },
+      );
+
+      if (response.data != null && response.data['success'] == true) {
+        print('Receipt validated and stored successfully');
+        // Optionally store subscription info locally for offline access
+        final subscription = response.data['subscription'];
+        if (subscription != null) {
+          ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(
+            subscription['expires_date']?.toString() ?? ''
+          );
+        }
+      }
+    } catch (e) {
+      print('Error validating receipt: $e');
+      // Don't block the purchase, local storage will work as fallback
+    }
+  }
   
   Future<void> restorePurchases() async {
+    // First check if user has subscription in Supabase
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+
+      if (user != null) {
+        // Check for active subscription in database
+        final response = await supabase
+            .rpc('get_active_subscription', params: {'p_user_id': user.id});
+
+        if (response != null && (response as List).isNotEmpty) {
+          final subscription = response[0];
+          final expiresDate = DateTime.parse(subscription['expires_date']);
+
+          if (expiresDate.isAfter(DateTime.now())) {
+            // Restore Pro status from server
+            ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(true);
+            ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(expiresDate.toIso8601String());
+
+            final productId = subscription['product_id'] as String;
+            final isMonthly = productId.contains('monthly');
+            ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update(
+              isMonthly ? 'monthly' : 'yearly'
+            );
+
+            showZagInfoSnackBar(
+              title: 'Subscription Restored',
+              message: 'Your Pro subscription has been restored',
+            );
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error restoring from server: $e');
+    }
+
+    // Fallback to Apple's restore
     if (!_isAvailable) return;
-    
+
     try {
       await _inAppPurchase.restorePurchases();
     } catch (e) {

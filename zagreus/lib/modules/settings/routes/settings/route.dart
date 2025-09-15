@@ -74,7 +74,6 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
           onTap: SettingsRoutes.PROFILES.go,
         ),
         ZagDivider(),
-        _buildProButton(),
         ZagBlock(
           title: 'settings.Resources'.tr(),
           body: [TextSpan(text: 'settings.ResourcesDescription'.tr())],
@@ -87,6 +86,8 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
           trailing: const ZagIconButton(icon: Icons.settings_rounded),
           onTap: SettingsRoutes.SYSTEM.go,
         ),
+        ZagDivider(),
+        _buildProButton(),
       ],
     );
   }

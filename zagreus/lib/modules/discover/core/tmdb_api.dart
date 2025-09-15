@@ -14,6 +14,33 @@ class TMDBApi {
     return '$_imageBaseUrl/$size$path';
   }
   
+  static Future<Map<String, dynamic>?> getTVShowDetails(int tmdbId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/tv/$tmdbId?api_key=$_apiKey'),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'id': data['id'],
+          'name': data['name'],
+          'poster_path': data['poster_path'],
+          'backdrop_path': data['backdrop_path'],
+          'overview': data['overview'],
+          'first_air_date': data['first_air_date'],
+          'vote_average': data['vote_average'],
+          'vote_count': data['vote_count'],
+          'popularity': data['popularity'],
+        };
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching TV show details: $e');
+      return null;
+    }
+  }
+  
   // Multi-search across movies, TV shows, and people
   Future<List<Map<String, dynamic>>> searchMulti(String query, {int page = 1}) async {
     try {
@@ -225,67 +252,131 @@ class TMDBApi {
     }
   }
   
-  // Simulating Trakt Most Anticipated Shows using TMDB upcoming/trending
+  // Simulating Trakt Most Anticipated Shows using TMDB
+  // nzb360 fetches 40 shows from Trakt's anticipated endpoint
   static Future<List<Map<String, dynamic>>> getMostAnticipatedShows({
     String? region,
   }) async {
     try {
-      // Using TMDB discover to simulate Trakt's anticipated shows
-      // Get shows that are upcoming or very recently released
-      final now = DateTime.now();
-      final oneMonthAgo = now.subtract(const Duration(days: 30));
-      final sixMonthsFromNow = now.add(const Duration(days: 180));
+      // Trakt's anticipated shows are typically:
+      // 1. Shows that are returning for new seasons soon
+      // 2. New shows that haven't premiered yet but have buzz
+      // 3. Popular shows with upcoming episodes
       
-      String url = '$_baseUrl/discover/tv?api_key=$_apiKey';
-      url += '&sort_by=popularity.desc';
-      url += '&first_air_date.gte=${oneMonthAgo.toIso8601String().split('T')[0]}';
-      url += '&first_air_date.lte=${sixMonthsFromNow.toIso8601String().split('T')[0]}';
-      url += '&vote_count.gte=10'; // Only shows with some votes (anticipated)
-      url += '&page=1';
+      List<Map<String, dynamic>> allShows = [];
+      
+      // Get on-the-air shows (these are actively anticipated)
+      String onAirUrl = '$_baseUrl/tv/on_the_air?api_key=$_apiKey&page=1';
+      if (region != null) {
+        onAirUrl += '&region=$region';
+      }
+      
+      final onAirResponse = await http.get(Uri.parse(onAirUrl));
+      if (onAirResponse.statusCode == 200) {
+        final onAirData = json.decode(onAirResponse.body);
+        final onAirShows = (onAirData['results'] as List).cast<Map<String, dynamic>>();
+        
+        // Add all on-air shows (these are being anticipated for next episodes)
+        for (final show in onAirShows) {
+          show['anticipation_source'] = 'on_air';
+          allShows.add(show);
+        }
+      }
+      
+      // Get popular shows with recent/upcoming episodes
+      final now = DateTime.now();
+      final twoWeeksAgo = now.subtract(const Duration(days: 14));
+      final threeMonthsFromNow = now.add(const Duration(days: 90));
+      
+      String discoverUrl = '$_baseUrl/discover/tv?api_key=$_apiKey';
+      discoverUrl += '&sort_by=popularity.desc';
+      discoverUrl += '&air_date.gte=${twoWeeksAgo.toIso8601String().split('T')[0]}';
+      discoverUrl += '&air_date.lte=${threeMonthsFromNow.toIso8601String().split('T')[0]}';
+      discoverUrl += '&vote_count.gte=50'; // Popular shows only
+      discoverUrl += '&page=1';
       
       if (region != null) {
-        url += '&region=$region';
+        discoverUrl += '&region=$region';
       }
       
-      final response = await http.get(Uri.parse(url));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final results = data['results'] as List;
+      final discoverResponse = await http.get(Uri.parse(discoverUrl));
+      if (discoverResponse.statusCode == 200) {
+        final discoverData = json.decode(discoverResponse.body);
+        final discoverShows = (discoverData['results'] as List).cast<Map<String, dynamic>>();
         
-        // Shuffle to simulate Trakt's different ordering
-        final shuffled = List.from(results)..shuffle();
-        
-        // Transform the data to match our UI needs
-        final shows = shuffled.take(20).map((item) {
-          return {
-            'id': item['id'],
-            'title': item['name'] ?? 'Unknown',
-            'backdrop': getImageUrl(item['backdrop_path']),
-            'poster': getImageUrl(item['poster_path'], size: 'w500'),
-            'rating': (item['vote_average'] ?? 0).toDouble(),
-            'overview': item['overview'] ?? '',
-            'firstAirDate': item['first_air_date'],
-            'mediaType': 'tv',
-            'tmdbId': item['id'],
-            'popularity': item['popularity'] ?? 0,
-            'voteCount': item['vote_count'] ?? 0,
-            'inLibrary': false,
-            'isAnticipated': true,
-          };
-        }).toList();
-        
-        // Sort by popularity/vote count to get most anticipated
-        shows.sort((a, b) {
-          final aScore = (a['popularity'] as num) * (a['voteCount'] as num);
-          final bScore = (b['popularity'] as num) * (b['voteCount'] as num);
-          return bScore.compareTo(aScore);
-        });
-        
-        return shows;
+        for (final show in discoverShows) {
+          show['anticipation_source'] = 'upcoming';
+          allShows.add(show);
+        }
       }
       
-      return [];
+      // Get top rated shows that might have new seasons
+      String topRatedUrl = '$_baseUrl/tv/top_rated?api_key=$_apiKey&page=1';
+      if (region != null) {
+        topRatedUrl += '&region=$region';
+      }
+      
+      final topRatedResponse = await http.get(Uri.parse(topRatedUrl));
+      if (topRatedResponse.statusCode == 200) {
+        final topRatedData = json.decode(topRatedResponse.body);
+        final topRatedShows = (topRatedData['results'] as List).take(15).cast<Map<String, dynamic>>();
+        
+        for (final show in topRatedShows) {
+          show['anticipation_source'] = 'top_rated';
+          allShows.add(show);
+        }
+      }
+      
+      // Remove duplicates by ID
+      final uniqueShows = <int, Map<String, dynamic>>{};
+      for (final show in allShows) {
+        final id = show['id'] as int;
+        // Keep the first occurrence (prioritizes on_air shows)
+        if (!uniqueShows.containsKey(id)) {
+          uniqueShows[id] = show;
+        }
+      }
+      
+      // Sort by "anticipation level" (popularity * vote_count * recency)
+      final sortedShows = uniqueShows.values.toList();
+      sortedShows.sort((a, b) {
+        final aPopularity = (a['popularity'] as num?) ?? 0;
+        final bPopularity = (b['popularity'] as num?) ?? 0;
+        final aVoteCount = (a['vote_count'] as num?) ?? 0;
+        final bVoteCount = (b['vote_count'] as num?) ?? 0;
+        
+        // Prioritize on_air shows
+        final aOnAir = a['anticipation_source'] == 'on_air' ? 2.0 : 1.0;
+        final bOnAir = b['anticipation_source'] == 'on_air' ? 2.0 : 1.0;
+        
+        // Calculate anticipation score
+        final aScore = aPopularity * (1 + (aVoteCount / 1000)) * aOnAir;
+        final bScore = bPopularity * (1 + (bVoteCount / 1000)) * bOnAir;
+        
+        return bScore.compareTo(aScore);
+      });
+      
+      // Take top 40 shows (matching nzb360's limit)
+      final anticipatedShows = sortedShows.take(40).map((item) {
+        return {
+          'id': item['id'],
+          'title': item['name'] ?? 'Unknown',
+          'backdrop': getImageUrl(item['backdrop_path']),
+          'poster': getImageUrl(item['poster_path'], size: 'w500'),
+          'rating': (item['vote_average'] ?? 0).toDouble(),
+          'overview': item['overview'] ?? '',
+          'firstAirDate': item['first_air_date'],
+          'mediaType': 'tv',
+          'tmdbId': item['id'],
+          'popularity': item['popularity'] ?? 0,
+          'voteCount': item['vote_count'] ?? 0,
+          'inLibrary': false,
+          'isAnticipated': true,
+        };
+      }).toList();
+      
+      return anticipatedShows;
+      
     } catch (e) {
       print('API Error (Most Anticipated Shows): $e');
       return [];

@@ -8,6 +8,7 @@ import 'package:zagreus/router/routes/sonarr.dart';
 import 'package:zagreus/router/routes/discover.dart';
 import 'package:zagreus/router/routes/search.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
+import 'package:zagreus/modules/discover/core/trakt_api.dart';
 import 'package:zagreus/modules/discover/routes/person_details/route.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/sonarr.dart';
@@ -729,15 +730,28 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
   
   Future<void> _loadMostAnticipatedShows() async {
-    print('🎯 Loading most anticipated shows...');
+    print('🎯 Loading most anticipated shows from Trakt...');
     try {
-      // Get user's region from locale
-      final locale = Localizations.localeOf(context);
-      final region = locale.countryCode ?? 'US';
-      print('🎯 Using region: $region');
+      // Use the real Trakt API
+      final shows = await TraktApi.getAnticipatedShows(page: 1, limit: 40);
+      print('🎯 Got ${shows.length} most anticipated shows from Trakt');
       
-      final shows = await TMDBApi.getMostAnticipatedShows(region: region);
-      print('🎯 Got ${shows.length} most anticipated shows');
+      // Enrich with TMDB poster images if we have TMDB IDs
+      for (final show in shows) {
+        final tmdbId = show['tmdbId'] as int?;
+        if (tmdbId != null) {
+          // Fetch poster from TMDB
+          final tmdbDetails = await TMDBApi.getTVShowDetails(tmdbId);
+          if (tmdbDetails != null) {
+            show['poster'] = TMDBApi.getImageUrl(tmdbDetails['poster_path'], size: 'w500');
+            show['backdrop'] = TMDBApi.getImageUrl(tmdbDetails['backdrop_path']);
+            // Use TMDB overview if Trakt doesn't have one
+            if (show['overview'] == null || (show['overview'] as String).isEmpty) {
+              show['overview'] = tmdbDetails['overview'];
+            }
+          }
+        }
+      }
       
       // Check against Sonarr library if available
       final sonarrState = context.read<SonarrState>();
@@ -747,17 +761,22 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           print('🎯 Checking against ${sonarrSeries.length} Sonarr series');
           
           for (final show in shows) {
-            final tmdbId = show['tmdbId'] as int;
-            // Check if this show is in Sonarr library
+            final tvdbId = show['tvdbId'] as int?;
+            final title = show['title'] as String;
+            
+            // Check if this show is in Sonarr library by TVDB ID or title
             final inLibrary = sonarrSeries.any((series) {
-              // Using title match as fallback for TMDB ID matching
-              return series.title?.toLowerCase() == (show['title'] as String).toLowerCase();
+              if (tvdbId != null && series.tvdbId == tvdbId) {
+                return true;
+              }
+              return series.title?.toLowerCase() == title.toLowerCase();
             });
             show['inLibrary'] = inLibrary;
             
             if (inLibrary) {
               final series = sonarrSeries.firstWhere(
-                (s) => s.title?.toLowerCase() == (show['title'] as String).toLowerCase(),
+                (s) => (tvdbId != null && s.tvdbId == tvdbId) || 
+                       s.title?.toLowerCase() == title.toLowerCase(),
               );
               show['serviceItemId'] = series.id;
             }

@@ -1,4 +1,6 @@
 import 'package:zagreus/database/tables/zagreus.dart';
+import 'package:zagreus/database/tables/bios.dart';
+import 'package:zagreus/modules.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ZagreusPro {
@@ -91,15 +93,34 @@ class ZagreusPro {
   static void enablePro({required bool isMonthly}) {
     // Set expiry date based on subscription type
     final now = DateTime.now();
-    final expiry = isMonthly 
+    final expiry = isMonthly
       ? now.add(const Duration(days: 30))
       : now.add(const Duration(days: 365));
-    
+
     ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(true);
     ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(expiry.toIso8601String());
     ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update(
       isMonthly ? 'monthly' : 'yearly'
     );
+
+    // Automatically set boot module to Discover on first Pro activation
+    _setProBootModule();
+  }
+
+  static void _setProBootModule() {
+    try {
+      final currentModule = BIOSDatabase.BOOT_MODULE.read();
+      // Only set to Discover if it's the first Pro activation
+      if (currentModule != ZagModule.DISCOVER &&
+          ZagreusDatabase.USER_BOOT_MODULE.read().isEmpty) {
+        // Save current module as user preference
+        ZagreusDatabase.USER_BOOT_MODULE.update(currentModule.key);
+        // Set to Discover
+        BIOSDatabase.BOOT_MODULE.update(ZagModule.DISCOVER);
+      }
+    } catch (e) {
+      print('Error setting Pro boot module: $e');
+    }
   }
   
   static bool get hasExpired {

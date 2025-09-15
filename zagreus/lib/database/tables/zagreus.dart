@@ -34,7 +34,8 @@ enum ZagreusDatabase<T> with ZagTableMixin<T> {
   CHANGELOG_LAST_BUILD_VERSION<int>(0),
   ZAGREUS_PRO_ENABLED<bool>(false),
   ZAGREUS_PRO_EXPIRY<String>(''),
-  ZAGREUS_PRO_SUBSCRIPTION_TYPE<String>('');
+  ZAGREUS_PRO_SUBSCRIPTION_TYPE<String>(''),
+  USER_BOOT_MODULE<String>('dashboard');
 
   @override
   ZagTable get table => ZagTable.zagreus;

@@ -27,7 +27,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   int _currentPageIndex = 0;
   
   List<RadarrMovie> _recentlyDownloaded = [];
-  List<dynamic> _recentlyDownloadedShows = []; // Sonarr episodes
+  List<Map<String, dynamic>> _recentlyDownloadedShows = []; // Sonarr episodes
   List<Map<String, dynamic>> _airingNextShows = []; // Sonarr airing next
   List<RadarrMovie> _recommendedMovies = [];
   List<RadarrMovie> _missingMovies = [];
@@ -2576,7 +2576,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SonarrRecentlyDownloadedRoute(),
+                  builder: (context) => SonarrRecentlyDownloadedRoute(
+                    initialData: _recentlyDownloadedShows,
+                  ),
                 ),
               );
             },
@@ -2629,7 +2631,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SonarrRecentlyDownloadedRoute(),
+                          builder: (context) => SonarrRecentlyDownloadedRoute(
+                            initialData: _recentlyDownloadedShows,
+                          ),
                         ),
                       );
                     },
@@ -2689,7 +2693,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SonarrAiringNextRoute(),
+                  builder: (context) => SonarrAiringNextRoute(
+                    initialData: _airingNextShows,
+                  ),
                 ),
               );
             },
@@ -2742,7 +2748,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SonarrAiringNextRoute(),
+                          builder: (context) => SonarrAiringNextRoute(
+                            initialData: _airingNextShows,
+                          ),
                         ),
                       );
                     },

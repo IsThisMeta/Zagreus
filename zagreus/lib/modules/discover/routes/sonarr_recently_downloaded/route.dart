@@ -5,7 +5,12 @@ import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/router/routes/sonarr.dart';
 
 class SonarrRecentlyDownloadedRoute extends StatefulWidget {
-  const SonarrRecentlyDownloadedRoute({Key? key}) : super(key: key);
+  final List<Map<String, dynamic>>? initialData;
+  
+  const SonarrRecentlyDownloadedRoute({
+    Key? key,
+    this.initialData,
+  }) : super(key: key);
 
   @override
   State<SonarrRecentlyDownloadedRoute> createState() => _State();
@@ -21,7 +26,14 @@ class _State extends State<SonarrRecentlyDownloadedRoute> with ZagScrollControll
   @override
   void initState() {
     super.initState();
-    _loadRecentlyDownloadedShows();
+    if (widget.initialData != null) {
+      // Use the provided initial data
+      _recentlyDownloadedShows = widget.initialData!;
+      _isLoading = false;
+    } else {
+      // Load data from API
+      _loadRecentlyDownloadedShows();
+    }
   }
   
   Future<void> _loadRecentlyDownloadedShows() async {

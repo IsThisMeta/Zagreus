@@ -5,7 +5,12 @@ import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/router/routes/sonarr.dart';
 
 class SonarrAiringNextRoute extends StatefulWidget {
-  const SonarrAiringNextRoute({Key? key}) : super(key: key);
+  final List<Map<String, dynamic>>? initialData;
+  
+  const SonarrAiringNextRoute({
+    Key? key,
+    this.initialData,
+  }) : super(key: key);
 
   @override
   State<SonarrAiringNextRoute> createState() => _State();
@@ -22,7 +27,14 @@ class _State extends State<SonarrAiringNextRoute> with ZagScrollControllerMixin 
   @override
   void initState() {
     super.initState();
-    _loadAiringNextShows();
+    if (widget.initialData != null) {
+      // Use the provided initial data
+      _airingNextShows = widget.initialData!;
+      _isLoading = false;
+    } else {
+      // Load data from API
+      _loadAiringNextShows();
+    }
   }
   
   Future<void> _loadAiringNextShows() async {

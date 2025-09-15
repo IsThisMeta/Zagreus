@@ -10,7 +10,8 @@ enum DiscoverRoutes with ZagRoutesMixin {
   RECENTLY_DOWNLOADED('recently_downloaded'),
   RECOMMENDED('recommended'),
   MISSING('missing'),
-  DOWNLOADING_SOON('downloading_soon');
+  DOWNLOADING_SOON('downloading_soon'),
+  TMDB_POPULAR_MOVIES('tmdb_popular_movies');
 
   @override
   final String path;
@@ -36,6 +37,8 @@ enum DiscoverRoutes with ZagRoutesMixin {
         return route(widget: const DiscoverMissingRoute());
       case DiscoverRoutes.DOWNLOADING_SOON:
         return route(widget: DiscoverDownloadingSoonRoute());
+      case DiscoverRoutes.TMDB_POPULAR_MOVIES:
+        return route(widget: const TMDBPopularMoviesRoute());
     }
   }
   
@@ -48,6 +51,7 @@ enum DiscoverRoutes with ZagRoutesMixin {
           DiscoverRoutes.RECOMMENDED.routes,
           DiscoverRoutes.MISSING.routes,
           DiscoverRoutes.DOWNLOADING_SOON.routes,
+          DiscoverRoutes.TMDB_POPULAR_MOVIES.routes,
         ];
       case DiscoverRoutes.RECENTLY_DOWNLOADED:
         return [];
@@ -56,6 +60,8 @@ enum DiscoverRoutes with ZagRoutesMixin {
       case DiscoverRoutes.MISSING:
         return [];
       case DiscoverRoutes.DOWNLOADING_SOON:
+        return [];
+      case DiscoverRoutes.TMDB_POPULAR_MOVIES:
         return [];
     }
   }

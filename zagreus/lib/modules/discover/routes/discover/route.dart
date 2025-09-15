@@ -18,6 +18,7 @@ import 'package:zagreus/modules/discover/routes/recently_downloaded/route.dart';
 import 'package:zagreus/modules/discover/routes/downloading_soon/route.dart';
 import 'package:zagreus/modules/discover/routes/missing/route.dart';
 import 'package:zagreus/modules/discover/routes/recommended/route.dart';
+import 'package:zagreus/modules/discover/routes/tmdb_popular_movies/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -2075,6 +2076,38 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   ),
                 ),
               ),
+              // View All button with instant navigation
+              if (_popularMovies.isNotEmpty)
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TMDBPopularMoviesRoute(
+                          initialData: _popularMovies,
+                        ),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF6688FF),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'View All',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

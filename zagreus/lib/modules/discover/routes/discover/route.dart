@@ -805,8 +805,6 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           const SizedBox(height: 12),
           _popularMoviesSection(), // Always show section, even while loading
           const SizedBox(height: 12),
-          _popularTVShowsSection(), // Popular TV shows section
-          const SizedBox(height: 12),
           _popularPeopleSection(), // Popular people section
           const SizedBox(height: 12),
         ],
@@ -826,6 +824,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           // TV shows sections
           if (_recentlyDownloadedShows.isNotEmpty) _recentlyDownloadedShowsSection(),
           if (_airingNextShows.isNotEmpty) _airingNextSection(),
+          const SizedBox(height: 12),
+          _popularTVShowsSection(), // Popular TV shows from TMDB
           const SizedBox(height: 32),
         ],
       ),

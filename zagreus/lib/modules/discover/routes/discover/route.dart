@@ -157,22 +157,24 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
       // Check if Radarr is enabled first
       final radarrState = context.read<RadarrState>();
       if (!radarrState.enabled) {
+        // If Radarr is not enabled, just use empty list
         setState(() {
-          _error = 'Radarr is not enabled';
+          _recentlyDownloaded = [];
           _isLoading = false;
         });
         return;
       }
-      
+
       final api = radarrState.api;
       if (api == null) {
+        // If API not configured, use empty list
         setState(() {
-          _error = 'Radarr API is not configured';
+          _recentlyDownloaded = [];
           _isLoading = false;
         });
         return;
@@ -234,6 +236,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     try {
       final radarrState = context.read<RadarrState>();
       if (!radarrState.enabled) {
+        // If Radarr not enabled, use empty list
+        setState(() {
+          _recommendedMovies = [];
+        });
         return;
       }
       
@@ -270,6 +276,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     try {
       final radarrState = context.read<RadarrState>();
       if (!radarrState.enabled) {
+        // If Radarr not enabled, use empty list
+        setState(() {
+          _missingMovies = [];
+        });
         return;
       }
       
@@ -296,7 +306,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       print('📅 [DOWNLOADING SOON] Starting to load...');
       final radarrState = context.read<RadarrState>();
       if (!radarrState.enabled) {
-        print('📅 [DOWNLOADING SOON] Radarr not enabled, skipping');
+        print('📅 [DOWNLOADING SOON] Radarr not enabled, using empty list');
+        setState(() {
+          _downloadingSoon = [];
+        });
         return;
       }
       

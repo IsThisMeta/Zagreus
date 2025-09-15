@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:zagreus/core.dart';
 import 'package:zagreus/extensions/string/links.dart';
@@ -157,6 +158,59 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
             //     _purchasePro(false);
             //   },
             // ),
+            const SizedBox(height: 16),
+            // Legal links required by Apple
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Text(
+                    'By subscribing, you agree to our',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkWell(
+                        onTap: () => _openUrl('https://zagreus.app/terms'),
+                        child: Text(
+                          'Terms of Service',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: ZagColours.accent,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        ' and ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => _openUrl('https://zagreus.app/privacy'),
+                        child: Text(
+                          'Privacy Policy',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: ZagColours.accent,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
           // Debug only - cancel subscription button
           if (isPro && const bool.fromEnvironment('dart.vm.product') == false)
@@ -222,5 +276,17 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       title: '[DEBUG] Subscription Cancelled',
       message: 'Zagreus Pro has been disabled',
     );
+  }
+
+  void _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      showZagInfoSnackBar(
+        title: 'Error',
+        message: 'Could not open link',
+      );
+    }
   }
 }

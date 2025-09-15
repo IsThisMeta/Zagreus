@@ -5,7 +5,12 @@ import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
 
 class DiscoverRecentlyDownloadedRoute extends StatefulWidget {
-  const DiscoverRecentlyDownloadedRoute({Key? key}) : super(key: key);
+  final List<RadarrMovie>? initialData;
+  
+  const DiscoverRecentlyDownloadedRoute({
+    Key? key,
+    this.initialData,
+  }) : super(key: key);
 
   @override
   State<DiscoverRecentlyDownloadedRoute> createState() => _State();
@@ -21,7 +26,14 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
   @override
   void initState() {
     super.initState();
-    _loadRecentlyDownloaded();
+    if (widget.initialData != null) {
+      // Use the provided initial data
+      _movies = widget.initialData!;
+      _isLoading = false;
+    } else {
+      // Load data from API
+      _loadRecentlyDownloaded();
+    }
   }
   
   Future<void> _loadRecentlyDownloaded() async {

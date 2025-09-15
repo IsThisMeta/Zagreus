@@ -5,7 +5,12 @@ import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
 
 class DiscoverMissingRoute extends StatefulWidget {
-  const DiscoverMissingRoute({Key? key}) : super(key: key);
+  final List<RadarrMovie>? initialData;
+  
+  const DiscoverMissingRoute({
+    Key? key,
+    this.initialData,
+  }) : super(key: key);
 
   @override
   State<DiscoverMissingRoute> createState() => _State();
@@ -21,7 +26,14 @@ class _State extends State<DiscoverMissingRoute> with ZagScrollControllerMixin {
   @override
   void initState() {
     super.initState();
-    _loadMissingMovies();
+    if (widget.initialData != null) {
+      // Use the provided initial data
+      _movies = widget.initialData!;
+      _isLoading = false;
+    } else {
+      // Load data from API
+      _loadMissingMovies();
+    }
   }
   
   Future<void> _loadMissingMovies() async {

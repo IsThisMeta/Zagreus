@@ -13,6 +13,10 @@ import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/sonarr.dart';
 import 'package:zagreus/modules/discover/routes/sonarr_recently_downloaded/route.dart';
 import 'package:zagreus/modules/discover/routes/sonarr_airing_next/route.dart';
+import 'package:zagreus/modules/discover/routes/recently_downloaded/route.dart';
+import 'package:zagreus/modules/discover/routes/downloading_soon/route.dart';
+import 'package:zagreus/modules/discover/routes/missing/route.dart';
+import 'package:zagreus/modules/discover/routes/recommended/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -1587,7 +1591,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: GestureDetector(
             onTap: () {
-              DiscoverRoutes.RECOMMENDED.go();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DiscoverRecommendedRoute(
+                    initialData: _recommendedMovies,
+                  ),
+                ),
+              );
             },
             child: Row(
               children: [
@@ -1671,7 +1682,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: GestureDetector(
             onTap: () {
-              DiscoverRoutes.MISSING.go();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DiscoverMissingRoute(
+                    initialData: _missingMovies,
+                  ),
+                ),
+              );
             },
             child: Row(
               children: [
@@ -1739,7 +1757,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: GestureDetector(
             onTap: () {
-              DiscoverRoutes.DOWNLOADING_SOON.go();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DiscoverDownloadingSoonRoute(
+                    initialData: _downloadingSoon,
+                  ),
+                ),
+              );
             },
             child: Row(
               children: [
@@ -2386,7 +2411,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: GestureDetector(
             onTap: () {
-              DiscoverRoutes.RECENTLY_DOWNLOADED.go();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DiscoverRecentlyDownloadedRoute(
+                    initialData: _recentlyDownloaded,
+                  ),
+                ),
+              );
             },
             child: Row(
               children: [

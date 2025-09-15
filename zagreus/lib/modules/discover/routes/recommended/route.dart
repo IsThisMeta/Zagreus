@@ -5,7 +5,12 @@ import 'package:zagreus/modules/radarr.dart';
 import 'package:zagreus/router/routes/radarr.dart';
 
 class DiscoverRecommendedRoute extends StatefulWidget {
-  const DiscoverRecommendedRoute({Key? key}) : super(key: key);
+  final List<RadarrMovie>? initialData;
+  
+  const DiscoverRecommendedRoute({
+    Key? key,
+    this.initialData,
+  }) : super(key: key);
 
   @override
   State<DiscoverRecommendedRoute> createState() => _State();
@@ -21,7 +26,14 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
   @override
   void initState() {
     super.initState();
-    _loadRecommendedMovies();
+    if (widget.initialData != null) {
+      // Use the provided initial data
+      _movies = widget.initialData!;
+      _isLoading = false;
+    } else {
+      // Load data from API
+      _loadRecommendedMovies();
+    }
   }
   
   Future<void> _loadRecommendedMovies() async {

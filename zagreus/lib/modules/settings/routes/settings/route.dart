@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,6 +9,7 @@ import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/services/in_app_purchase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsRoute extends StatefulWidget {
   const SettingsRoute({
@@ -20,6 +22,7 @@ class SettingsRoute extends StatefulWidget {
 
 class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  Timer? _revokeTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -90,19 +93,31 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
   
   Widget _buildProButton() {
     final bool isPro = ZagreusPro.isEnabled;
-    
+
     return ZagBlock(
       title: 'Zagreus Pro',
       body: [
         TextSpan(
-          text: isPro 
+          text: isPro
             ? 'Active • Monthly subscription'
             : 'Unlock premium features • \$0.79/mo'
         )
       ],
-      trailing: ZagIconButton(
-        icon: isPro ? Icons.star_rounded : Icons.lock_open_rounded,
-        color: isPro ? ZagColours.orange : ZagColours.accent,
+      trailing: GestureDetector(
+        onLongPressStart: (_) {
+          // Start timer for 5 second hold
+          if (isPro) {
+            _startRevokeTimer();
+          }
+        },
+        onLongPressEnd: (_) {
+          // Cancel timer if released early
+          _cancelRevokeTimer();
+        },
+        child: ZagIconButton(
+          icon: isPro ? Icons.star_rounded : Icons.lock_open_rounded,
+          color: isPro ? ZagColours.orange : ZagColours.accent,
+        ),
       ),
       onTap: () => _showProDialog(context),
     );
@@ -284,15 +299,33 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
     }
   }
   
-  void _cancelPro() {
-    // Debug only - reset Pro status
+  void _cancelPro() async {
+    // Debug only - reset Pro status locally
     ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(false);
     ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update('');
     ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update('');
+
+    // Also clear from Supabase if signed in
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        await supabase
+            .from('subscriptions')
+            .delete()
+            .eq('user_id', user.id);
+      }
+    } catch (e) {
+      print('Error clearing cloud subscription: $e');
+    }
+
+    // Clear any cached Pro status
+    ZagreusPro.clearCache();
+
     setState(() {});
     showZagInfoSnackBar(
-      title: '[DEBUG] Subscription Cancelled',
-      message: 'Zagreus Pro has been disabled',
+      title: 'Pro Status Revoked',
+      message: 'Cleared locally and from cloud',
     );
   }
 
@@ -319,5 +352,51 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
 
     // Refresh the UI to show updated Pro status
     setState(() {});
+  }
+
+  void _startRevokeTimer() {
+    _cancelRevokeTimer(); // Cancel any existing timer
+    _revokeTimer = Timer(const Duration(seconds: 5), () {
+      // After 5 seconds of holding, show secret revoke option
+      _showSecretRevokeDialog();
+    });
+  }
+
+  void _cancelRevokeTimer() {
+    _revokeTimer?.cancel();
+    _revokeTimer = null;
+  }
+
+  void _showSecretRevokeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🤫 Secret Debug Menu'),
+        content: const Text(
+          'Revoke Zagreus Pro subscription?\n\n'
+          'This will clear your Pro status locally.\n'
+          'Use "Restore Purchases" to get it back.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _cancelPro();
+            },
+            child: Text('Revoke', style: TextStyle(color: ZagColours.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cancelRevokeTimer();
+    super.dispose();
   }
 }

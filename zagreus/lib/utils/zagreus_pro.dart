@@ -5,6 +5,12 @@ class ZagreusPro {
   static bool? _cachedProStatus;
   static DateTime? _cacheExpiry;
 
+  /// Clear the cached Pro status (useful for testing)
+  static void clearCache() {
+    _cachedProStatus = null;
+    _cacheExpiry = null;
+  }
+
   static Future<bool> get isEnabledAsync async {
     // Check cache first (valid for 5 minutes)
     if (_cachedProStatus != null &&

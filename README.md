@@ -55,6 +55,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 Copyright (C) 2025 Zebrra Labs LLC
 
 This program is a fork of LunaSea, originally created by Jagandeep Brar.
+Original LunaSea Copyright (C) 2019-2025 Jagandeep Brar
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

@@ -110,13 +110,18 @@ class ZagreusPro {
   static void _setProBootModule() {
     try {
       final currentModule = BIOSDatabase.BOOT_MODULE.read();
-      // Only set to Discover if it's the first Pro activation
-      if (currentModule != ZagModule.DISCOVER &&
-          ZagreusDatabase.USER_BOOT_MODULE.read().isEmpty) {
-        // Save current module as user preference
-        ZagreusDatabase.USER_BOOT_MODULE.update(currentModule.key);
-        // Set to Discover
+      final userModuleSaved = ZagreusDatabase.USER_BOOT_MODULE.read();
+
+      // Set to Discover if not already, and save user's preference
+      if (currentModule != ZagModule.DISCOVER) {
+        // Only save current as user preference if we haven't saved one yet
+        // (dashboard is the default, so if it's still dashboard, this is first time)
+        if (userModuleSaved == 'dashboard' || userModuleSaved.isEmpty) {
+          ZagreusDatabase.USER_BOOT_MODULE.update(currentModule.key);
+        }
+        // Always set to Discover when Pro is activated
         BIOSDatabase.BOOT_MODULE.update(ZagModule.DISCOVER);
+        print('Pro activated: Setting boot module to Discover');
       }
     } catch (e) {
       print('Error setting Pro boot module: $e');

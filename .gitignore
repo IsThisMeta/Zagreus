@@ -5,3 +5,9 @@
 lib/modules/discover/core/api_keys.dart
 zagreus/lib/config/encryption_config_private.dart
 zagreus/lib/modules/discover/core/.trakt_config.dart
+zagreus/supabase/config.toml
+zagreus/supabase/functions/README.md
+zagreus/lib/utils/zagreus_pro.dart
+zagreus/supabase/migrations/20240915_create_subscriptions_table.sql
+zagreus/lib/utils/zagreus_pro.dart
+zagreus/lib/services/in_app_purchase_service.dart

@@ -119,6 +119,54 @@ class TMDBApi {
     }
   }
   
+  static Future<List<Map<String, dynamic>>> getPopularTVShows({
+    int page = 1,
+    String? region,
+  }) async {
+    try {
+      // Fetch multiple pages for more results (like nzb360)
+      List<Map<String, dynamic>> allShows = [];
+      
+      for (int p = 1; p <= 2; p++) {
+        String url = '$_baseUrl/tv/popular?api_key=$_apiKey&page=$p';
+        if (region != null) {
+          url += '&region=$region';
+        }
+        
+        final response = await http.get(Uri.parse(url));
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final results = data['results'] as List;
+          
+          // Transform the data to match our UI needs
+          final shows = results.map((item) {
+            return {
+              'id': item['id'],
+              'title': item['name'] ?? 'Unknown',
+              'backdrop': getImageUrl(item['backdrop_path']),
+              'poster': getImageUrl(item['poster_path'], size: 'w500'),
+              'rating': (item['vote_average'] ?? 0).toDouble(),
+              'overview': item['overview'] ?? '',
+              'firstAirDate': item['first_air_date'],
+              'mediaType': 'tv',
+              'tmdbId': item['id'],
+              'popularity': item['popularity'] ?? 0,
+              'inLibrary': false,
+            };
+          }).toList();
+          
+          allShows.addAll(shows);
+        }
+      }
+      
+      return allShows;
+    } catch (e) {
+      print('TMDB API Error (Popular TV Shows): $e');
+      return [];
+    }
+  }
+  
   static Future<List<Map<String, dynamic>>> getPopularPeople({
     int page = 1,
     String? region,

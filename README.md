@@ -1,5 +1,4 @@
 # Zagreus
-# Zagreus
 
 Zagreus is a self-hosted media software controller. This is a fork of LunaSea.
 

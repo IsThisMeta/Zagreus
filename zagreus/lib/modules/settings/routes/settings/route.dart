@@ -158,6 +158,17 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
             //     _purchasePro(false);
             //   },
             // ),
+            const SizedBox(height: 8),
+            // Restore Purchases button
+            ZagDialog.tile(
+              icon: Icons.restore_rounded,
+              iconColor: Colors.grey,
+              text: 'Restore Purchases',
+              onTap: () {
+                Navigator.of(context).pop();
+                _restorePurchases();
+              },
+            ),
             const SizedBox(height: 16),
             // Legal links required by Apple
             Padding(
@@ -288,5 +299,18 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
         message: 'Could not open link',
       );
     }
+  }
+
+  void _restorePurchases() async {
+    showZagInfoSnackBar(
+      title: 'Restoring',
+      message: 'Checking for previous purchases...',
+    );
+
+    final iapService = InAppPurchaseService();
+    await iapService.restorePurchases();
+
+    // Refresh the UI to show updated Pro status
+    setState(() {});
   }
 }

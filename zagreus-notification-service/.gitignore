@@ -118,3 +118,7 @@ dist
 .env
 serviceaccount.json
 server.log
+
+# APNS Keys - NEVER COMMIT
+*.p8
+AuthKey_*.p8

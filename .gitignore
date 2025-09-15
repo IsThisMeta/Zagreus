@@ -12,3 +12,6 @@ zagreus/supabase/migrations/20240915_create_subscriptions_table.sql
 zagreus/lib/utils/zagreus_pro.dart
 zagreus/lib/services/in_app_purchase_service.dart
 zagreus/lib/services/in_app_purchase_service.dart
+# APNS Keys
+*.p8
+AuthKey_*.p8

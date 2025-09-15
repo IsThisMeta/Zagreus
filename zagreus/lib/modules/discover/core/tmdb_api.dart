@@ -225,6 +225,73 @@ class TMDBApi {
     }
   }
   
+  // Simulating Trakt Most Anticipated Shows using TMDB upcoming/trending
+  static Future<List<Map<String, dynamic>>> getMostAnticipatedShows({
+    String? region,
+  }) async {
+    try {
+      // Using TMDB discover to simulate Trakt's anticipated shows
+      // Get shows that are upcoming or very recently released
+      final now = DateTime.now();
+      final oneMonthAgo = now.subtract(const Duration(days: 30));
+      final sixMonthsFromNow = now.add(const Duration(days: 180));
+      
+      String url = '$_baseUrl/discover/tv?api_key=$_apiKey';
+      url += '&sort_by=popularity.desc';
+      url += '&first_air_date.gte=${oneMonthAgo.toIso8601String().split('T')[0]}';
+      url += '&first_air_date.lte=${sixMonthsFromNow.toIso8601String().split('T')[0]}';
+      url += '&vote_count.gte=10'; // Only shows with some votes (anticipated)
+      url += '&page=1';
+      
+      if (region != null) {
+        url += '&region=$region';
+      }
+      
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final results = data['results'] as List;
+        
+        // Shuffle to simulate Trakt's different ordering
+        final shuffled = List.from(results)..shuffle();
+        
+        // Transform the data to match our UI needs
+        final shows = shuffled.take(20).map((item) {
+          return {
+            'id': item['id'],
+            'title': item['name'] ?? 'Unknown',
+            'backdrop': getImageUrl(item['backdrop_path']),
+            'poster': getImageUrl(item['poster_path'], size: 'w500'),
+            'rating': (item['vote_average'] ?? 0).toDouble(),
+            'overview': item['overview'] ?? '',
+            'firstAirDate': item['first_air_date'],
+            'mediaType': 'tv',
+            'tmdbId': item['id'],
+            'popularity': item['popularity'] ?? 0,
+            'voteCount': item['vote_count'] ?? 0,
+            'inLibrary': false,
+            'isAnticipated': true,
+          };
+        }).toList();
+        
+        // Sort by popularity/vote count to get most anticipated
+        shows.sort((a, b) {
+          final aScore = (a['popularity'] as num) * (a['voteCount'] as num);
+          final bScore = (b['popularity'] as num) * (b['voteCount'] as num);
+          return bScore.compareTo(aScore);
+        });
+        
+        return shows;
+      }
+      
+      return [];
+    } catch (e) {
+      print('API Error (Most Anticipated Shows): $e');
+      return [];
+    }
+  }
+  
   static Future<List<Map<String, dynamic>>> getPopularPeople({
     int page = 1,
     String? region,

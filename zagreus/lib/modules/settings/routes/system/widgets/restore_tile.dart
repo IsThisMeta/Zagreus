@@ -37,17 +37,20 @@ class SettingsSystemBackupRestoreRestoreTile extends StatelessWidget {
     BuildContext context,
     ZagFile file,
   ) async {
-    String encrypted = String.fromCharCodes(file.data);
+    String data = String.fromCharCodes(file.data);
     try {
-      await ZagConfig().import(context, encrypted);
+      // Local backups are plain JSON, no decryption needed
+      await ZagConfig().import(context, data);
       showZagSuccessSnackBar(
         title: 'settings.RestoreFromCloudSuccess'.tr(),
         message: 'settings.RestoreFromCloudSuccessMessage'.tr(),
       );
-    } catch (_) {
+    } catch (error, stack) {
+      // Don't assume it's an encryption issue - local backups aren't encrypted
+      ZagLogger().error('Failed to import backup', error, stack);
       showZagErrorSnackBar(
         title: 'settings.RestoreFromCloudFailure'.tr(),
-        message: 'zagreus.IncorrectEncryptionKey'.tr(),
+        message: 'Failed to restore backup. The file may be corrupted or incompatible.',
         showButton: true,
         buttonText: 'zagreus.Retry'.tr(),
         buttonOnPressed: () async => _decryptBackup(context, file),

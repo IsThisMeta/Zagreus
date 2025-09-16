@@ -19,6 +19,7 @@ import 'package:zagreus/modules/discover/routes/downloading_soon/route.dart';
 import 'package:zagreus/modules/discover/routes/missing/route.dart';
 import 'package:zagreus/modules/discover/routes/recommended/route.dart';
 import 'package:zagreus/modules/discover/routes/tmdb_popular_movies/route.dart';
+import 'package:zagreus/modules/discover/routes/tmdb_popular_tv_shows/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -2089,10 +2090,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   ),
                 ),
               ),
-              // View All button with instant navigation
               if (_popularMovies.isNotEmpty)
-                TextButton(
-                  onPressed: () {
+                GestureDetector(
+                  onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => TMDBPopularMoviesRoute(
@@ -2101,24 +2101,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       ),
                     );
                   },
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF6688FF),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'View All',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 14,
-                      ),
-                    ],
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: (Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black).withOpacity(0.5),
+                    size: 16,
                   ),
                 ),
             ],
@@ -2320,6 +2308,25 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   ),
                 ),
               ),
+              if (_popularTVShows.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TMDBPopularTVShowsRoute(
+                          initialData: _popularTVShows,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: (Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black).withOpacity(0.5),
+                    size: 16,
+                  ),
+                ),
             ],
           ),
         ),

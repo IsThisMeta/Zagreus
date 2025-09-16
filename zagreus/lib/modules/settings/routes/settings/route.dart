@@ -268,7 +268,7 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       InkWell(
-                        onTap: () => _openUrl('https://zagreus.app/terms'),
+                        onTap: () => _openUrl('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
                         child: Text(
                           'Terms of Service',
                           style: TextStyle(

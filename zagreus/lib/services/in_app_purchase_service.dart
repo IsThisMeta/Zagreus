@@ -53,6 +53,9 @@ class InAppPurchaseService {
 
     // Don't restore purchases on every launch - let ZagreusPro handle verification
     // Only restore when user explicitly requests it
+
+    // But do verify subscription periodically (once per week)
+    await _verifySubscriptionIfNeeded();
   }
   
   Future<void> loadProducts() async {
@@ -270,11 +273,51 @@ class InAppPurchaseService {
   void _onDone() {
     _subscription?.cancel();
   }
-  
+
   void _onError(dynamic error) {
     ZagLogger().error('Purchase stream error', error, null);
   }
-  
+
+  Future<void> _verifySubscriptionIfNeeded() async {
+    // Only verify if user has Pro enabled locally
+    if (!ZagreusPro.isEnabled) return;
+
+    // Check when we last verified
+    final lastVerified = ZagreusDatabase.LAST_SUBSCRIPTION_VERIFY.read();
+    if (lastVerified.isNotEmpty) {
+      try {
+        final lastDate = DateTime.parse(lastVerified);
+        final now = DateTime.now();
+
+        // If we verified in the last 7 days, skip
+        if (now.difference(lastDate).inDays < 7) {
+          return;
+        }
+      } catch (e) {
+        // Invalid date, continue with verification
+      }
+    }
+
+    // Silently verify with Supabase
+    try {
+      final isValid = await ZagreusPro.isEnabledAsync;
+
+      // Update last verified time
+      ZagreusDatabase.LAST_SUBSCRIPTION_VERIFY.update(DateTime.now().toIso8601String());
+
+      // If subscription expired, clear Pro status
+      if (!isValid && ZagreusPro.hasExpired) {
+        showZagInfoSnackBar(
+          title: 'Subscription Expired',
+          message: 'Your Zagreus Pro subscription has expired',
+        );
+      }
+    } catch (e) {
+      // Silently fail - don't interrupt user experience
+      print('Failed to verify subscription: $e');
+    }
+  }
+
   void dispose() {
     _subscription?.cancel();
   }

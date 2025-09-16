@@ -20,6 +20,8 @@ import 'package:zagreus/modules/discover/routes/missing/route.dart';
 import 'package:zagreus/modules/discover/routes/recommended/route.dart';
 import 'package:zagreus/modules/discover/routes/tmdb_popular_movies/route.dart';
 import 'package:zagreus/modules/discover/routes/tmdb_popular_tv_shows/route.dart';
+import 'package:zagreus/modules/discover/routes/tmdb_trending_new_tv_shows/route.dart';
+import 'package:zagreus/modules/discover/routes/trakt_most_anticipated_shows/route.dart';
 
 class DiscoverHomeRoute extends StatefulWidget {
   const DiscoverHomeRoute({Key? key}) : super(key: key);
@@ -32,7 +34,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late ZagPageController _pageController;
   int _currentPageIndex = 0;
-  
+
   List<RadarrMovie> _recentlyDownloaded = [];
   List<Map<String, dynamic>> _recentlyDownloadedShows = []; // Sonarr episodes
   List<Map<String, dynamic>> _airingNextShows = []; // Sonarr airing next
@@ -46,14 +48,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   List<Map<String, dynamic>> _popularPeople = [];
   bool _isLoading = true;
   String? _error;
-  
+
   // Hero carousel state
   PageController _heroPageController = PageController();
   int _currentHeroIndex = 0;
   String _trendingTimeWindow = 'day'; // 'day' or 'week'
   List<Map<String, dynamic>> _trendingItems = [];
   Timer? _autoScrollTimer;
-  
+
   @override
   void initState() {
     super.initState();
@@ -74,7 +76,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadMockTrendingData();
     _startAutoScroll();
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -86,7 +88,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _loadPopularPeople();
     _loadSonarrAiringNext();
   }
-  
+
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
@@ -94,7 +96,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     _pageController.dispose();
     super.dispose();
   }
-  
+
   void _startAutoScroll() {
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_trendingItems.isNotEmpty) {
@@ -107,27 +109,27 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       }
     });
   }
-  
+
   void _stopAutoScroll() {
     _autoScrollTimer?.cancel();
   }
-  
+
   void _restartAutoScroll() {
     _stopAutoScroll();
     _startAutoScroll();
   }
-  
+
   void _loadMockTrendingData() {
     _loadTrendingData();
   }
-  
+
   Future<void> _loadTrendingData() async {
     try {
       final items = await TMDBApi.getTrending(
         mediaType: 'all', // Can be 'movie', 'tv', or 'all'
         timeWindow: _trendingTimeWindow,
       );
-      
+
       // Check against Radarr library if available
       if (mounted) {
         final radarrState = context.read<RadarrState>();
@@ -141,7 +143,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           }
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _trendingItems = items;
@@ -152,7 +154,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       // Falls back to mock data in the API
     }
   }
-  
+
   Future<void> _loadRecentlyDownloaded() async {
     setState(() {
       _isLoading = true;
@@ -180,19 +182,20 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         });
         return;
       }
-      
+
       // Fetch history
       final history = await api.history.get(
         pageSize: 50,
         sortDirection: RadarrSortDirection.DESCENDING,
         sortKey: RadarrHistorySortKey.DATE,
       );
-      
+
       // Filter only downloaded items and get unique movie IDs
       final downloadedRecords = history.records?.where((record) {
-        return record.eventType == RadarrEventType.DOWNLOAD_FOLDER_IMPORTED;
-      }).toList() ?? [];
-      
+            return record.eventType == RadarrEventType.DOWNLOAD_FOLDER_IMPORTED;
+          }).toList() ??
+          [];
+
       // Get unique movie IDs from history
       final movieIds = <int>{};
       for (final record in downloadedRecords) {
@@ -200,15 +203,15 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           movieIds.add(record.movieId!);
         }
       }
-      
+
       // Fetch all movies if not already cached
       if (radarrState.movies == null) {
         radarrState.fetchMovies();
       }
-      
+
       // Wait for movies to load
       final allMovies = await radarrState.movies!;
-      
+
       // Filter movies that are in the downloaded history
       final downloadedMovies = <RadarrMovie>[];
       for (final movieId in movieIds.take(10)) {
@@ -220,7 +223,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           downloadedMovies.add(movie);
         }
       }
-      
+
       setState(() {
         _recentlyDownloaded = downloadedMovies;
         _isLoading = false;
@@ -232,7 +235,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       });
     }
   }
-  
+
   Future<void> _loadRecommendedMovies() async {
     try {
       final radarrState = context.read<RadarrState>();
@@ -243,17 +246,17 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         });
         return;
       }
-      
+
       final api = radarrState.api;
       if (api == null) {
         return;
       }
-      
+
       // Fetch recommended movies from import lists
       final recommendedMovies = await api.importList.getMovies(
         includeRecommendations: true,
       );
-      
+
       // Remove duplicates and limit
       final Set<int> tmdbIds = {};
       final uniqueMovies = <RadarrMovie>[];
@@ -263,7 +266,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           uniqueMovies.add(movie);
         }
       }
-      
+
       setState(() {
         _recommendedMovies = uniqueMovies.take(10).toList();
       });
@@ -272,7 +275,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       print('Failed to load recommendations: $e');
     }
   }
-  
+
   Future<void> _loadMissingMovies() async {
     try {
       final radarrState = context.read<RadarrState>();
@@ -283,12 +286,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         });
         return;
       }
-      
+
       // Fetch movies if not already cached
       if (radarrState.movies == null) {
         radarrState.fetchMovies();
       }
-      
+
       // Get missing movies from state
       if (radarrState.missing != null) {
         final missingMovies = await radarrState.missing!;
@@ -301,7 +304,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       print('Failed to load missing movies: $e');
     }
   }
-  
+
   Future<void> _loadDownloadingSoon() async {
     try {
       print('📅 [DOWNLOADING SOON] Starting to load...');
@@ -313,95 +316,105 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         });
         return;
       }
-      
+
       // Fetch movies if not already cached
       if (radarrState.movies == null) {
         print('📅 [DOWNLOADING SOON] Movies cache is null, fetching...');
         radarrState.fetchMovies();
       }
-      
+
       // Wait for movies to load
       print('📅 [DOWNLOADING SOON] Waiting for movies to load...');
       final allMovies = await radarrState.movies!;
-      print('📅 [DOWNLOADING SOON] Loaded ${allMovies.length} total movies from Radarr');
-      
+      print(
+          '📅 [DOWNLOADING SOON] Loaded ${allMovies.length} total movies from Radarr');
+
       final downloadingSoon = <RadarrMovie>[];
       final now = DateTime.now();
       const lookAheadDays = 28;
-      
+
       int monitoredCount = 0;
       int notDownloadedCount = 0;
       int monitoredNotDownloaded = 0;
-      
+
       for (final movie in allMovies) {
         final isMonitored = movie.monitored == true;
         final hasFile = movie.hasFile == true;
-        
+
         if (isMonitored) monitoredCount++;
         if (!hasFile) notDownloadedCount++;
         if (isMonitored && !hasFile) monitoredNotDownloaded++;
-        
+
         // Skip if not monitored or already downloaded
         if (!isMonitored || hasFile) {
           continue;
         }
-        
+
         // Try digital release first, then physical release (matching Zebrra logic)
         final releaseDate = movie.digitalRelease ?? movie.physicalRelease;
-        
+
         if (releaseDate != null) {
           // Calculate days using UTC dates (matching Zebrra)
           final nowUtc = now.toUtc();
           final releaseDateUtc = releaseDate.toUtc();
-          
+
           // Compare start of days in UTC
-          final startOfTodayUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
-          final startOfReleaseUtc = DateTime.utc(releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
-          
-          final daysUntil = startOfReleaseUtc.difference(startOfTodayUtc).inDays;
-          
+          final startOfTodayUtc =
+              DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
+          final startOfReleaseUtc = DateTime.utc(
+              releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
+
+          final daysUntil =
+              startOfReleaseUtc.difference(startOfTodayUtc).inDays;
+
           print('📅 [DOWNLOADING SOON] Movie "${movie.title}":');
           print('📅   - Digital: ${movie.digitalRelease}');
           print('📅   - Physical: ${movie.physicalRelease}');
           print('📅   - Days until: $daysUntil');
-          
+
           // Check if within look-ahead window
           if (daysUntil >= 0 && daysUntil <= lookAheadDays) {
             downloadingSoon.add(movie);
-            print('📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - releases in $daysUntil days');
+            print(
+                '📅 [DOWNLOADING SOON] ✅ Added "${movie.title}" - releases in $daysUntil days');
           }
         }
       }
-      
+
       print('📅 [DOWNLOADING SOON] Summary:');
       print('📅 [DOWNLOADING SOON]   Total movies: ${allMovies.length}');
       print('📅 [DOWNLOADING SOON]   Monitored: $monitoredCount');
       print('📅 [DOWNLOADING SOON]   Not downloaded: $notDownloadedCount');
-      print('📅 [DOWNLOADING SOON]   Monitored & not downloaded: $monitoredNotDownloaded');
-      print('📅 [DOWNLOADING SOON]   Downloading soon: ${downloadingSoon.length}');
-      
+      print(
+          '📅 [DOWNLOADING SOON]   Monitored & not downloaded: $monitoredNotDownloaded');
+      print(
+          '📅 [DOWNLOADING SOON]   Downloading soon: ${downloadingSoon.length}');
+
       // Sort by release date (closest first)
       downloadingSoon.sort((a, b) {
-        final aDate = a.digitalRelease ?? a.physicalRelease ?? 
-                      (a.inCinemas?.add(const Duration(days: 90)));
-        final bDate = b.digitalRelease ?? b.physicalRelease ?? 
-                      (b.inCinemas?.add(const Duration(days: 90)));
+        final aDate = a.digitalRelease ??
+            a.physicalRelease ??
+            (a.inCinemas?.add(const Duration(days: 90)));
+        final bDate = b.digitalRelease ??
+            b.physicalRelease ??
+            (b.inCinemas?.add(const Duration(days: 90)));
         if (aDate == null && bDate == null) return 0;
         if (aDate == null) return 1;
         if (bDate == null) return -1;
         return aDate.compareTo(bDate);
       });
-      
+
       setState(() {
         _downloadingSoon = downloadingSoon.take(10).toList();
-        print('📅 [DOWNLOADING SOON] Set ${_downloadingSoon.length} movies in state');
+        print(
+            '📅 [DOWNLOADING SOON] Set ${_downloadingSoon.length} movies in state');
       });
     } catch (e) {
       print('📅 [DOWNLOADING SOON] ERROR: $e');
       print('📅 [DOWNLOADING SOON] Stack trace: ${StackTrace.current}');
     }
   }
-  
+
   Future<void> _loadPopularMovies() async {
     print('🎬 Loading popular movies...');
     try {
@@ -409,10 +422,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       final locale = Localizations.localeOf(context);
       final region = locale.countryCode ?? 'US';
       print('🎬 Using region: $region');
-      
+
       final movies = await TMDBApi.getPopularMovies(region: region);
       print('🎬 Got ${movies.length} popular movies from TMDB');
-      
+
       // Check against Radarr library if available
       final radarrState = context.read<RadarrState>();
       if (radarrState.enabled && radarrState.movies != null) {
@@ -422,10 +435,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           movie['inLibrary'] = radarrMovies.any((m) => m.tmdbId == tmdbId);
         }
       }
-      
+
       if (mounted) {
         setState(() {
-          _popularMovies = movies.take(10).toList(); // Limit to 10 for the section
+          _popularMovies =
+              movies.take(10).toList(); // Limit to 10 for the section
         });
         print('🎬 Set ${_popularMovies.length} popular movies in state');
       }
@@ -433,7 +447,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       print('❌ Error loading popular movies: $e');
     }
   }
-  
+
   Future<void> _loadRecentlyDownloadedShows() async {
     try {
       final sonarrState = context.read<SonarrState>();
@@ -444,9 +458,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         });
         return;
       }
-      
+
       final api = sonarrState.api!;
-      
+
       // Fetch history sorted by date descending
       final history = await api.history.get(
         page: 1,
@@ -456,11 +470,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         includeEpisode: true,
         includeSeries: true,
       );
-      
+
       // Filter to only downloadFolderImported events and dedupe by episodeId
       final downloadedRecords = <SonarrHistoryRecord>[];
       final seenEpisodeIds = <int>{};
-      
+
       for (final record in history.records ?? []) {
         if (record.eventType == SonarrEventType.DOWNLOAD_FOLDER_IMPORTED &&
             record.episodeId != null &&
@@ -470,13 +484,13 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           if (downloadedRecords.length >= 10) break; // Limit to 10 items
         }
       }
-      
+
       // Map to UI format
       final shows = <Map<String, dynamic>>[];
       for (final record in downloadedRecords) {
         final episode = record.episode;
         final series = record.series;
-        
+
         if (episode != null && series != null) {
           // Get fanart or poster image
           String? imageUrl;
@@ -495,7 +509,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               }
             }
           }
-          
+
           shows.add({
             'seriesTitle': series.title ?? 'Unknown Series',
             'episodeTitle': episode.title ?? 'Episode ${episode.episodeNumber}',
@@ -507,7 +521,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           });
         }
       }
-      
+
       setState(() {
         _recentlyDownloadedShows = shows;
       });
@@ -519,7 +533,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       });
     }
   }
-  
+
   Future<void> _loadSonarrAiringNext() async {
     try {
       final sonarrState = context.read<SonarrState>();
@@ -529,13 +543,13 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         });
         return;
       }
-      
+
       final api = sonarrState.api!;
-      
+
       // Get episodes airing in the next 7 days
       final now = DateTime.now();
       final endDate = now.add(const Duration(days: 14)); // Look 14 days ahead
-      
+
       final calendar = await api.calendar.get(
         start: now,
         end: endDate,
@@ -543,24 +557,24 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         includeSeries: true,
         includeEpisodeFile: true,
       );
-      
+
       // Filter to only monitored episodes that haven't aired yet and don't have files
       final upcomingEpisodes = calendar.where((episode) {
-        return episode.monitored == true && 
-               episode.hasFile != true &&
-               episode.airDateUtc != null &&
-               episode.airDateUtc!.isAfter(now);
+        return episode.monitored == true &&
+            episode.hasFile != true &&
+            episode.airDateUtc != null &&
+            episode.airDateUtc!.isAfter(now);
       }).toList();
-      
+
       // Sort by air date
-      upcomingEpisodes.sort((a, b) => 
-        a.airDateUtc!.compareTo(b.airDateUtc!));
-      
+      upcomingEpisodes.sort((a, b) => a.airDateUtc!.compareTo(b.airDateUtc!));
+
       // Map to UI format
       final shows = <Map<String, dynamic>>[];
-      for (final episode in upcomingEpisodes.take(10)) { // Limit to 10 items
+      for (final episode in upcomingEpisodes.take(10)) {
+        // Limit to 10 items
         final series = episode.series;
-        
+
         if (series != null) {
           // Get fanart or poster image
           String? imageUrl;
@@ -579,7 +593,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               }
             }
           }
-          
+
           shows.add({
             'seriesTitle': series.title ?? 'Unknown Series',
             'episodeTitle': episode.title ?? 'Episode ${episode.episodeNumber}',
@@ -593,7 +607,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           });
         }
       }
-      
+
       setState(() {
         _airingNextShows = shows;
       });
@@ -604,17 +618,17 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       });
     }
   }
-  
+
   String _formatAiringTime(DateTime? airDateUtc, String? network) {
     if (airDateUtc == null) return '';
-    
+
     // Convert UTC to local time
     final localTime = airDateUtc.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
     final episodeDay = DateTime(localTime.year, localTime.month, localTime.day);
-    
+
     String dayLabel;
     if (episodeDay == today) {
       dayLabel = 'Today';
@@ -623,25 +637,39 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     } else {
       // Format as "Mon, Jan 15"
       final weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      dayLabel = '${weekdays[localTime.weekday % 7]}, ${months[localTime.month - 1]} ${localTime.day}';
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      dayLabel =
+          '${weekdays[localTime.weekday % 7]}, ${months[localTime.month - 1]} ${localTime.day}';
     }
-    
+
     // Format time as "3:00 PM"
     final hour = localTime.hour;
     final minute = localTime.minute.toString().padLeft(2, '0');
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    
+
     // Truncate network name if too long
     final networkName = network ?? '';
-    final truncatedNetwork = networkName.length > 12 
-        ? '${networkName.substring(0, 12)}...' 
+    final truncatedNetwork = networkName.length > 12
+        ? '${networkName.substring(0, 12)}...'
         : networkName;
-    
+
     return '$dayLabel • $displayHour:$minute $period${truncatedNetwork.isNotEmpty ? ' on $truncatedNetwork' : ''}';
   }
-  
+
   Future<void> _loadPopularTVShows() async {
     print('📺 Loading popular TV shows...');
     try {
@@ -649,17 +677,17 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       final locale = Localizations.localeOf(context);
       final region = locale.countryCode ?? 'US';
       print('📺 Using region: $region');
-      
+
       final shows = await TMDBApi.getPopularTVShows(region: region);
       print('📺 Got ${shows.length} popular TV shows from TMDB');
-      
+
       // Check against Sonarr library if available
       final sonarrState = context.read<SonarrState>();
       if (sonarrState.enabled && sonarrState.api != null) {
         try {
           final sonarrSeries = await sonarrState.api!.series.getAll();
           print('📺 Checking against ${sonarrSeries.length} Sonarr series');
-          
+
           for (final show in shows) {
             final tmdbId = show['tmdbId'] as int;
             // Check if this show is in Sonarr library by TMDB ID
@@ -667,13 +695,16 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               // Sonarr uses TVDB ID primarily, but we can check if any series matches
               // For now, we'll use a simple name match as fallback
               // In production, you'd want to use a proper TMDB to TVDB mapping
-              return series.title?.toLowerCase() == (show['title'] as String).toLowerCase();
+              return series.title?.toLowerCase() ==
+                  (show['title'] as String).toLowerCase();
             });
             show['inLibrary'] = inLibrary;
-            
+
             if (inLibrary) {
               final series = sonarrSeries.firstWhere(
-                (s) => s.title?.toLowerCase() == (show['title'] as String).toLowerCase(),
+                (s) =>
+                    s.title?.toLowerCase() ==
+                    (show['title'] as String).toLowerCase(),
               );
               show['serviceItemId'] = series.id;
             }
@@ -682,10 +713,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           print('📺 Error checking Sonarr library: $e');
         }
       }
-      
+
       if (mounted) {
         setState(() {
-          _popularTVShows = shows.take(10).toList(); // Limit to 10 for the section
+          _popularTVShows =
+              shows.take(10).toList(); // Limit to 10 for the section
         });
         print('📺 Set ${_popularTVShows.length} popular TV shows in state');
       }
@@ -693,7 +725,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       print('❌ Error loading popular TV shows: $e');
     }
   }
-  
+
   Future<void> _loadTrendingNewTVShows() async {
     print('🆕 Loading trending new TV shows...');
     try {
@@ -701,29 +733,32 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       final locale = Localizations.localeOf(context);
       final region = locale.countryCode ?? 'US';
       print('🆕 Using region: $region');
-      
+
       final shows = await TMDBApi.getTrendingNewTVShows(region: region);
       print('🆕 Got ${shows.length} trending new TV shows from TMDB');
-      
+
       // Check against Sonarr library if available
       final sonarrState = context.read<SonarrState>();
       if (sonarrState.enabled && sonarrState.api != null) {
         try {
           final sonarrSeries = await sonarrState.api!.series.getAll();
           print('🆕 Checking against ${sonarrSeries.length} Sonarr series');
-          
+
           for (final show in shows) {
             final tmdbId = show['tmdbId'] as int;
             // Check if this show is in Sonarr library by TMDB ID
             final inLibrary = sonarrSeries.any((series) {
               // Using title match as fallback for now
-              return series.title?.toLowerCase() == (show['title'] as String).toLowerCase();
+              return series.title?.toLowerCase() ==
+                  (show['title'] as String).toLowerCase();
             });
             show['inLibrary'] = inLibrary;
-            
+
             if (inLibrary) {
               final series = sonarrSeries.firstWhere(
-                (s) => s.title?.toLowerCase() == (show['title'] as String).toLowerCase(),
+                (s) =>
+                    s.title?.toLowerCase() ==
+                    (show['title'] as String).toLowerCase(),
               );
               show['serviceItemId'] = series.id;
             }
@@ -732,25 +767,27 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           print('🆕 Error checking Sonarr library: $e');
         }
       }
-      
+
       if (mounted) {
         setState(() {
-          _trendingNewTVShows = shows.take(10).toList(); // Limit to 10 for the section
+          _trendingNewTVShows =
+              shows.take(10).toList(); // Limit to 10 for the section
         });
-        print('🆕 Set ${_trendingNewTVShows.length} trending new TV shows in state');
+        print(
+            '🆕 Set ${_trendingNewTVShows.length} trending new TV shows in state');
       }
     } catch (e) {
       print('❌ Error loading trending new TV shows: $e');
     }
   }
-  
+
   Future<void> _loadMostAnticipatedShows() async {
     print('🎯 Loading most anticipated shows from Trakt...');
     try {
       // Use the real Trakt API
       final shows = await TraktApi.getAnticipatedShows(page: 1, limit: 40);
       print('🎯 Got ${shows.length} most anticipated shows from Trakt');
-      
+
       // Enrich with TMDB poster images if we have TMDB IDs
       for (final show in shows) {
         final tmdbId = show['tmdbId'] as int?;
@@ -758,27 +795,30 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           // Fetch poster from TMDB
           final tmdbDetails = await TMDBApi.getTVShowDetails(tmdbId);
           if (tmdbDetails != null) {
-            show['poster'] = TMDBApi.getImageUrl(tmdbDetails['poster_path'], size: 'w500');
-            show['backdrop'] = TMDBApi.getImageUrl(tmdbDetails['backdrop_path']);
+            show['poster'] =
+                TMDBApi.getImageUrl(tmdbDetails['poster_path'], size: 'w500');
+            show['backdrop'] =
+                TMDBApi.getImageUrl(tmdbDetails['backdrop_path']);
             // Use TMDB overview if Trakt doesn't have one
-            if (show['overview'] == null || (show['overview'] as String).isEmpty) {
+            if (show['overview'] == null ||
+                (show['overview'] as String).isEmpty) {
               show['overview'] = tmdbDetails['overview'];
             }
           }
         }
       }
-      
+
       // Check against Sonarr library if available
       final sonarrState = context.read<SonarrState>();
       if (sonarrState.enabled && sonarrState.api != null) {
         try {
           final sonarrSeries = await sonarrState.api!.series.getAll();
           print('🎯 Checking against ${sonarrSeries.length} Sonarr series');
-          
+
           for (final show in shows) {
             final tvdbId = show['tvdbId'] as int?;
             final title = show['title'] as String;
-            
+
             // Check if this show is in Sonarr library by TVDB ID or title
             final inLibrary = sonarrSeries.any((series) {
               if (tvdbId != null && series.tvdbId == tvdbId) {
@@ -787,11 +827,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               return series.title?.toLowerCase() == title.toLowerCase();
             });
             show['inLibrary'] = inLibrary;
-            
+
             if (inLibrary) {
               final series = sonarrSeries.firstWhere(
-                (s) => (tvdbId != null && s.tvdbId == tvdbId) || 
-                       s.title?.toLowerCase() == title.toLowerCase(),
+                (s) =>
+                    (tvdbId != null && s.tvdbId == tvdbId) ||
+                    s.title?.toLowerCase() == title.toLowerCase(),
               );
               show['serviceItemId'] = series.id;
             }
@@ -800,31 +841,34 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           print('🎯 Error checking Sonarr library: $e');
         }
       }
-      
+
       if (mounted) {
         setState(() {
-          _mostAnticipatedShows = shows.take(10).toList(); // Limit to 10 for the section
+          _mostAnticipatedShows =
+              shows.take(10).toList(); // Limit to 10 for the section
         });
-        print('🎯 Set ${_mostAnticipatedShows.length} most anticipated shows in state');
+        print(
+            '🎯 Set ${_mostAnticipatedShows.length} most anticipated shows in state');
       }
     } catch (e) {
       print('❌ Error loading most anticipated shows: $e');
     }
   }
-  
+
   Future<void> _loadPopularPeople() async {
     print('👥 Loading popular people...');
     try {
       // Get user's region from locale
       final locale = Localizations.localeOf(context);
       final region = locale.countryCode ?? 'US';
-      
+
       final people = await TMDBApi.getPopularPeople(region: region);
       print('👥 Got ${people.length} popular people from TMDB');
-      
+
       if (mounted) {
         setState(() {
-          _popularPeople = people.take(20).toList(); // Show 20 people in the row
+          _popularPeople =
+              people.take(20).toList(); // Show 20 people in the row
         });
         print('👥 Set ${_popularPeople.length} popular people in state');
       }
@@ -832,7 +876,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       print('❌ Error loading popular people: $e');
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ZagScaffold(
@@ -842,18 +886,20 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       appBar: ZagAppBar(
         title: 'Discover',
         useDrawer: true,
-        actions: _currentPageIndex != 3 ? [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: Row(
-              children: [
-                _appBarToggleButton('Today', 'day'),
-                const SizedBox(width: 8),
-                _appBarToggleButton('This Week', 'week'),
-              ],
-            ),
-          ),
-        ] : null,
+        actions: _currentPageIndex != 3
+            ? [
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Row(
+                    children: [
+                      _appBarToggleButton('Today', 'day'),
+                      const SizedBox(width: 8),
+                      _appBarToggleButton('This Week', 'week'),
+                    ],
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: _body(),
       bottomNavigationBar: _DiscoverNavigationBar(
@@ -861,7 +907,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _body() {
     return ZagPageView(
       controller: _pageController,
@@ -873,7 +919,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _moviesPage() {
     if (_isLoading) {
       return Center(
@@ -882,7 +928,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         ),
       );
     }
-    
+
     if (_error != null) {
       return Center(
         child: Column(
@@ -923,7 +969,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         ),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: _loadRecentlyDownloaded,
       child: ListView(
@@ -949,7 +995,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _tvShowsPage() {
     return RefreshIndicator(
       onRefresh: _loadRecentlyDownloadedShows,
@@ -960,7 +1006,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           // Hero carousel (could be TV shows specific)
           _heroCarousel(),
           // TV shows sections
-          if (_recentlyDownloadedShows.isNotEmpty) _recentlyDownloadedShowsSection(),
+          if (_recentlyDownloadedShows.isNotEmpty)
+            _recentlyDownloadedShowsSection(),
           if (_airingNextShows.isNotEmpty) _airingNextSection(),
           const SizedBox(height: 12),
           _popularTVShowsSection(), // Popular TV shows from TMDB
@@ -973,7 +1020,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _calendarPage() {
     return Center(
       child: Column(
@@ -1011,7 +1058,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   // Search state
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _searchResults = [];
@@ -1098,7 +1145,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           child: _isSearching
               ? Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(ZagColours.accent),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(ZagColours.accent),
                   ),
                 )
               : _searchResults.isEmpty
@@ -1110,7 +1158,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                               Icon(
                                 Icons.search_rounded,
                                 size: 60,
-                                color: Theme.of(context).brightness == Brightness.dark
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? Colors.white.withOpacity(0.2)
                                     : Colors.black.withOpacity(0.2),
                               ),
@@ -1119,7 +1168,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                                 'Search for movies, TV shows, and people',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? Colors.white.withOpacity(0.4)
                                       : Colors.black.withOpacity(0.4),
                                 ),
@@ -1134,7 +1184,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                               Icon(
                                 Icons.search_off_rounded,
                                 size: 60,
-                                color: Theme.of(context).brightness == Brightness.dark
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? Colors.white.withOpacity(0.2)
                                     : Colors.black.withOpacity(0.2),
                               ),
@@ -1143,7 +1194,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                                 'No results found',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? Colors.white.withOpacity(0.4)
                                       : Colors.black.withOpacity(0.4),
                                 ),
@@ -1156,24 +1208,24 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Future<void> _performSearch(String query) async {
     if (query.isEmpty) return;
-    
+
     setState(() {
       _isSearching = true;
     });
-    
+
     try {
       print('🔍 Searching for: $query');
       final tmdbApi = TMDBApi();
       final results = await tmdbApi.searchMulti(query);
-      
+
       setState(() {
         _searchResults = results;
         _isSearching = false;
       });
-      
+
       print('🔍 Found ${results.length} results');
     } catch (e) {
       print('❌ Search error: $e');
@@ -1188,7 +1240,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       );
     }
   }
-  
+
   Widget _buildSearchResults() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1200,9 +1252,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         final overview = item['overview'] ?? '';
         final posterPath = item['poster_path'] as String?;
         final profilePath = item['profile_path'] as String?;
-        final releaseDate = item['release_date'] ?? item['first_air_date'] ?? '';
+        final releaseDate =
+            item['release_date'] ?? item['first_air_date'] ?? '';
         final voteAverage = (item['vote_average'] ?? 0).toDouble();
-        
+
         // Get appropriate image path
         String? imagePath;
         if (mediaType == 'person') {
@@ -1210,11 +1263,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         } else {
           imagePath = posterPath;
         }
-        
-        final imageUrl = imagePath != null 
+
+        final imageUrl = imagePath != null
             ? 'https://image.tmdb.org/t/p/w185$imagePath'
             : null;
-        
+
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
@@ -1262,7 +1315,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       children: [
                         // Media type badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: _getMediaTypeColor(mediaType),
                             borderRadius: BorderRadius.circular(4),
@@ -1283,9 +1337,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black87,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black87,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -1296,7 +1351,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                             releaseDate.split('-').first,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.white.withOpacity(0.5)
                                   : Colors.black.withOpacity(0.5),
                             ),
@@ -1316,7 +1372,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                                 voteAverage.toStringAsFixed(1),
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? Colors.white.withOpacity(0.7)
                                       : Colors.black.withOpacity(0.7),
                                 ),
@@ -1330,7 +1387,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                             overview,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.white.withOpacity(0.6)
                                   : Colors.black.withOpacity(0.6),
                             ),
@@ -1349,7 +1407,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       },
     );
   }
-  
+
   Widget _searchResultPlaceholder(String? mediaType) {
     IconData icon;
     if (mediaType == 'person') {
@@ -1359,7 +1417,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     } else {
       icon = Icons.movie_rounded;
     }
-    
+
     return Center(
       child: Icon(
         icon,
@@ -1368,7 +1426,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Color _getMediaTypeColor(String? mediaType) {
     switch (mediaType) {
       case 'movie':
@@ -1381,7 +1439,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         return Colors.grey;
     }
   }
-  
+
   String _getMediaTypeLabel(String? mediaType) {
     switch (mediaType) {
       case 'movie':
@@ -1394,12 +1452,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         return 'UNKNOWN';
     }
   }
-  
+
   void _handleSearchResultTap(Map<String, dynamic> item) {
     final mediaType = item['media_type'] as String?;
     final tmdbId = item['id'] as int;
     final title = item['title'] ?? item['name'] ?? 'Unknown';
-    
+
     if (mediaType == 'movie') {
       // Try to find in Radarr first
       final radarrState = context.read<RadarrState>();
@@ -1409,7 +1467,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
             (m) => m.tmdbId == tmdbId,
             orElse: () => RadarrMovie(),
           );
-          
+
           if (movie.id != null) {
             // Movie is in library, navigate to details
             RadarrRoutes.MOVIE.go(
@@ -1443,7 +1501,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       );
     }
   }
-  
+
   Widget _emptyState() {
     return Center(
       child: Column(
@@ -1475,7 +1533,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _heroCarousel() {
     return SizedBox(
       height: 450,
@@ -1496,125 +1554,126 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
               itemBuilder: (context, index) {
                 final item = _trendingItems[index];
                 return GestureDetector(
-                onTap: () => _handleHeroTap(item),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Backdrop image
-                    Image.network(
-                      item['backdrop'] as String,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey.shade800,
-                          child: Center(
-                            child: Icon(
-                              Icons.movie_rounded,
-                              size: 60,
-                              color: Colors.grey.shade600,
+                  onTap: () => _handleHeroTap(item),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Backdrop image
+                      Image.network(
+                        item['backdrop'] as String,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.shade800,
+                            child: Center(
+                              child: Icon(
+                                Icons.movie_rounded,
+                                size: 60,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                        stops: const [0.5, 1.0],
+                          );
+                        },
                       ),
-                    ),
-                  ),
-                  // Content
-                  Positioned(
-                    bottom: 40,
-                    left: 24,
-                    right: 24,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // In library badge
-                        if (item['inLibrary'] as bool)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                      // Gradient overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                            stops: const [0.5, 1.0],
+                          ),
+                        ),
+                      ),
+                      // Content
+                      Positioned(
+                        bottom: 40,
+                        left: 24,
+                        right: 24,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // In library badge
+                            if (item['inLibrary'] as bool)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.play_circle_fill,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'In library',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 12),
+                            // Title
+                            Text(
+                              item['title'] as String,
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            const SizedBox(height: 8),
+                            // Rating and watching
+                            Row(
                               children: [
                                 Icon(
-                                  Icons.play_circle_fill,
-                                  size: 20,
-                                  color: Colors.white,
+                                  Icons.star,
+                                  color: Colors.yellow,
+                                  size: 16,
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'In library',
+                                  (item['rating'] as num) > 0
+                                      ? (item['rating'] as num)
+                                          .toStringAsFixed(1)
+                                      : 'N/A',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 14,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Text(
+                                  '• ${item['watchingNow']} watching now',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 16,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        const SizedBox(height: 12),
-                        // Title
-                        Text(
-                          item['title'] as String,
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Rating and watching
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: Colors.yellow,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              (item['rating'] as num) > 0 
-                                  ? (item['rating'] as num).toStringAsFixed(1)
-                                  : 'N/A',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              '• ${item['watchingNow']} watching now',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 16,
-                              ),
-                            ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-                ),
-              );
-            },
+                );
+              },
             ),
           ),
           // Page indicators
@@ -1644,7 +1703,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _timeWindowToggle() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -1657,11 +1716,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   void _handleHeroTap(Map<String, dynamic> item) async {
     final mediaType = item['mediaType'] as String;
     final tmdbId = item['tmdbId'] as int;
-    
+
     if (mediaType == 'movie') {
       // Check if movie is in Radarr library
       final radarrState = context.read<RadarrState>();
@@ -1671,7 +1730,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           (m) => m.tmdbId == tmdbId,
           orElse: () => RadarrMovie(),
         );
-        
+
         if (movie.id != null) {
           // Movie is in library, navigate to details
           RadarrRoutes.MOVIE.go(
@@ -1698,10 +1757,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       );
     }
   }
-  
+
   Widget _appBarToggleButton(String label, String value) {
     final isSelected = _trendingTimeWindow == value;
-    
+
     return TextButton(
       onPressed: () {
         setState(() {
@@ -1715,7 +1774,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         minimumSize: Size.zero,
-        backgroundColor: isSelected 
+        backgroundColor: isSelected
             ? (Theme.of(context).brightness == Brightness.dark
                 ? Colors.white.withOpacity(0.1)
                 : Colors.black.withOpacity(0.05))
@@ -1741,7 +1800,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   Widget _toggleButton(String label, String value) {
     final isSelected = _trendingTimeWindow == value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1755,12 +1814,14 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? (isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1))
+          color: isSelected
+              ? (isDark
+                  ? Colors.white.withOpacity(0.2)
+                  : Colors.black.withOpacity(0.1))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected 
+            color: isSelected
                 ? (isDark ? Colors.white : Colors.black87)
                 : (isDark ? Colors.grey : Colors.grey.shade600),
             width: 1,
@@ -1769,7 +1830,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected 
+            color: isSelected
                 ? (isDark ? Colors.white : Colors.black87)
                 : (isDark ? Colors.grey : Colors.grey.shade600),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1779,7 +1840,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _recommendedMoviesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1830,8 +1891,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 Icon(
                   Icons.arrow_forward_ios,
                   color: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black).withOpacity(0.5),
+                          ? Colors.white
+                          : Colors.black)
+                      .withOpacity(0.5),
                   size: 16,
                 ),
               ],
@@ -1860,8 +1922,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     'Tap to view recommended movies',
                     style: TextStyle(
                       color: (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black).withOpacity(0.5),
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -1870,7 +1933,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _missingMoviesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1921,8 +1984,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 Icon(
                   Icons.arrow_forward_ios,
                   color: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black).withOpacity(0.5),
+                          ? Colors.white
+                          : Colors.black)
+                      .withOpacity(0.5),
                   size: 16,
                 ),
               ],
@@ -1945,7 +2009,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _downloadingSoonSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1996,8 +2060,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 Icon(
                   Icons.arrow_forward_ios,
                   color: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black).withOpacity(0.5),
+                          ? Colors.white
+                          : Colors.black)
+                      .withOpacity(0.5),
                   size: 16,
                 ),
               ],
@@ -2053,7 +2118,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _popularMoviesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2104,8 +2169,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   child: Icon(
                     Icons.arrow_forward_ios,
                     color: (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black).withOpacity(0.5),
+                            ? Colors.white
+                            : Colors.black)
+                        .withOpacity(0.5),
                     size: 16,
                   ),
                 ),
@@ -2134,8 +2200,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     'Loading popular movies...',
                     style: TextStyle(
                       color: (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black).withOpacity(0.5),
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -2144,7 +2211,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _popularMovieCard(Map<String, dynamic> movie) {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
@@ -2209,7 +2276,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       top: 8,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(4),
@@ -2253,7 +2321,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   void _handlePopularMovieTap(Map<String, dynamic> movie) {
     // For now, just show a snackbar
     // Could implement adding to Radarr or showing details
@@ -2271,7 +2339,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _popularTVShowsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2322,8 +2390,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   child: Icon(
                     Icons.arrow_forward_ios,
                     color: (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black).withOpacity(0.5),
+                            ? Colors.white
+                            : Colors.black)
+                        .withOpacity(0.5),
                     size: 16,
                   ),
                 ),
@@ -2352,8 +2421,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     'Loading popular TV shows...',
                     style: TextStyle(
                       color: (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black).withOpacity(0.5),
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -2362,7 +2432,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _popularTVShowCard(Map<String, dynamic> show) {
     final bool inLibrary = show['inLibrary'] ?? false;
     final double rating = (show['rating'] ?? 0.0).toDouble();
@@ -2408,7 +2478,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(4),
@@ -2471,7 +2542,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _tvShowPosterPlaceholder() {
     return Container(
       color: Colors.grey.shade700,
@@ -2484,12 +2555,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   void _handlePopularTVShowTap(Map<String, dynamic> show) {
     // TODO: Navigate to TV show details or add to Sonarr
     print('Tapped on TV show: ${show['title']}');
   }
-  
+
   Widget _trendingNewTVShowsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2526,6 +2597,26 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   ),
                 ),
               ),
+              if (_trendingNewTVShows.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TMDBTrendingNewTVShowsRoute(
+                          initialData: _trendingNewTVShows,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: (Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black)
+                        .withOpacity(0.5),
+                    size: 16,
+                  ),
+                ),
             ],
           ),
         ),
@@ -2551,8 +2642,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     'Loading trending new TV shows...',
                     style: TextStyle(
                       color: (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black).withOpacity(0.5),
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -2561,7 +2653,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _trendingNewTVShowCard(Map<String, dynamic> show) {
     final bool inLibrary = show['inLibrary'] ?? false;
     final double rating = (show['rating'] ?? 0.0).toDouble();
@@ -2608,7 +2700,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(4),
@@ -2629,7 +2722,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       top: isNew ? 35 : 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(4),
@@ -2692,12 +2786,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   void _handleTrendingNewTVShowTap(Map<String, dynamic> show) {
     // TODO: Navigate to TV show details or add to Sonarr
     print('Tapped on trending new TV show: ${show['title']}');
   }
-  
+
   Widget _mostAnticipatedShowsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2734,6 +2828,26 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   ),
                 ),
               ),
+              if (_mostAnticipatedShows.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TraktMostAnticipatedShowsRoute(
+                          initialData: _mostAnticipatedShows,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: (Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black)
+                        .withOpacity(0.5),
+                    size: 16,
+                  ),
+                ),
             ],
           ),
         ),
@@ -2759,8 +2873,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     'Loading most anticipated shows...',
                     style: TextStyle(
                       color: (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black).withOpacity(0.5),
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -2769,7 +2884,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _mostAnticipatedShowCard(Map<String, dynamic> show) {
     final bool inLibrary = show['inLibrary'] ?? false;
     final double rating = (show['rating'] ?? 0.0).toDouble();
@@ -2821,7 +2936,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -2858,7 +2974,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       top: 35,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(4),
@@ -2921,12 +3038,12 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   void _handleMostAnticipatedShowTap(Map<String, dynamic> show) {
     // TODO: Navigate to TV show details or add to Sonarr
     print('Tapped on most anticipated show: ${show['title']}');
   }
-  
+
   Widget _popularPeopleSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2988,8 +3105,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     'Loading popular people...',
                     style: TextStyle(
                       color: (Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black).withOpacity(0.5),
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -2998,7 +3116,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _popularPersonCard(Map<String, dynamic> person) {
     return Padding(
       padding: const EdgeInsets.only(right: 16),
@@ -3066,8 +3184,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 style: TextStyle(
                   fontSize: 10,
                   color: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black).withOpacity(0.5),
+                          ? Colors.white
+                          : Colors.black)
+                      .withOpacity(0.5),
                 ),
               ),
           ],
@@ -3075,7 +3194,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _personPlaceholder() {
     return Container(
       color: Colors.grey.shade700,
@@ -3086,7 +3205,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _missingMovieCard(RadarrMovie movie) {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
@@ -3122,7 +3241,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(4),
@@ -3156,24 +3276,26 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _downloadingSoonCard(RadarrMovie movie) {
     // Format release date (matching Zebrra logic)
     String releaseText = '';
     DateTime? releaseDate = movie.digitalRelease ?? movie.physicalRelease;
-    
+
     if (releaseDate != null) {
       // Calculate days using UTC dates (matching Zebrra)
       final now = DateTime.now();
       final nowUtc = now.toUtc();
       final releaseDateUtc = releaseDate.toUtc();
-      
+
       // Compare start of days in UTC
-      final startOfTodayUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
-      final startOfReleaseUtc = DateTime.utc(releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
-      
+      final startOfTodayUtc =
+          DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
+      final startOfReleaseUtc = DateTime.utc(
+          releaseDateUtc.year, releaseDateUtc.month, releaseDateUtc.day);
+
       final daysUntil = startOfReleaseUtc.difference(startOfTodayUtc).inDays;
-      
+
       if (daysUntil == 0) {
         releaseText = 'TODAY';
       } else if (daysUntil == 1) {
@@ -3184,7 +3306,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     } else {
       releaseText = 'TBA';
     }
-    
+
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
@@ -3239,7 +3361,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.deepOrange,
                           borderRadius: BorderRadius.circular(4),
@@ -3273,7 +3396,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _recentlyDownloadedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3343,9 +3466,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _movieCard(RadarrMovie movie) {
-    
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
@@ -3392,11 +3514,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _buildPosterImage(BuildContext context, RadarrMovie movie) {
     // Try to get poster URL - either from movie ID (if in library) or from images array
     String? posterUrl;
-    
+
     if (movie.id != null) {
       // Movie is in library, use standard poster URL
       posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
@@ -3406,23 +3528,23 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         (img) => img.coverType?.toLowerCase().contains('poster') == true,
         orElse: () => movie.images!.first,
       );
-      
+
       // Use remoteUrl if available, otherwise use url
       posterUrl = posterImage.remoteUrl ?? posterImage.url;
     }
-    
+
     if (posterUrl == null) {
       return _posterPlaceholder(movie);
     }
-    
+
     final headers = context.read<RadarrState>().headers;
-    
+
     // Convert headers to Map<String, String>
     final stringHeaders = <String, String>{};
     headers.forEach((key, value) {
       stringHeaders[key.toString()] = value.toString();
     });
-    
+
     return Image.network(
       posterUrl,
       fit: BoxFit.cover,
@@ -3432,7 +3554,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       },
     );
   }
-  
+
   Widget _posterPlaceholder(RadarrMovie movie) {
     return Container(
       color: Colors.grey.shade800,
@@ -3464,11 +3586,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _recentlyDownloadedShowsSection() {
     // Limit to 3 items for the home view
     final displayItems = _recentlyDownloadedShows.take(3).toList();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3581,11 +3703,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _airingNextSection() {
     // Limit to 3 items for the home view
     final displayItems = _airingNextShows.take(3).toList();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3643,7 +3765,9 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
-              ...displayItems.map((episode) => _airingNextCard(episode)).toList(),
+              ...displayItems
+                  .map((episode) => _airingNextCard(episode))
+                  .toList(),
               if (_airingNextShows.length > 3)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -3698,7 +3822,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _airingNextCard(Map<String, dynamic> episode) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -3791,7 +3915,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _formatAiringTime(episode['airDateUtc'], episode['network']),
+                          _formatAiringTime(
+                              episode['airDateUtc'], episode['network']),
                           style: TextStyle(
                             fontSize: 10,
                             color: ZagColours.accent,
@@ -3811,7 +3936,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
-  
+
   Widget _tvShowCard(Map<String, dynamic> episode) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

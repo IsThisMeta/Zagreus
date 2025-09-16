@@ -81,6 +81,7 @@ class _ZagBIOSState extends State<ZagBIOS> {
             selectItems: [
               ZagreusDatabase.THEME_AMOLED,
               ZagreusDatabase.THEME_AMOLED_BORDER,
+              ZagreusDatabase.THEME_LIGHT_BORDER,
               ZagreusDatabase.THEME_MODE,
               ZagreusDatabase.THEME_FOLLOW_SYSTEM,
             ],

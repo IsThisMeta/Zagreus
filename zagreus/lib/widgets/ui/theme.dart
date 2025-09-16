@@ -33,6 +33,7 @@ class ZagTheme {
 
   static bool get isAMOLEDTheme => ZagreusDatabase.THEME_AMOLED.read();
   static bool get useBorders => ZagreusDatabase.THEME_AMOLED_BORDER.read();
+  static bool get useLightBorders => ZagreusDatabase.THEME_LIGHT_BORDER.read();
   static String get themeMode => ZagreusDatabase.THEME_MODE.read();
 
   /// Midnight theme (Default)
@@ -136,10 +137,11 @@ class ZagTheme {
         iconTheme: IconThemeData(color: Colors.black87),
         elevation: 0,
       ),
-      tooltipTheme: const TooltipThemeData(
+      tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
           color: Colors.grey,
-          borderRadius: BorderRadius.all(Radius.circular(ZagUI.BORDER_RADIUS)),
+          borderRadius: const BorderRadius.all(Radius.circular(ZagUI.BORDER_RADIUS)),
+          border: useLightBorders ? Border.all(color: Colors.black12) : null,
         ),
         textStyle: TextStyle(
           color: Colors.white,

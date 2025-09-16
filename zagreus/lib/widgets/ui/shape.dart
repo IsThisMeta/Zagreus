@@ -17,7 +17,11 @@ class ZagShapeBorder extends RoundedRectangleBorder {
                 : const Radius.circular(ZagUI.BORDER_RADIUS),
           ),
           side: useBorder
-              ? const BorderSide(color: ZagColours.white10)
+              ? BorderSide(
+                  color: ZagTheme.themeMode == 'light'
+                      ? Colors.black.withOpacity(0.08)
+                      : ZagColours.white10
+                )
               : BorderSide.none,
         );
 }

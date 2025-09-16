@@ -110,6 +110,9 @@ class ZagUI {
 
   // <--> Borders
   static bool get shouldUseBorder {
+    if (ZagTheme.themeMode == 'light') {
+      return ZagTheme.useLightBorders;
+    }
     return ZagTheme.isAMOLEDTheme && ZagTheme.useBorders;
   }
 

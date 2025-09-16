@@ -375,6 +375,20 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
   }
   
   void _cancelPro() async {
+    // Restore user's previous boot module before revoking Pro
+    final currentModule = BIOSDatabase.BOOT_MODULE.read();
+    if (currentModule == ZagModule.DISCOVER) {
+      // User is currently on Discover, restore their previous choice
+      final previousModule = ZagreusDatabase.USER_BOOT_MODULE.read();
+      if (previousModule.isNotEmpty && previousModule != 'discover') {
+        final module = ZagModule.fromKey(previousModule) ?? ZagModule.DASHBOARD;
+        BIOSDatabase.BOOT_MODULE.update(module);
+      } else {
+        // Fallback to dashboard if no previous module saved
+        BIOSDatabase.BOOT_MODULE.update(ZagModule.DASHBOARD);
+      }
+    }
+
     // Debug only - reset Pro status locally
     ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(false);
     ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update('');
@@ -398,9 +412,10 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
     ZagreusPro.clearCache();
 
     setState(() {});
+
     showZagInfoSnackBar(
       title: 'Pro Status Revoked',
-      message: 'Cleared locally and from cloud',
+      message: 'Boot module restored to ${BIOSDatabase.BOOT_MODULE.read().name}',
     );
   }
 

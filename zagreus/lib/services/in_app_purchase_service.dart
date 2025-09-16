@@ -50,9 +50,9 @@ class InAppPurchaseService {
       onDone: _onDone,
       onError: _onError,
     );
-    
-    // Restore previous purchases
-    await restorePurchases();
+
+    // Don't restore purchases on every launch - let ZagreusPro handle verification
+    // Only restore when user explicitly requests it
   }
   
   Future<void> loadProducts() async {

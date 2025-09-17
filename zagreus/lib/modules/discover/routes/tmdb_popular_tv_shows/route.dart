@@ -352,7 +352,7 @@ class _State extends State<TMDBPopularTVShowsRoute>
                     width: 14,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: ZagColours.accent,
+                      color: const Color(0xFF35C5F4),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(

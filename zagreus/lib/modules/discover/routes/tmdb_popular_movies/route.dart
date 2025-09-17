@@ -338,8 +338,8 @@ class _State extends State<TMDBPopularMoviesRoute>
               // Library indicator - bottom right
               if (inLibrary)
                 Positioned(
-                  bottom: 12,
-                  right: 12,
+                  bottom: 14,
+                  right: 14,
                   child: Container(
                     width: 14,
                     height: 14,

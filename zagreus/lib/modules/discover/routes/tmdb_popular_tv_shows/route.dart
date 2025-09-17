@@ -300,25 +300,9 @@ class _State extends State<TMDBPopularTVShowsRoute>
 
   Widget _showTile(Map<String, dynamic> show) {
     final bool inLibrary = show['inLibrary'] ?? false;
-    final int? serviceItemId = show['serviceItemId'] as int?;
-    final int? tmdbId = show['tmdbId'] as int?;
 
     return GestureDetector(
-      onTap: () {
-        if (inLibrary && serviceItemId != null) {
-          SonarrRoutes.SERIES.go(
-            params: {
-              'series': serviceItemId.toString(),
-            },
-          );
-        } else if (tmdbId != null) {
-          SonarrRoutes.ADD_SERIES.go(
-            queryParams: {
-              'query': 'tmdb:$tmdbId',
-            },
-          );
-        }
-      },
+      onTap: () => _handleShowTap(show),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -347,8 +331,8 @@ class _State extends State<TMDBPopularTVShowsRoute>
               // Library indicator dot - bottom right
               if (inLibrary)
                 Positioned(
-                  bottom: 12,
-                  right: 12,
+                  bottom: 14,
+                  right: 14,
                   child: Container(
                     width: 14,
                     height: 14,
@@ -403,6 +387,136 @@ class _State extends State<TMDBPopularTVShowsRoute>
         ),
       ),
     );
+  }
+
+  Future<void> _handleShowTap(Map<String, dynamic> show) async {
+    final bool inLibrary = show['inLibrary'] ?? false;
+    final int? serviceItemId = show['serviceItemId'] as int?;
+    final int? tmdbId = show['tmdbId'] as int?;
+    final String? title = show['title'] as String?;
+
+    if (inLibrary && serviceItemId != null) {
+      SonarrRoutes.SERIES.go(
+        params: {
+          'series': serviceItemId.toString(),
+        },
+      );
+      return;
+    }
+
+    await _openSeriesInSonarr(
+      tmdbId: tmdbId,
+      title: title,
+    );
+  }
+
+  Future<void> _openSeriesInSonarr({int? tmdbId, String? title}) async {
+    final sonarrState = context.read<SonarrState>();
+    if (!sonarrState.enabled || sonarrState.api == null) {
+      showZagSnackBar(
+        title: title ?? 'Sonarr',
+        message: 'Connect Sonarr to manage shows from Discover.',
+        type: ZagSnackbarType.INFO,
+      );
+      return;
+    }
+
+    bool loaderShown = false;
+    void dismissLoader() {
+      if (loaderShown && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        loaderShown = false;
+      }
+    }
+
+    try {
+      SonarrSeries? match;
+      if (sonarrState.series != null) {
+        final seriesMap = await sonarrState.series!;
+        final lowerTitle = title?.toLowerCase();
+        if (lowerTitle != null && lowerTitle.isNotEmpty) {
+          for (final series in seriesMap.values) {
+            final candidate = series.title?.toLowerCase();
+            if (candidate != null && candidate == lowerTitle) {
+              match = series;
+              break;
+            }
+          }
+        }
+      }
+
+      if (match != null && match.id != null) {
+        SonarrRoutes.SERIES.go(
+          params: {
+            'series': match.id!.toString(),
+          },
+        );
+        return;
+      }
+
+      final query = tmdbId != null
+          ? 'tmdb:$tmdbId'
+          : (title != null && title.trim().isNotEmpty ? title.trim() : '');
+
+      if (query.isEmpty) {
+        showZagSnackBar(
+          title: title ?? 'Sonarr',
+          message: 'Unable to open this show in Sonarr.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: ZagLoader()),
+      );
+      loaderShown = true;
+
+      final results = await sonarrState.api!.seriesLookup.get(term: query);
+
+      if (!mounted) {
+        dismissLoader();
+        return;
+      }
+
+      dismissLoader();
+
+      if (results.isEmpty) {
+        showZagSnackBar(
+          title: title ?? 'Sonarr',
+          message: tmdbId != null
+              ? 'Could not find TMDB ID $tmdbId in Sonarr.'
+              : 'Could not find this show in Sonarr.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      final sonarrSeries = results.first;
+
+      if (sonarrSeries.id != null) {
+        SonarrRoutes.SERIES.go(
+          params: {
+            'series': sonarrSeries.id!.toString(),
+          },
+        );
+        return;
+      }
+
+      SonarrRoutes.ADD_SERIES_DETAILS.go(
+        extra: sonarrSeries,
+      );
+    } catch (error) {
+      dismissLoader();
+      if (!mounted) return;
+      showZagSnackBar(
+        title: title ?? 'Sonarr',
+        message: 'Something went wrong talking to Sonarr.',
+        type: ZagSnackbarType.ERROR,
+      );
+    }
   }
 
   Widget _buildPosterImage(Map<String, dynamic> show) {

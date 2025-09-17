@@ -2977,14 +2977,6 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       color: Colors.grey.shade800,
-                      // Add glow effect for anticipated shows
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFED2224).withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),

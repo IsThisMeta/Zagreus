@@ -244,27 +244,6 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
                   ),
                 ),
               ),
-              if (isNew)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'NEW',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ),
               if (inLibrary)
                 Positioned(
                   top: 8,
@@ -306,20 +285,12 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    if (show['firstAirDate'] != null)
-                      Text(
-                        show['firstAirDate'].toString().split('-').first,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
                   ],
                 ),
               ),
               Positioned(
                 top: 8,
-                right: inLibrary ? 40 : 8,
+                left: 8,
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

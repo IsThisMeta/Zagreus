@@ -2489,7 +2489,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // Rating badge
                   if (rating > 0)
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -2522,7 +2522,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       right: 8,
                       child: Container(
                         width: 12,
@@ -2713,7 +2713,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // Rating badge (below NEW badge if present)
                   if (rating > 0)
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -2746,7 +2746,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       right: 8,
                       child: Container(
                         width: 12,
@@ -3000,7 +3000,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // Rating badge (below HOT badge to avoid overlap)
                   if (rating > 0)
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -3033,7 +3033,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       right: 8,
                       child: Container(
                         width: 12,

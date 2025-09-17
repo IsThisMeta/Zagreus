@@ -411,14 +411,6 @@ class _State extends State<TMDBPopularMoviesRoute>
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    if (movie['releaseDate'] != null)
-                      Text(
-                        movie['releaseDate'].toString().split('-')[0],
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
                   ],
                 ),
               ),

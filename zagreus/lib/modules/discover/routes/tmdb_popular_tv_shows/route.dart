@@ -419,14 +419,6 @@ class _State extends State<TMDBPopularTVShowsRoute>
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    if (show['firstAirDate'] != null)
-                      Text(
-                        show['firstAirDate'].toString().split('-').first,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
                   ],
                 ),
               ),

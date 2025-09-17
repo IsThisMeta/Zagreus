@@ -280,14 +280,6 @@ class _State extends State<DiscoverMissingRoute> with ZagScrollControllerMixin {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    if (movie.year != null)
-                      Text(
-                        movie.year.toString(),
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
                   ],
                 ),
               ),

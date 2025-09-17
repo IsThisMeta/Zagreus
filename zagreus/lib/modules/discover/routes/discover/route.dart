@@ -1453,7 +1453,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
 
-  void _handleSearchResultTap(Map<String, dynamic> item) {
+  Future<void> _handleSearchResultTap(Map<String, dynamic> item) async {
     final mediaType = item['media_type'] as String?;
     final tmdbId = item['id'] as int;
     final title = item['title'] ?? item['name'] ?? 'Unknown';
@@ -1462,29 +1462,23 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       // Try to find in Radarr first
       final radarrState = context.read<RadarrState>();
       if (radarrState.enabled && radarrState.movies != null) {
-        radarrState.movies!.then((movies) {
-          final movie = movies.firstWhere(
-            (m) => m.tmdbId == tmdbId,
-            orElse: () => RadarrMovie(),
-          );
+        final movies = await radarrState.movies!;
+        final movie = movies.firstWhere(
+          (m) => m.tmdbId == tmdbId,
+          orElse: () => RadarrMovie(),
+        );
 
-          if (movie.id != null) {
-            // Movie is in library, navigate to details
-            RadarrRoutes.MOVIE.go(
-              params: {
-                'movie': movie.id.toString(),
-              },
-            );
-          } else {
-            // Movie not in library, navigate to add movie with TMDB ID
-            RadarrRoutes.ADD_MOVIE.go(
-              queryParams: {
-                'query': 'tmdb:$tmdbId',
-              },
-            );
-          }
-        });
+        if (movie.id != null) {
+          RadarrRoutes.MOVIE.go(
+            params: {
+              'movie': movie.id.toString(),
+            },
+          );
+          return;
+        }
       }
+
+      await _openMovieInRadarr(tmdbId: tmdbId, title: title);
     } else if (mediaType == 'tv') {
       // TV show handling would go here with Sonarr
       showZagSnackBar(
@@ -1717,7 +1711,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
 
-  void _handleHeroTap(Map<String, dynamic> item) async {
+  Future<void> _handleHeroTap(Map<String, dynamic> item) async {
     final mediaType = item['mediaType'] as String;
     final tmdbId = item['tmdbId'] as int;
 
@@ -1732,22 +1726,19 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         );
 
         if (movie.id != null) {
-          // Movie is in library, navigate to details
           RadarrRoutes.MOVIE.go(
             params: {
               'movie': movie.id.toString(),
             },
           );
-        } else {
-          // Movie not in library, navigate to add movie with TMDB ID
-          // Radarr accepts tmdb: prefix for TMDB ID lookups
-          RadarrRoutes.ADD_MOVIE.go(
-            queryParams: {
-              'query': 'tmdb:$tmdbId',
-            },
-          );
+          return;
         }
       }
+
+      await _openMovieInRadarr(
+        tmdbId: tmdbId,
+        title: item['title'] as String?,
+      );
     } else if (mediaType == 'tv') {
       // For TV shows, we'd need similar logic with Sonarr
       showZagSnackBar(
@@ -2322,21 +2313,32 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
 
-  void _handlePopularMovieTap(Map<String, dynamic> movie) {
-    // For now, just show a snackbar
-    // Could implement adding to Radarr or showing details
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${movie['title']} - TMDB ID: ${movie['tmdbId']}'),
-        action: movie['inLibrary'] != true
-            ? SnackBarAction(
-                label: 'Add to Radarr',
-                onPressed: () {
-                  // Implement add to Radarr functionality
-                },
-              )
-            : null,
-      ),
+  Future<void> _handlePopularMovieTap(Map<String, dynamic> movie) async {
+    final bool inLibrary = movie['inLibrary'] ?? false;
+    final int? serviceItemId = movie['serviceItemId'] as int?;
+    final int? tmdbId = movie['tmdbId'] as int?;
+
+    if (inLibrary && serviceItemId != null) {
+      RadarrRoutes.MOVIE.go(
+        params: {
+          'movie': serviceItemId.toString(),
+        },
+      );
+      return;
+    }
+
+    if (tmdbId == null) {
+      showZagSnackBar(
+        title: movie['title'] ?? 'Movie',
+        message: 'Missing TMDB identifier for this title.',
+        type: ZagSnackbarType.ERROR,
+      );
+      return;
+    }
+
+    await _openMovieInRadarr(
+      tmdbId: tmdbId,
+      title: movie['title'] as String?,
     );
   }
 
@@ -2790,6 +2792,83 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   void _handleTrendingNewTVShowTap(Map<String, dynamic> show) {
     // TODO: Navigate to TV show details or add to Sonarr
     print('Tapped on trending new TV show: ${show['title']}');
+  }
+
+  Future<void> _openMovieInRadarr({
+    required int tmdbId,
+    String? title,
+  }) async {
+    final radarrState = context.read<RadarrState>();
+    if (!radarrState.enabled || radarrState.api == null) {
+      showZagSnackBar(
+        title: title ?? 'Radarr',
+        message: 'Connect Radarr to manage movies from Discover.',
+        type: ZagSnackbarType.INFO,
+      );
+      return;
+    }
+
+    bool loaderShown = false;
+    void dismissLoader() {
+      if (loaderShown && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        loaderShown = false;
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: ZagLoader()),
+    );
+    loaderShown = true;
+
+    try {
+      final results = await radarrState.api!.movieLookup.get(
+        term: 'tmdb:$tmdbId',
+      );
+
+      if (!mounted) {
+        dismissLoader();
+        return;
+      }
+
+      dismissLoader();
+
+      if (results.isEmpty) {
+        showZagSnackBar(
+          title: title ?? 'Movie',
+          message: 'Could not find TMDB ID $tmdbId in Radarr.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      final radarrMovie = results.first;
+
+      if (radarrMovie.id != null) {
+        RadarrRoutes.MOVIE.go(
+          params: {
+            'movie': radarrMovie.id!.toString(),
+          },
+        );
+        return;
+      }
+
+      RadarrRoutes.ADD_MOVIE_DETAILS.go(
+        extra: radarrMovie,
+        queryParams: {'isDiscovery': 'true'},
+      );
+    } catch (error, stack) {
+      dismissLoader();
+      if (!mounted) return;
+      ZagLogger().error('Failed to open Radarr add movie flow', error, stack);
+      showZagSnackBar(
+        title: title ?? 'Movie',
+        message: 'Something went wrong talking to Radarr.',
+        type: ZagSnackbarType.ERROR,
+      );
+    }
   }
 
   Widget _mostAnticipatedShowsSection() {

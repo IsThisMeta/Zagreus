@@ -6,7 +6,7 @@ import 'package:zagreus/router/routes/radarr.dart';
 
 class DiscoverRecommendedRoute extends StatefulWidget {
   final List<RadarrMovie>? initialData;
-  
+
   const DiscoverRecommendedRoute({
     Key? key,
     this.initialData,
@@ -16,13 +16,14 @@ class DiscoverRecommendedRoute extends StatefulWidget {
   State<DiscoverRecommendedRoute> createState() => _State();
 }
 
-class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMixin {
+class _State extends State<DiscoverRecommendedRoute>
+    with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   List<RadarrMovie> _movies = [];
   bool _isLoading = true;
   String? _error;
-  
+
   @override
   void initState() {
     super.initState();
@@ -35,13 +36,13 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       _loadRecommendedMovies();
     }
   }
-  
+
   Future<void> _loadRecommendedMovies() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
       final radarrState = context.read<RadarrState>();
       if (!radarrState.enabled) {
@@ -51,7 +52,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
         });
         return;
       }
-      
+
       final api = radarrState.api;
       if (api == null) {
         setState(() {
@@ -60,38 +61,36 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
         });
         return;
       }
-      
+
       // Fetch recommended movies from Radarr's import lists
       // First, get all import lists
       final importLists = await api.importList.getAll();
-      
+
       // Find import lists that are recommendations (like TMDB Popular, IMDB Top, etc)
       final recommendationLists = importLists.where((list) {
-        return list.enabled == true && (
-          list.name?.toLowerCase().contains('popular') == true ||
-          list.name?.toLowerCase().contains('top') == true ||
-          list.name?.toLowerCase().contains('trending') == true ||
-          list.name?.toLowerCase().contains('recommend') == true
-        );
+        return list.enabled == true &&
+            (list.name?.toLowerCase().contains('popular') == true ||
+                list.name?.toLowerCase().contains('top') == true ||
+                list.name?.toLowerCase().contains('trending') == true ||
+                list.name?.toLowerCase().contains('recommend') == true);
       }).toList();
-      
+
       // If no recommendation lists, try to get from all enabled lists
       if (recommendationLists.isEmpty) {
-        recommendationLists.addAll(
-          importLists.where((list) => list.enabled == true).take(3)
-        );
+        recommendationLists
+            .addAll(importLists.where((list) => list.enabled == true).take(3));
       }
-      
+
       // Fetch movies from import lists (Radarr's recommendations)
       final Set<int> tmdbIds = {};
       List<RadarrMovie> recommendedMovies = [];
-      
+
       try {
         // Get all movies from import lists with recommendations
         recommendedMovies = await api.importList.getMovies(
           includeRecommendations: true,
         );
-        
+
         // Remove duplicates by TMDB ID
         final uniqueMovies = <RadarrMovie>[];
         for (final movie in recommendedMovies) {
@@ -104,7 +103,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       } catch (e) {
         ZagLogger().warning('Failed to fetch recommendations: $e');
       }
-      
+
       // Sort by popularity or rating if available
       recommendedMovies.sort((a, b) {
         // Sort by year (newer first), then by title
@@ -116,18 +115,18 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
         final bTitle = b.title ?? '';
         return aTitle.compareTo(bTitle);
       });
-      
+
       // Limit to reasonable number for display
       final displayMovies = recommendedMovies.take(50).toList();
-      
+
       setState(() {
         _movies = displayMovies;
         _isLoading = false;
         if (_movies.isEmpty) {
-          _error = 'No recommendations found. Make sure you have import lists configured in Radarr.';
+          _error =
+              'No recommendations found. Make sure you have import lists configured in Radarr.';
         }
       });
-      
     } catch (error, stack) {
       ZagLogger().error('Failed to load recommended movies', error, stack);
       setState(() {
@@ -136,7 +135,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ZagScaffold(
@@ -145,7 +144,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       body: _body(),
     );
   }
-  
+
   PreferredSizeWidget _appBar() {
     return ZagAppBar(
       title: 'Recommended Movies',
@@ -157,14 +156,14 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       ],
     );
   }
-  
+
   Widget _body() {
     if (_isLoading) {
       return Center(
         child: ZagLoader(),
       );
     }
-    
+
     if (_error != null) {
       return Center(
         child: Column(
@@ -201,7 +200,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
         ),
       );
     }
-    
+
     if (_movies.isEmpty) {
       return Center(
         child: Column(
@@ -224,7 +223,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
         ),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: _loadRecommendedMovies,
       child: GridView.builder(
@@ -241,26 +240,10 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       ),
     );
   }
-  
+
   Widget _movieTile(RadarrMovie movie) {
     return GestureDetector(
-      onTap: () {
-        // Navigate to movie details if in library
-        if (movie.id != null) {
-          RadarrRoutes.MOVIE.go(
-            params: {
-              'movie': movie.id.toString(),
-            },
-          );
-        } else if (movie.tmdbId != null) {
-          // Navigate to add movie with TMDB ID
-          RadarrRoutes.ADD_MOVIE.go(
-            params: {
-              'query': 'tmdb:${movie.tmdbId}',
-            },
-          );
-        }
-      },
+      onTap: () => _handleMovieTap(movie),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -321,11 +304,11 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       ),
     );
   }
-  
+
   Widget _buildPosterImage(BuildContext context, RadarrMovie movie) {
     // Try to get poster URL - either from movie ID (if in library) or from images array
     String? posterUrl;
-    
+
     if (movie.id != null) {
       // Movie is in library, use standard poster URL
       posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
@@ -335,23 +318,23 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
         (img) => img.coverType?.toLowerCase().contains('poster') == true,
         orElse: () => movie.images!.first,
       );
-      
+
       // Use remoteUrl if available, otherwise use url
       posterUrl = posterImage.remoteUrl ?? posterImage.url;
     }
-    
+
     if (posterUrl == null) {
       return _posterPlaceholder(movie);
     }
-    
+
     final headers = context.read<RadarrState>().headers;
-    
+
     // Convert headers to Map<String, String>
     final stringHeaders = <String, String>{};
     headers.forEach((key, value) {
       stringHeaders[key.toString()] = value.toString();
     });
-    
+
     return Image.network(
       posterUrl,
       fit: BoxFit.cover,
@@ -361,7 +344,7 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
       },
     );
   }
-  
+
   Widget _posterPlaceholder(RadarrMovie movie) {
     return Container(
       color: Colors.grey.shade800,
@@ -377,6 +360,31 @@ class _State extends State<DiscoverRecommendedRoute> with ZagScrollControllerMix
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _handleMovieTap(RadarrMovie movie) async {
+    if (movie.id != null) {
+      RadarrRoutes.MOVIE.go(
+        params: {
+          'movie': movie.id.toString(),
+        },
+      );
+      return;
+    }
+
+    if (movie.tmdbId == null) {
+      showZagSnackBar(
+        title: movie.title ?? 'Movie',
+        message: 'Missing TMDB identifier for this recommendation.',
+        type: ZagSnackbarType.ERROR,
+      );
+      return;
+    }
+
+    RadarrRoutes.ADD_MOVIE_DETAILS.go(
+      extra: movie,
+      queryParams: {'isDiscovery': 'true'},
     );
   }
 }

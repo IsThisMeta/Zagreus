@@ -536,6 +536,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
             'network': 'Downloaded',
             'thumbnail': imageUrl,
             'airDateUtc': episode.airDateUtc,
+            'seriesId': series.id,
+            'episodeId': episode.id,
           });
         }
       }
@@ -3997,12 +3999,20 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
-              // TODO: Navigate to episode details
-              showZagSnackBar(
-                title: episode['seriesTitle'],
-                message: 'Sonarr integration coming soon',
-                type: ZagSnackbarType.INFO,
-              );
+              final seriesId = episode['seriesId'];
+              if (seriesId is int) {
+                SonarrRoutes.SERIES.go(
+                  params: {
+                    'series': seriesId.toString(),
+                  },
+                );
+              } else {
+                showZagSnackBar(
+                  title: episode['seriesTitle'] ?? 'Sonarr',
+                  message: 'Unable to open this show in Sonarr right now.',
+                  type: ZagSnackbarType.ERROR,
+                );
+              }
             },
             child: Row(
               children: [

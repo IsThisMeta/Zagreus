@@ -15,7 +15,7 @@ class SonarrAddSeriesDetailsActionBar extends StatelessWidget {
       actions: [
         ZagActionBarCard(
           title: 'zagreus.Options'.tr(),
-          subtitle: 'sonarr.LanguageTags'.tr(),
+          subtitle: 'Language & Tags',
           onTap: () async => SonarrDialogs().addSeriesOptions(context),
         ),
         ZagButton(

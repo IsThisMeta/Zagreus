@@ -666,7 +666,7 @@ class SonarrDialogs {
       content: [
         if (languageProfiles.isNotEmpty)
           ZagDialog.tile(
-            text: '${'sonarr.LanguageProfile'.tr()}: ${state.languageProfile?.name ?? 'zagreus.None'.tr()}',
+            text: 'Language Profile: ${state.languageProfile?.name ?? 'None'}',
             icon: ZagIcons.TRANSLATE,
             onTap: () async {
               Navigator.of(context, rootNavigator: true).pop();
@@ -681,7 +681,7 @@ class SonarrDialogs {
             },
           ),
         ZagDialog.tile(
-          text: '${'sonarr.Tags'.tr()}: ${state.tags.isEmpty ? 'zagreus.None'.tr() : state.tags.map((t) => t.label).join(', ')}',
+          text: 'Tags: ${state.tags.isEmpty ? 'None' : state.tags.map((t) => t.label).join(', ')}',
           icon: ZagIcons.FILTER,
           onTap: () async {
             Navigator.of(context, rootNavigator: true).pop();

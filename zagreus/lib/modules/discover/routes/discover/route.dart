@@ -2671,7 +2671,6 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   Widget _trendingNewTVShowCard(Map<String, dynamic> show) {
     final bool inLibrary = show['inLibrary'] ?? false;
     final double rating = (show['rating'] ?? 0.0).toDouble();
-    final bool isNew = show['isNew'] ?? false;
 
     return Padding(
       padding: const EdgeInsets.only(right: 12),
@@ -2708,32 +2707,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                           : _tvShowPosterPlaceholder(),
                     ),
                   ),
-                  // NEW badge
-                  if (isNew)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'NEW',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
                   // Rating badge (below NEW badge if present)
                   if (rating > 0)
                     Positioned(
-                      top: isNew ? 35 : 8,
+                      top: 8,
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -3022,47 +2999,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                           : _tvShowPosterPlaceholder(),
                     ),
                   ),
-                  // ANTICIPATED badge
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFFED2224),
-                            const Color(0xFFFF6B6B),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome,
-                            color: Colors.white,
-                            size: 10,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            'HOT',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                   // Rating badge (below HOT badge to avoid overlap)
                   if (rating > 0)
                     Positioned(
-                      top: 35,
+                      top: 8,
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(

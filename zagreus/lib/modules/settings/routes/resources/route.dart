@@ -34,25 +34,24 @@ class _State extends State<SettingsResourcesRoute> with ZagScrollControllerMixin
     return ZagListView(
       controller: scrollController,
       children: [
-        ZagHeader(text: 'Support'),
-        ZagBlock(
-          title: 'Buy Me a Coffee',
-          body: [TextSpan(text: 'Support the development of Zagreus')],
-          trailing: const ZagIconButton(icon: Icons.coffee_rounded),
-          onTap: () => 'https://buymeacoffee.com/isthismeta'.openLink(),
-        ),
         ZagHeader(text: 'Community'),
         ZagBlock(
-          title: 'GitHub',
-          body: [TextSpan(text: 'Source code and issue tracking')],
-          trailing: const ZagIconButton(icon: Icons.code_rounded),
-          onTap: () => 'https://github.com/isthismeta/zagreus'.openLink(),
+          title: 'Reddit',
+          body: [TextSpan(text: 'Join the community discussion')],
+          trailing: const ZagIconButton(icon: Icons.forum_rounded),
+          onTap: () => 'https://reddit.com/r/ZagreusApp'.openLink(),
         ),
         ZagBlock(
           title: 'Discord',
           body: [TextSpan(text: 'Join the community chat')],
           trailing: const ZagIconButton(icon: Icons.chat_rounded),
           onTap: () => 'https://discord.gg/RRv63rVtSt'.openLink(),
+        ),
+        ZagBlock(
+          title: 'GitHub',
+          body: [TextSpan(text: 'Source code and issue tracking')],
+          trailing: const ZagIconButton(icon: Icons.code_rounded),
+          onTap: () => 'https://github.com/isthismeta/zagreus'.openLink(),
         ),
         ZagHeader(text: 'Documentation'),
         ZagBlock(
@@ -66,6 +65,13 @@ class _State extends State<SettingsResourcesRoute> with ZagScrollControllerMixin
               message: 'Documentation coming soon',
             );
           },
+        ),
+        ZagHeader(text: 'Support'),
+        ZagBlock(
+          title: 'Buy Me a Coffee',
+          body: [TextSpan(text: 'Support the development of Zagreus')],
+          trailing: const ZagIconButton(icon: Icons.coffee_rounded),
+          onTap: () => 'https://buymeacoffee.com/isthismeta'.openLink(),
         ),
       ],
     );

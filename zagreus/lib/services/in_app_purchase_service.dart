@@ -11,25 +11,26 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 
 class InAppPurchaseService {
-  static final InAppPurchaseService _instance = InAppPurchaseService._internal();
+  static final InAppPurchaseService _instance =
+      InAppPurchaseService._internal();
   factory InAppPurchaseService() => _instance;
   InAppPurchaseService._internal();
 
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
-  
+
   // Product IDs - these must match exactly what you create in App Store Connect
   static const String monthlyProductId = 'com.zagreus.pro.monthlyrenewing';
   static const String yearlyProductId = 'com.zagreus.pro.yearly';
-  
+
   static const Set<String> _productIds = {
     monthlyProductId,
     // yearlyProductId,  // Commented out - not in StoreKit file
   };
-  
+
   bool _isAvailable = false;
   List<ProductDetails> _products = [];
-  
+
   Future<void> initialize() async {
     print('DEBUG: IAP initialize called');
     // Check if IAP is available
@@ -39,12 +40,13 @@ class InAppPurchaseService {
       ZagLogger().warning('In-app purchases not available');
       return;
     }
-    
+
     // Load products
     await loadProducts();
-    
+
     // Listen to purchase updates
-    final Stream<List<PurchaseDetails>> purchaseUpdated = _inAppPurchase.purchaseStream;
+    final Stream<List<PurchaseDetails>> purchaseUpdated =
+        _inAppPurchase.purchaseStream;
     _subscription = purchaseUpdated.listen(
       _onPurchaseUpdate,
       onDone: _onDone,
@@ -57,39 +59,40 @@ class InAppPurchaseService {
     // But do verify subscription periodically (once per week)
     await _verifySubscriptionIfNeeded();
   }
-  
+
   Future<void> loadProducts() async {
     if (!_isAvailable) return;
-    
+
     print('DEBUG: Attempting to load products: $_productIds');
-    final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(_productIds);
+    final ProductDetailsResponse response =
+        await _inAppPurchase.queryProductDetails(_productIds);
     print('DEBUG: Response received');
-    
+
     if (response.error != null) {
       ZagLogger().error('Error loading products', response.error, null);
       return;
     }
-    
+
     if (response.notFoundIDs.isNotEmpty) {
       print('DEBUG: Products not found: ${response.notFoundIDs}');
       ZagLogger().warning('Products not found: ${response.notFoundIDs}');
     }
-    
+
     _products = response.productDetails;
     print('DEBUG: Found ${_products.length} products');
     for (var p in _products) {
       print('DEBUG: - ${p.id}');
     }
   }
-  
+
   Future<bool> purchaseMonthly() async {
     return _purchase(monthlyProductId);
   }
-  
+
   Future<bool> purchaseYearly() async {
     return _purchase(yearlyProductId);
   }
-  
+
   Future<bool> _purchase(String productId) async {
     if (!_isAvailable) {
       showZagInfoSnackBar(
@@ -98,11 +101,11 @@ class InAppPurchaseService {
       );
       return false;
     }
-    
+
     final ProductDetails? productDetails = _products.firstWhereOrNull(
       (product) => product.id == productId,
     );
-    
+
     if (productDetails == null) {
       showZagInfoSnackBar(
         title: 'Error',
@@ -110,11 +113,11 @@ class InAppPurchaseService {
       );
       return false;
     }
-    
+
     final PurchaseParam purchaseParam = PurchaseParam(
       productDetails: productDetails,
     );
-    
+
     try {
       // For subscriptions, use buyNonConsumable
       final bool success = await _inAppPurchase.buyNonConsumable(
@@ -130,7 +133,7 @@ class InAppPurchaseService {
       return false;
     }
   }
-  
+
   void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
@@ -147,21 +150,23 @@ class InAppPurchaseService {
           message: 'Unable to complete purchase',
         );
       } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                 purchaseDetails.status == PurchaseStatus.restored) {
+          purchaseDetails.status == PurchaseStatus.restored) {
         // Verify and deliver the purchase
         _deliverProduct(purchaseDetails);
       }
-      
+
       // Complete the purchase
       if (purchaseDetails.pendingCompletePurchase) {
         _inAppPurchase.completePurchase(purchaseDetails);
       }
     }
   }
-  
+
   void _deliverProduct(PurchaseDetails purchaseDetails) async {
     // Determine if monthly or yearly
     final bool isMonthly = purchaseDetails.productID == monthlyProductId;
+
+    final bool wasAlreadyPro = ZagreusPro.isEnabled;
 
     // Validate receipt with server
     await _validateAndStoreReceipt(purchaseDetails);
@@ -169,10 +174,18 @@ class InAppPurchaseService {
     // Enable Pro locally (as backup)
     ZagreusPro.enablePro(isMonthly: isMonthly);
 
-    showZagInfoSnackBar(
-      title: 'Welcome to Zagreus Pro!',
-      message: 'Premium features are now unlocked',
-    );
+    final bool isNewPurchase =
+        purchaseDetails.status == PurchaseStatus.purchased;
+    if (isNewPurchase || !wasAlreadyPro) {
+      showZagInfoSnackBar(
+        title: 'Welcome to Zagreus Pro!',
+        message: 'Premium features are now unlocked',
+      );
+    } else if (purchaseDetails.status == PurchaseStatus.restored &&
+        wasAlreadyPro) {
+      // Avoid spamming the welcome toast on every app launch. Optionally log.
+      ZagLogger().debug('Pro subscription restored silently.');
+    }
   }
 
   Future<void> _validateAndStoreReceipt(PurchaseDetails purchaseDetails) async {
@@ -211,9 +224,8 @@ class InAppPurchaseService {
         // Optionally store subscription info locally for offline access
         final subscription = response.data['subscription'];
         if (subscription != null) {
-          ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(
-            subscription['expires_date']?.toString() ?? ''
-          );
+          ZagreusDatabase.ZAGREUS_PRO_EXPIRY
+              .update(subscription['expires_date']?.toString() ?? '');
         }
       }
     } catch (e) {
@@ -221,7 +233,7 @@ class InAppPurchaseService {
       // Don't block the purchase, local storage will work as fallback
     }
   }
-  
+
   Future<void> restorePurchases() async {
     // First check if user has subscription in Supabase
     try {
@@ -240,13 +252,13 @@ class InAppPurchaseService {
           if (expiresDate.isAfter(DateTime.now())) {
             // Restore Pro status from server
             ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(true);
-            ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(expiresDate.toIso8601String());
+            ZagreusDatabase.ZAGREUS_PRO_EXPIRY
+                .update(expiresDate.toIso8601String());
 
             final productId = subscription['product_id'] as String;
             final isMonthly = productId.contains('monthly');
-            ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update(
-              isMonthly ? 'monthly' : 'yearly'
-            );
+            ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE
+                .update(isMonthly ? 'monthly' : 'yearly');
 
             showZagInfoSnackBar(
               title: 'Subscription Restored',
@@ -269,7 +281,7 @@ class InAppPurchaseService {
       ZagLogger().error('Restore purchases failed', e, null);
     }
   }
-  
+
   void _onDone() {
     _subscription?.cancel();
   }
@@ -303,7 +315,8 @@ class InAppPurchaseService {
       final isValid = await ZagreusPro.isEnabledAsync;
 
       // Update last verified time
-      ZagreusDatabase.LAST_SUBSCRIPTION_VERIFY.update(DateTime.now().toIso8601String());
+      ZagreusDatabase.LAST_SUBSCRIPTION_VERIFY
+          .update(DateTime.now().toIso8601String());
 
       // If subscription expired, clear Pro status
       if (!isValid && ZagreusPro.hasExpired) {
@@ -321,7 +334,7 @@ class InAppPurchaseService {
   void dispose() {
     _subscription?.cancel();
   }
-  
+
   bool get isAvailable => _isAvailable;
   List<ProductDetails> get products => _products;
 }

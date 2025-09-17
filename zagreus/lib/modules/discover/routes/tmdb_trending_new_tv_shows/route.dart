@@ -249,15 +249,18 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: ZagColours.accent,
+                      color: const Color(0xFF35C5F4),
                       shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 16,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.6),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                   ),
                 ),

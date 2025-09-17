@@ -55,6 +55,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   String _trendingTimeWindow = 'day'; // 'day' or 'week'
   List<Map<String, dynamic>> _trendingItems = [];
   Timer? _autoScrollTimer;
+  final Set<String> _precachedHeroBackdrops = {};
 
   @override
   void initState() {
@@ -147,12 +148,29 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       if (mounted) {
         setState(() {
           _trendingItems = items;
+          _precachedHeroBackdrops.clear();
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _precacheHeroImage(_currentHeroIndex);
+          _precacheHeroImage(_currentHeroIndex + 1);
+          _precacheHeroImage(_currentHeroIndex + 2);
         });
       }
     } catch (e) {
       print('Failed to load trending: $e');
       // Falls back to mock data in the API
     }
+  }
+
+  void _precacheHeroImage(int index) {
+    if (!mounted) return;
+    if (index < 0 || index >= _trendingItems.length) return;
+    final url = _trendingItems[index]['backdrop'] as String?;
+    if (url == null || url.isEmpty) return;
+    if (_precachedHeroBackdrops.contains(url)) return;
+    _precachedHeroBackdrops.add(url);
+    precacheImage(NetworkImage(url), context);
   }
 
   Future<void> _loadRecentlyDownloaded() async {
@@ -1555,6 +1573,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                 setState(() {
                   _currentHeroIndex = index;
                 });
+                _precacheHeroImage(index + 1);
+                _precacheHeroImage(index - 1);
               },
               itemCount: _trendingItems.length,
               itemBuilder: (context, index) {

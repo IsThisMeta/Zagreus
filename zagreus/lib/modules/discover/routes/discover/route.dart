@@ -2522,18 +2522,21 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        width: 12,
+                        height: 12,
                         decoration: BoxDecoration(
                           color: const Color(0xFF35C5F4),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 12,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -2743,18 +2746,21 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        width: 12,
+                        height: 12,
                         decoration: BoxDecoration(
                           color: const Color(0xFF35C5F4),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 12,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -3027,18 +3033,21 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        width: 12,
+                        height: 12,
                         decoration: BoxDecoration(
                           color: const Color(0xFF35C5F4),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 12,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                       ),
                     ),

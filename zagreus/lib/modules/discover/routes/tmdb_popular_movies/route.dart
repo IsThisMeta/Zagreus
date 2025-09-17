@@ -337,18 +337,21 @@ class _State extends State<TMDBPopularMoviesRoute>
               // Library indicator
               if (inLibrary)
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  top: 10,
+                  left: 10,
                   child: Container(
-                    padding: EdgeInsets.all(6),
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
                       color: ZagColours.accent,
                       shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 16,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.6),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
                   ),
                 ),

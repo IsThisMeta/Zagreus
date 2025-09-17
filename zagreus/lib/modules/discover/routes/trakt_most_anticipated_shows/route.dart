@@ -229,27 +229,6 @@ class _State extends State<TraktMostAnticipatedShowsRoute>
                   ),
                 ),
               ),
-              if (isAnticipated)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFED2224),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'ANTICIPATED',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ),
-                ),
               // Library indicator - bottom right (Sonarr blue dot)
               if (inLibrary)
                 Positioned(

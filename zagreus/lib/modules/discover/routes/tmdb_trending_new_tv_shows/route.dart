@@ -230,27 +230,6 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
                   ),
                 ),
               ),
-              if (isNew)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6688FF),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'NEW',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ),
-                ),
               // Library indicator - bottom right
               if (inLibrary)
                 Positioned(

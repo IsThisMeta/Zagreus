@@ -3618,16 +3618,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
 
     final headers = context.read<RadarrState>().headers;
 
-    // Convert headers to Map<String, String>
-    final stringHeaders = <String, String>{};
-    headers.forEach((key, value) {
-      stringHeaders[key.toString()] = value.toString();
-    });
-
     return Image.network(
       posterUrl,
       fit: BoxFit.cover,
-      headers: stringHeaders.isNotEmpty ? stringHeaders : null,
+      headers: headers.isNotEmpty ? headers : null,
       errorBuilder: (context, error, stackTrace) {
         return _posterPlaceholder(movie);
       },

@@ -48,7 +48,7 @@ class RadarrState extends ZagModuleState {
 
   /// API handler instance
   RadarrAPI? _api;
-  
+
   /// Get the API instance
   RadarrAPI? get api => _api;
 
@@ -65,8 +65,8 @@ class RadarrState extends ZagModuleState {
   String get apiKey => _apiKey;
 
   /// Headers to attach to all requests
-  Map<dynamic, dynamic> _headers = {};
-  Map<dynamic, dynamic> get headers => _headers;
+  Map<String, String> _headers = const {};
+  Map<String, String> get headers => _headers;
 
   /// Check if Radarr is properly configured
   bool get isConfigured => _enabled && _host.isNotEmpty && _apiKey.isNotEmpty;
@@ -79,10 +79,11 @@ class RadarrState extends ZagModuleState {
     _enabled = _profile.radarrEnabled;
     _host = _profile.radarrHost;
     _apiKey = _profile.radarrKey;
-    _headers = _profile.radarrHeaders;
-    
-    ZagLogger().debug('Radarr config - Enabled: $_enabled, Host: $_host, Has API Key: ${_apiKey.isNotEmpty}');
-    
+    _headers = Map.unmodifiable(_profile.radarrHeaders);
+
+    ZagLogger().debug(
+        'Radarr config - Enabled: $_enabled, Host: $_host, Has API Key: ${_apiKey.isNotEmpty}');
+
     // Create the API instance if Radarr is enabled and configured
     if (_enabled && _host.isNotEmpty && _apiKey.isNotEmpty) {
       try {
@@ -96,7 +97,8 @@ class RadarrState extends ZagModuleState {
         // Sync webhook if enabled
         _syncWebhook();
       } catch (e, stackTrace) {
-        ZagLogger().error('Failed to create Radarr API instance', e, stackTrace);
+        ZagLogger()
+            .error('Failed to create Radarr API instance', e, stackTrace);
         _api = null;
       }
     } else {
@@ -104,7 +106,7 @@ class RadarrState extends ZagModuleState {
       _api = null;
     }
   }
-  
+
   /// Sync webhook configuration
   Future<void> _syncWebhook() async {
     ZagLogger().debug('Starting Radarr webhook sync...');
@@ -113,7 +115,7 @@ class RadarrState extends ZagModuleState {
         ZagLogger().warning('Cannot sync webhook - Radarr API is null');
         return;
       }
-      
+
       ZagLogger().debug('Radarr API exists, calling webhook manager...');
       final success = await RadarrWebhookManager.syncWebhook(_api!);
       if (success) {
@@ -126,7 +128,8 @@ class RadarrState extends ZagModuleState {
       }
     } catch (e) {
       // Don't fail profile loading if webhook sync fails
-      ZagLogger().warning('Failed to sync Radarr webhook during profile load: $e');
+      ZagLogger()
+          .warning('Failed to sync Radarr webhook during profile load: $e');
     }
   }
 

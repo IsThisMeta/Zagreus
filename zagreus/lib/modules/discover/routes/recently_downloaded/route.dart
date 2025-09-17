@@ -6,7 +6,7 @@ import 'package:zagreus/router/routes/radarr.dart';
 
 class DiscoverRecentlyDownloadedRoute extends StatefulWidget {
   final List<RadarrMovie>? initialData;
-  
+
   const DiscoverRecentlyDownloadedRoute({
     Key? key,
     this.initialData,
@@ -16,13 +16,14 @@ class DiscoverRecentlyDownloadedRoute extends StatefulWidget {
   State<DiscoverRecentlyDownloadedRoute> createState() => _State();
 }
 
-class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollControllerMixin {
+class _State extends State<DiscoverRecentlyDownloadedRoute>
+    with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   List<RadarrMovie> _movies = [];
   bool _isLoading = true;
   String? _error;
-  
+
   @override
   void initState() {
     super.initState();
@@ -35,13 +36,13 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
       _loadRecentlyDownloaded();
     }
   }
-  
+
   Future<void> _loadRecentlyDownloaded() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
       final radarrState = context.read<RadarrState>();
       if (!radarrState.enabled) {
@@ -51,7 +52,7 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
         });
         return;
       }
-      
+
       final api = radarrState.api;
       if (api == null) {
         setState(() {
@@ -60,19 +61,20 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
         });
         return;
       }
-      
+
       // Fetch more history
       final history = await api.history.get(
         pageSize: 200, // Get more records
         sortDirection: RadarrSortDirection.DESCENDING,
         sortKey: RadarrHistorySortKey.DATE,
       );
-      
+
       // Filter only downloaded items and get unique movie IDs
       final downloadedRecords = history.records?.where((record) {
-        return record.eventType == RadarrEventType.DOWNLOAD_FOLDER_IMPORTED;
-      }).toList() ?? [];
-      
+            return record.eventType == RadarrEventType.DOWNLOAD_FOLDER_IMPORTED;
+          }).toList() ??
+          [];
+
       // Get unique movie IDs
       final movieIds = <int>{};
       for (final record in downloadedRecords) {
@@ -80,18 +82,19 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
           movieIds.add(record.movieId!);
         }
       }
-      
+
       // Fetch all movies if not already cached
       if (radarrState.movies == null) {
         radarrState.fetchMovies();
       }
-      
+
       // Wait for movies to load
       final allMovies = await radarrState.movies!;
-      
+
       // Filter movies that are in the downloaded history
       final downloadedMovies = <RadarrMovie>[];
-      for (final movieId in movieIds.take(40)) { // Show up to 40
+      for (final movieId in movieIds.take(40)) {
+        // Show up to 40
         final movie = allMovies.firstWhere(
           (m) => m.id == movieId,
           orElse: () => RadarrMovie(),
@@ -100,7 +103,7 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
           downloadedMovies.add(movie);
         }
       }
-      
+
       setState(() {
         _movies = downloadedMovies;
         _isLoading = false;
@@ -112,7 +115,7 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ZagScaffold(
@@ -121,7 +124,7 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
       body: _body(),
     );
   }
-  
+
   PreferredSizeWidget _appBar() {
     return ZagAppBar(
       title: 'Recently Downloaded',
@@ -133,7 +136,7 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
       ],
     ) as PreferredSizeWidget;
   }
-  
+
   Widget _body() {
     if (_isLoading) {
       return Center(
@@ -142,13 +145,13 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
         ),
       );
     }
-    
+
     if (_error != null) {
       return ZagMessage.error(
         onTap: _loadRecentlyDownloaded,
       );
     }
-    
+
     if (_movies.isEmpty) {
       return Center(
         child: Column(
@@ -178,7 +181,7 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
         ),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: _loadRecentlyDownloaded,
       child: GridView.builder(
@@ -202,12 +205,12 @@ class _State extends State<DiscoverRecentlyDownloadedRoute> with ZagScrollContro
 
 class _MovieGridItem extends StatelessWidget {
   final RadarrMovie movie;
-  
+
   const _MovieGridItem({
     Key? key,
     required this.movie,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -278,31 +281,25 @@ class _MovieGridItem extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildPosterImage(BuildContext context, RadarrMovie movie) {
     final posterUrl = context.read<RadarrState>().getPosterURL(movie.id);
     final headers = context.read<RadarrState>().headers;
-    
+
     if (posterUrl == null) {
       return _posterPlaceholder(movie);
     }
-    
-    // Convert headers to Map<String, String>
-    final stringHeaders = <String, String>{};
-    headers.forEach((key, value) {
-      stringHeaders[key.toString()] = value.toString();
-    });
-    
+
     return Image.network(
       posterUrl,
       fit: BoxFit.cover,
-      headers: stringHeaders.isNotEmpty ? stringHeaders : null,
+      headers: headers.isNotEmpty ? headers : null,
       errorBuilder: (context, error, stackTrace) {
         return _posterPlaceholder(movie);
       },
     );
   }
-  
+
   Widget _posterPlaceholder(RadarrMovie movie) {
     return Container(
       color: Colors.grey.shade800,

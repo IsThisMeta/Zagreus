@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/supabase/core.dart';
@@ -12,8 +11,6 @@ import 'package:zagreus/api/radarr/radarr.dart';
 import 'package:zagreus/api/sonarr/sonarr.dart';
 import 'package:zagreus/modules/radarr/core/webhook_manager.dart';
 import 'package:zagreus/modules/sonarr/core/webhook_manager.dart';
-import 'dart:convert';
-import 'package:dio/dio.dart';
 
 class NotificationsRoute extends StatefulWidget {
   const NotificationsRoute({
@@ -26,15 +23,9 @@ class NotificationsRoute extends StatefulWidget {
 
 class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
-  String _debugInfo = 'Loading...';
-  String _radarrUrl = '';
-  String _sonarrUrl = '';
-  String _userId = '';
+
   String _radarrStatus = '';
   String _sonarrStatus = '';
-  String _radarrJson = '';
-  String _sonarrJson = '';
   bool _notificationsAuthorized = false;
 
   @override
@@ -43,9 +34,10 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     _syncWebhooksInBackground();
     _checkNotificationStatus();
   }
-  
+
   Future<void> _checkNotificationStatus() async {
-    final authorized = await ZagSupabaseMessaging.instance.areNotificationsAllowed();
+    final authorized =
+        await ZagSupabaseMessaging.instance.areNotificationsAllowed();
     if (mounted) {
       setState(() {
         _notificationsAuthorized = authorized;
@@ -57,44 +49,34 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     try {
       final profileName = ZagreusDatabase.ENABLED_PROFILE.read();
       final profile = ZagBox.profiles.read(profileName);
-      
-      setState(() {
-        _debugInfo = 'Profile: ${profileName ?? "none"}';
-      });
-      
+
       if (profile == null) {
         setState(() {
-          _debugInfo = 'No profile found';
+          _radarrStatus = 'Not configured';
+          _sonarrStatus = 'Not configured';
         });
         return;
       }
-      
+
       final user = ZagSupabase.client.auth.currentUser;
       if (!ZagSupabase.isSupported || user == null) {
         setState(() {
-          _debugInfo = 'Not logged in or Supabase not supported';
+          _radarrStatus = 'Requires login';
+          _sonarrStatus = 'Requires login';
         });
         return;
       }
-      
-      setState(() {
-        _userId = user.id;
-        _debugInfo = 'User ID: ${user.id}';
-      });
-      
+
       ZagLogger().debug('=== WEBHOOK SYNC TRIGGERED (Notifications Page) ===');
-      
-      // Build webhook URLs
-      final payload = base64.encode(utf8.encode(user.id));
-      _radarrUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
-      _sonarrUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
-      
+
       // Sync Radarr if configured
-      if (profile.radarrEnabled && profile.radarrHost.isNotEmpty && profile.radarrKey.isNotEmpty) {
+      if (profile.radarrEnabled &&
+          profile.radarrHost.isNotEmpty &&
+          profile.radarrKey.isNotEmpty) {
         setState(() {
           _radarrStatus = 'Syncing...';
         });
-        
+
         try {
           final api = RadarrAPI(
             host: profile.radarrHost,
@@ -120,13 +102,15 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           _radarrStatus = 'Not configured';
         });
       }
-      
+
       // Sync Sonarr if configured
-      if (profile.sonarrEnabled && profile.sonarrHost.isNotEmpty && profile.sonarrKey.isNotEmpty) {
+      if (profile.sonarrEnabled &&
+          profile.sonarrHost.isNotEmpty &&
+          profile.sonarrKey.isNotEmpty) {
         setState(() {
           _sonarrStatus = 'Syncing...';
         });
-        
+
         try {
           final api = SonarrAPI(
             host: profile.sonarrHost,
@@ -152,10 +136,12 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
           _sonarrStatus = 'Not configured';
         });
       }
-      
     } catch (e, stack) {
+      ZagLogger().error('Failed to sync notification webhooks', e, stack);
+      if (!mounted) return;
       setState(() {
-        _debugInfo = 'Error: $e';
+        if (_radarrStatus.isEmpty) _radarrStatus = 'Error syncing webhooks';
+        if (_sonarrStatus.isEmpty) _sonarrStatus = 'Error syncing webhooks';
       });
     }
   }
@@ -190,25 +176,27 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
   Widget _body() {
     final user = ZagSupabase.client.auth.currentUser;
     final isSignedIn = ZagSupabase.isSupported && user != null;
-    
+
     return ZagListView(
       controller: scrollController,
       children: [
         // Show sign-in banner if not signed in
-        if (!isSignedIn) 
+        if (!isSignedIn)
           ZagBanner(
             headerText: 'Sign In Required',
-            bodyText: 'Please sign in to your Zagreus account to enable push notifications',
+            bodyText:
+                'Please sign in to your Zagreus account to enable push notifications',
             icon: Icons.account_circle_outlined,
             iconColor: ZagColours.orange,
           ),
         ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS.listenableBuilder(
           builder: (context, _) {
             // Only show banner if notifications are enabled but not authorized
-            if (!ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS.read() || _notificationsAuthorized) {
+            if (!ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS.read() ||
+                _notificationsAuthorized) {
               return const SizedBox(height: 0.0, width: double.infinity);
             }
-            
+
             return ZagBanner(
               headerText: 'settings.NotAuthorized'.tr(),
               bodyText: 'settings.NotAuthorizedMessage'.tr(),
@@ -219,237 +207,17 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
         ),
         _enableNotifications(),
         ZagDivider(),
-        ZagBlock(
-          title: 'Debug Info',
-          body: [TextSpan(text: _debugInfo)],
-        ),
-        ZagBlock(
-          title: 'User ID',
-          body: [TextSpan(text: _userId.isEmpty ? 'Not logged in' : _userId)],
-        ),
-        ZagBlock(
-          title: 'Radarr Webhook URL',
-          body: [TextSpan(text: _radarrUrl.isEmpty ? 'Not generated' : _radarrUrl)],
-          trailing: _radarrUrl.isNotEmpty ? ZagIconButton(
-            icon: Icons.copy_rounded,
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: _radarrUrl));
-              showZagSuccessSnackBar(
-                title: 'Copied',
-                message: 'Radarr webhook URL copied to clipboard',
-              );
-            },
-          ) : null,
-        ),
-        ZagBlock(
-          title: 'Radarr Status',
-          body: [TextSpan(text: _radarrStatus.isEmpty ? 'Not checked' : _radarrStatus)],
-          trailing: _radarrStatus.isNotEmpty ? ZagIconButton(
-            icon: Icons.copy_rounded,
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: _radarrStatus));
-              showZagSuccessSnackBar(
-                title: 'Copied',
-                message: 'Radarr status copied to clipboard',
-              );
-            },
-          ) : null,
-        ),
-        ZagBlock(
-          title: 'Sonarr Webhook URL',
-          body: [TextSpan(text: _sonarrUrl.isEmpty ? 'Not generated' : _sonarrUrl)],
-          trailing: _sonarrUrl.isNotEmpty ? ZagIconButton(
-            icon: Icons.copy_rounded,
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: _sonarrUrl));
-              showZagSuccessSnackBar(
-                title: 'Copied',
-                message: 'Sonarr webhook URL copied to clipboard',
-              );
-            },
-          ) : null,
-        ),
-        ZagBlock(
-          title: 'Sonarr Status',
-          body: [TextSpan(text: _sonarrStatus.isEmpty ? 'Not checked' : _sonarrStatus)],
-          trailing: _sonarrStatus.isNotEmpty ? ZagIconButton(
-            icon: Icons.copy_rounded,
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: _sonarrStatus));
-              showZagSuccessSnackBar(
-                title: 'Copied',
-                message: 'Sonarr status copied to clipboard',
-              );
-            },
-          ) : null,
-        ),
-        ZagDivider(),
-        _testNotificationButton(),
-        ZagDivider(),
-        _directTestNotificationButton(),
+        _statusBlock('Radarr Status', _radarrStatus),
+        _statusBlock('Sonarr Status', _sonarrStatus),
       ],
     );
   }
 
-  Future<void> _sendTestNotification() async {
-    try {
-      final user = ZagSupabase.client.auth.currentUser;
-      if (user == null) {
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'Not logged in',
-        );
-        return;
-      }
-
-      // Ensure notifications are enabled
-      const db = ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS;
-      if (!db.read()) {
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'Please enable notifications first.',
-        );
-        return;
-      }
-
-      // Get the registered device token
-      final token = await ZagSupabaseMessaging.instance.getToken();
-      if (token == null || token.isEmpty) {
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'No device token found. Try disabling and re-enabling notifications.',
-        );
-        return;
-      }
-
-      ZagLogger().debug('Sending test notification...');
-
-      // Send a test webhook to our notification server
-      final dio = Dio();
-      final payload = base64.encode(utf8.encode(user.id));
-      
-      final response = await dio.post(
-        'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload',
-        data: {
-          'eventType': 'Test',
-          'movie': {
-            'title': 'Zagreus Test',
-            'id': 1,
-            'tmdbId': 550, // Fight Club for a nice poster
-          },
-        },
-      );
-
-      if (response.statusCode == 200) {
-        showZagSuccessSnackBar(
-          title: 'Success',
-          message: 'Test notification sent! Check your device.',
-        );
-      } else {
-        throw Exception('Server returned ${response.statusCode}');
-      }
-    } catch (e) {
-      ZagLogger().error('Failed to send test notification', e, null);
-      showZagErrorSnackBar(
-        title: 'Error',
-        message: 'Failed to send test notification: ${e.toString()}',
-      );
-    }
-  }
-
-  Future<void> _sendDirectTestNotification({int delay = 0}) async {
-    try {
-      // Get the registered device token
-      String? token;
-      try {
-        token = await ZagSupabaseMessaging().getToken();
-        ZagLogger().debug('Retrieved token: ${token ?? "NULL"}');
-      } catch (tokenError) {
-        ZagLogger().error('Failed to get token', tokenError, null);
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'Failed to get device token: ${tokenError.toString()}',
-        );
-        return;
-      }
-      
-      if (token == null || token.isEmpty) {
-        showZagErrorSnackBar(
-          title: 'Error',
-          message: 'No device token found. Try disabling and re-enabling notifications.',
-        );
-        return;
-      }
-
-      ZagLogger().debug('Sending direct test notification to token: $token with delay: $delay');
-
-      // Send directly to the direct test endpoint
-      final dio = Dio();
-      final url = delay > 0 
-        ? 'https://zagreus-notifications.fly.dev/direct/test-direct/$token?delay=$delay'
-        : 'https://zagreus-notifications.fly.dev/direct/test-direct/$token';
-        
-      final response = await dio.get(url);
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        if (data['success'] == true) {
-          showZagSuccessSnackBar(
-            title: delay > 0 ? 'Delayed Test Queued!' : 'Direct Test Sent!',
-            message: data['message'] ?? 'Notification sent successfully',
-          );
-        } else {
-          throw Exception('Test failed: ${data['error'] ?? 'Unknown error'}');
-        }
-      } else {
-        throw Exception('Server returned ${response.statusCode}');
-      }
-    } catch (e) {
-      ZagLogger().error('Failed to send direct test notification', e, null);
-      showZagErrorSnackBar(
-        title: 'Error',
-        message: 'Failed to send direct test: ${e.toString()}',
-      );
-    }
-  }
-
-  Widget _directTestNotificationButton() {
-    return Column(
-      children: [
-        ZagBlock(
-          title: 'Direct APNs Test',
-          body: [TextSpan(text: 'Sends notification after 5 seconds - background the app to see it!')],
-        ),
-        ZagButton(
-          type: ZagButtonType.TEXT,
-          text: 'Send Test (5s delay)',
-          onTap: () => _sendDirectTestNotification(delay: 5),
-        ),
-      ],
-    );
-  }
-
-  Widget _testNotificationButton() {
-    return Column(
-      children: [
-        ZagBlock(
-          title: 'Test Push Notification',
-          body: [TextSpan(text: 'Send a test notification after 5s delay')],
-          trailing: ZagIconButton(
-            icon: Icons.notifications_active_rounded,
-            onPressed: () => _sendDirectTestNotification(delay: 5),
-          ),
-        ),
-        const SizedBox(height: 8.0),
-        ZagBlock(
-          title: 'Direct Test (Debug)',
-          body: [TextSpan(text: 'Send notification directly to your device token (bypasses database)')],
-          trailing: ZagIconButton(
-            icon: Icons.bug_report_rounded,
-            onPressed: _sendDirectTestNotification,
-          ),
-        ),
-      ],
+  Widget _statusBlock(String title, String status) {
+    final displayText = status.isEmpty ? 'Not checked' : status;
+    return ZagBlock(
+      title: title,
+      body: [TextSpan(text: displayText)],
     );
   }
 
@@ -457,52 +225,57 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     const db = ZagreusDatabase.ENABLE_IN_APP_NOTIFICATIONS;
     final user = ZagSupabase.client.auth.currentUser;
     final isSignedIn = ZagSupabase.isSupported && user != null;
-    
+
     return ZagBlock(
       title: 'Enable Notifications',
       body: [TextSpan(text: 'Receive push notifications for media events')],
       trailing: db.listenableBuilder(
         builder: (context, _) => ZagSwitch(
           value: db.read(),
-          onChanged: !isSignedIn ? null : (value) async {
-            ZagLogger().debug('Notification toggle changed to: $value');
-            if (value) {
-              // Clear any cached token first
-              ZagSupabaseMessaging.instance.clearCachedToken();
-              
-              // Request notification permissions when enabling
-              try {
-                ZagLogger().debug('Requesting notification permissions...');
-                bool granted = await ZagSupabaseMessaging.instance.requestNotificationPermissions();
-                ZagLogger().debug('Permissions granted: $granted');
-                
-                if (!granted) {
-                  // If permissions denied, don't enable the toggle
-                  showZagErrorSnackBar(
-                    title: 'Permission Denied',
-                    message: 'Please enable notifications in Settings',
-                  );
-                  return;
-                }
-                
-                // Update authorization status
-                setState(() {
-                  _notificationsAuthorized = true;
-                });
-                
-                // Register device token when notifications are enabled
-                await _registerDeviceTokenIfNeeded();
-              } catch (e) {
-                ZagLogger().error('Failed to request permissions', e, null);
-                showZagErrorSnackBar(
-                  title: 'Error',
-                  message: 'Failed to enable notifications: $e',
-                );
-                return;
-              }
-            }
-            db.update(value);
-          },
+          onChanged: !isSignedIn
+              ? null
+              : (value) async {
+                  ZagLogger().debug('Notification toggle changed to: $value');
+                  if (value) {
+                    // Clear any cached token first
+                    ZagSupabaseMessaging.instance.clearCachedToken();
+
+                    // Request notification permissions when enabling
+                    try {
+                      ZagLogger()
+                          .debug('Requesting notification permissions...');
+                      bool granted = await ZagSupabaseMessaging.instance
+                          .requestNotificationPermissions();
+                      ZagLogger().debug('Permissions granted: $granted');
+
+                      if (!granted) {
+                        // If permissions denied, don't enable the toggle
+                        showZagErrorSnackBar(
+                          title: 'Permission Denied',
+                          message: 'Please enable notifications in Settings',
+                        );
+                        return;
+                      }
+
+                      // Update authorization status
+                      setState(() {
+                        _notificationsAuthorized = true;
+                      });
+
+                      // Register device token when notifications are enabled
+                      await _registerDeviceTokenIfNeeded();
+                    } catch (e) {
+                      ZagLogger()
+                          .error('Failed to request permissions', e, null);
+                      showZagErrorSnackBar(
+                        title: 'Error',
+                        message: 'Failed to enable notifications: $e',
+                      );
+                      return;
+                    }
+                  }
+                  db.update(value);
+                },
         ),
       ),
     );

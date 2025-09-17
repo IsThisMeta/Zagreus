@@ -1529,6 +1529,17 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
   }
 
   Widget _heroCarousel() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_heroPageController.hasClients) {
+        final currentPage = _heroPageController.page?.round() ??
+            _heroPageController.initialPage;
+        if (currentPage != _currentHeroIndex) {
+          _heroPageController.jumpToPage(_currentHeroIndex);
+        }
+      }
+    });
+
     return SizedBox(
       height: 450,
       child: Stack(
@@ -1538,6 +1549,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
             onPanCancel: () => _restartAutoScroll(),
             onPanEnd: (_) => _restartAutoScroll(),
             child: PageView.builder(
+              key: const PageStorageKey('discoverHeroCarousel'),
               controller: _heroPageController,
               onPageChanged: (index) {
                 setState(() {

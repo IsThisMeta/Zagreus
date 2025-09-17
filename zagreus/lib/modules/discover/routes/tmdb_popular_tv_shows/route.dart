@@ -398,29 +398,6 @@ class _State extends State<TMDBPopularTVShowsRoute>
                     ),
                   ),
                 ),
-              // Year in center bottom
-              if (show['firstAirDate'] != null)
-                Positioned(
-                  bottom: 12,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Text(
-                      show['firstAirDate'].toString().split('-').first,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.8),
-                            blurRadius: 3,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

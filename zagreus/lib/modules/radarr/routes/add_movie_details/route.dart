@@ -125,6 +125,7 @@ class _State extends State<AddMovieDetailsRoute>
           const RadarrAddMovieDetailsMinimumAvailabilityTile(),
           const RadarrAddMovieDetailsQualityProfileTile(),
           const RadarrAddMovieDetailsTagsTile(),
+          const RadarrAddMovieDetailsSearchOnAddTile(),
         ],
       ),
     );

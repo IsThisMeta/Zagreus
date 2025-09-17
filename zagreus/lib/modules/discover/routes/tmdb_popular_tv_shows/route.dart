@@ -344,9 +344,10 @@ class _State extends State<TMDBPopularTVShowsRoute>
                   ),
                 ),
               ),
+              // Library indicator dot - bottom right
               if (inLibrary)
                 Positioned(
-                  top: 12,
+                  bottom: 12,
                   right: 12,
                   child: Container(
                     width: 14,
@@ -364,64 +365,62 @@ class _State extends State<TMDBPopularTVShowsRoute>
                     ),
                   ),
                 ),
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        (show['rating'] ?? 0.0).toStringAsFixed(1),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+              // Rating badge - bottom left
+              if (show['rating'] != null && show['rating'] > 0)
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                          size: 14,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Text(
+                          (show['rating'] ?? 0.0).toStringAsFixed(1),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: 8,
-                left: 8,
-                right: 8,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      show['title'] ?? 'Unknown',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+              // Year in center bottom
+              if (show['firstAirDate'] != null)
+                Positioned(
+                  bottom: 12,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Text(
+                      show['firstAirDate'].toString().split('-').first,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                         shadows: [
                           Shadow(
-                            color: Colors.black,
-                            blurRadius: 4,
+                            color: Colors.black.withOpacity(0.8),
+                            blurRadius: 3,
                           ),
                         ],
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
                     ),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

@@ -452,6 +452,34 @@ class SonarrDialogs {
     return Tuple2(_flag, profile);
   }
 
+  Future<Tuple2<bool, SonarrLanguageProfile?>> selectLanguageProfile(
+      BuildContext context, List<SonarrLanguageProfile> profiles) async {
+    bool _flag = false;
+    SonarrLanguageProfile? profile;
+
+    void _setValues(bool flag, SonarrLanguageProfile? value) {
+      _flag = flag;
+      profile = value;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+    await ZagDialog.dialog(
+      context: context,
+      title: 'Language Profile',
+      content: List.generate(
+        profiles.length,
+        (index) => ZagDialog.tile(
+          text: profiles[index].name!,
+          icon: Icons.translate,
+          iconColor: ZagColours().byListIndex(index),
+          onTap: () => _setValues(true, profiles[index]),
+        ),
+      ),
+      contentPadding: ZagDialog.listDialogContentPadding(),
+    );
+    return Tuple2(_flag, profile);
+  }
+
   Future<Tuple2<bool, SonarrQualityProfile?>> editQualityProfile(
       BuildContext context, List<SonarrQualityProfile?> profiles) async {
     bool _flag = false;
@@ -614,6 +642,17 @@ class SonarrDialogs {
   }
 
   Future<void> addSeriesOptions(BuildContext context) async {
+    final state = context.read<SonarrSeriesAddDetailsState>();
+    final sonarrState = context.read<SonarrState>();
+
+    List<SonarrLanguageProfile> languageProfiles = [];
+    List<SonarrTag> tags = [];
+
+    try {
+      languageProfiles = await sonarrState.languageProfiles!;
+      tags = await sonarrState.tags!;
+    } catch (_) {}
+
     await ZagDialog.dialog(
       context: context,
       title: 'zagreus.Options'.tr(),
@@ -625,22 +664,30 @@ class SonarrDialogs {
       ],
       showCancelButton: false,
       content: [
-        SonarrDatabase.ADD_SERIES_SEARCH_FOR_MISSING.listenableBuilder(
-          builder: (context, _) => ZagDialog.checkbox(
-            title: 'sonarr.StartSearchForMissingEpisodes'.tr(),
-            value: SonarrDatabase.ADD_SERIES_SEARCH_FOR_MISSING.read(),
-            onChanged: (value) =>
-                SonarrDatabase.ADD_SERIES_SEARCH_FOR_MISSING.update(value!),
+        if (languageProfiles.isNotEmpty)
+          ZagDialog.tile(
+            text: '${'sonarr.LanguageProfile'.tr()}: ${state.languageProfile?.name ?? 'zagreus.None'.tr()}',
+            icon: ZagIcons.TRANSLATE,
+            onTap: () async {
+              Navigator.of(context, rootNavigator: true).pop();
+              final result = await selectLanguageProfile(
+                context,
+                languageProfiles,
+              );
+              if (result.item1 && result.item2 != null) {
+                state.languageProfile = result.item2!;
+              }
+              await addSeriesOptions(context);
+            },
           ),
-        ),
-        SonarrDatabase.ADD_SERIES_SEARCH_FOR_CUTOFF_UNMET.listenableBuilder(
-          builder: (context, _) => ZagDialog.checkbox(
-            title: 'sonarr.StartSearchForCutoffUnmetEpisodes'.tr(),
-            value: SonarrDatabase.ADD_SERIES_SEARCH_FOR_CUTOFF_UNMET.read(),
-            onChanged: (value) => SonarrDatabase
-                .ADD_SERIES_SEARCH_FOR_CUTOFF_UNMET
-                .update(value!),
-          ),
+        ZagDialog.tile(
+          text: '${'sonarr.Tags'.tr()}: ${state.tags.isEmpty ? 'zagreus.None'.tr() : state.tags.map((t) => t.label).join(', ')}',
+          icon: ZagIcons.FILTER,
+          onTap: () async {
+            Navigator.of(context, rootNavigator: true).pop();
+            await setAddTags(context);
+            await addSeriesOptions(context);
+          },
         ),
       ],
       contentPadding: ZagDialog.listDialogContentPadding(),

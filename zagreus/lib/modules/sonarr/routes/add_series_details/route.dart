@@ -124,11 +124,10 @@ class _State extends State<AddSeriesDetailsRoute>
         const SonarrSeriesAddDetailsRootFolderTile(),
         const SonarrSeriesAddDetailsMonitorTile(),
         const SonarrSeriesAddDetailsQualityProfileTile(),
-        if (languageProfiles.isNotEmpty)
-          const SonarrSeriesAddDetailsLanguageProfileTile(),
         const SonarrSeriesAddDetailsSeriesTypeTile(),
         const SonarrSeriesAddDetailsUseSeasonFoldersTile(),
-        const SonarrSeriesAddDetailsTagsTile(),
+        const SonarrAddSeriesDetailsSearchForMissingTile(),
+        const SonarrAddSeriesDetailsSearchForCutoffTile(),
       ],
     );
   }

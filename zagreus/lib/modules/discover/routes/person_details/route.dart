@@ -742,6 +742,14 @@ class _State extends State<PersonDetailsRoute>
       return;
     }
 
+    bool loaderShown = false;
+    void dismissLoader() {
+      if (loaderShown && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        loaderShown = false;
+      }
+    }
+
     try {
       SonarrSeries? match;
       if (sonarrState.series != null) {
@@ -780,12 +788,56 @@ class _State extends State<PersonDetailsRoute>
         return;
       }
 
-      SonarrRoutes.ADD_SERIES.go(
-        queryParams: {
-          'query': query,
-        },
+      if (tmdbId == null) {
+        SonarrRoutes.ADD_SERIES.go(
+          queryParams: {
+            'query': query,
+          },
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: ZagLoader()),
+      );
+      loaderShown = true;
+
+      final results = await sonarrState.api!.seriesLookup.get(term: query);
+
+      if (!mounted) {
+        dismissLoader();
+        return;
+      }
+
+      dismissLoader();
+
+      if (results.isEmpty) {
+        showZagSnackBar(
+          title: title ?? 'Sonarr',
+          message: 'Could not find TMDB ID $tmdbId in Sonarr.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      final sonarrSeries = results.first;
+
+      if (sonarrSeries.id != null) {
+        SonarrRoutes.SERIES.go(
+          params: {
+            'series': sonarrSeries.id!.toString(),
+          },
+        );
+        return;
+      }
+
+      SonarrRoutes.ADD_SERIES_DETAILS.go(
+        extra: sonarrSeries,
       );
     } catch (error) {
+      dismissLoader();
       showZagSnackBar(
         title: title ?? 'Sonarr',
         message: 'Something went wrong talking to Sonarr.',

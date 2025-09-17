@@ -244,9 +244,10 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
                   ),
                 ),
               ),
+              // Library indicator - bottom right
               if (inLibrary)
                 Positioned(
-                  top: 12,
+                  bottom: 12,
                   right: 12,
                   child: Container(
                     width: 14,
@@ -264,36 +265,11 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
                     ),
                   ),
                 ),
-              Positioned(
-                bottom: 8,
-                left: 8,
-                right: 8,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      show['title'] ?? 'Unknown',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 8,
-                left: 8,
+              // Rating badge - bottom left
+              if (show['rating'] != null && show['rating'] > 0)
+                Positioned(
+                  bottom: 8,
+                  left: 8,
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

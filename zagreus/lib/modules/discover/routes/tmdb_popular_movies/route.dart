@@ -335,15 +335,16 @@ class _State extends State<TMDBPopularMoviesRoute>
                 ),
               ),
               // Library indicator
+              // Library indicator - bottom right
               if (inLibrary)
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  bottom: 12,
+                  right: 12,
                   child: Container(
                     width: 14,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: ZagColours.accent,
+                      color: const Color(0xFFFEC333), // Radarr yellow
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -355,65 +356,38 @@ class _State extends State<TMDBPopularMoviesRoute>
                     ),
                   ),
                 ),
-              // Popularity badge
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                        size: 14,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        (movie['rating'] ?? 0.0).toStringAsFixed(1),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Title and year
-              Positioned(
-                bottom: 8,
-                left: 8,
-                right: 8,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      movie['title'] ?? 'Unknown',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black,
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
+              // Rating badge - bottom left
+              if (movie['rating'] != null && movie['rating'] > 0)
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                          size: 14,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          (movie['rating'] ?? 0.0).toStringAsFixed(1),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

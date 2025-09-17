@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/modules/discover/core/tmdb_api.dart';
+import 'package:zagreus/modules/radarr.dart';
+import 'package:zagreus/modules/sonarr.dart';
+import 'package:zagreus/router/routes/radarr.dart';
+import 'package:zagreus/router/routes/sonarr.dart';
 
 class PersonDetailsRoute extends StatefulWidget {
   final int personId;
   final String personName;
-  
+
   const PersonDetailsRoute({
     Key? key,
     required this.personId,
@@ -16,9 +21,10 @@ class PersonDetailsRoute extends StatefulWidget {
   State<PersonDetailsRoute> createState() => _State();
 }
 
-class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMixin {
+class _State extends State<PersonDetailsRoute>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   Map<String, dynamic>? _personDetails;
   List<Map<String, dynamic>> _credits = [];
   List<Map<String, dynamic>> _filteredCredits = [];
@@ -26,28 +32,28 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
   String _selectedFilter = 'ALL'; // ALL, MOVIES, TV SHOWS
   String _selectedRole = 'ALL'; // ALL, CAST, CREW
   bool _expandedBio = false;
-  
+
   @override
   void initState() {
     super.initState();
     _loadPersonData();
   }
-  
+
   Future<void> _loadPersonData() async {
     try {
       // Load person details
       final details = await TMDBApi.getPersonDetails(widget.personId);
-      
+
       // Load person credits
       final credits = await TMDBApi.getPersonCombinedCredits(widget.personId);
-      
+
       setState(() {
         _personDetails = details;
         _credits = credits;
         _filteredCredits = credits;
         _isLoading = false;
       });
-      
+
       _applyFilters();
     } catch (e) {
       print('Error loading person data: $e');
@@ -56,21 +62,25 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       });
     }
   }
-  
+
   void _applyFilters() {
     setState(() {
       _filteredCredits = _credits.where((credit) {
         // Filter by media type
-        if (_selectedFilter == 'MOVIES' && credit['mediaType'] != 'movie') return false;
-        if (_selectedFilter == 'TV SHOWS' && credit['mediaType'] != 'tv') return false;
-        
+        if (_selectedFilter == 'MOVIES' && credit['mediaType'] != 'movie')
+          return false;
+        if (_selectedFilter == 'TV SHOWS' && credit['mediaType'] != 'tv')
+          return false;
+
         // Filter by role
-        if (_selectedRole == 'CAST' && credit['creditType'] != 'cast') return false;
-        if (_selectedRole == 'CREW' && credit['creditType'] != 'crew') return false;
-        
+        if (_selectedRole == 'CAST' && credit['creditType'] != 'cast')
+          return false;
+        if (_selectedRole == 'CREW' && credit['creditType'] != 'crew')
+          return false;
+
         return true;
       }).toList();
-      
+
       // Sort by release date (newest first)
       _filteredCredits.sort((a, b) {
         final aDate = a['releaseDate'] ?? '0000';
@@ -79,7 +89,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       });
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return ZagScaffold(
@@ -90,7 +100,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       body: _isLoading ? _loadingBody() : _body(),
     );
   }
-  
+
   Widget _loadingBody() {
     return Center(
       child: CircularProgressIndicator(
@@ -98,14 +108,14 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   Widget _body() {
     if (_personDetails == null) {
       return ZagMessage.error(
         onTap: _loadPersonData,
       );
     }
-    
+
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -118,7 +128,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ],
     );
   }
-  
+
   Widget _personInfoSection() {
     return Container(
       decoration: BoxDecoration(
@@ -212,7 +222,8 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
               ),
             ],
           ),
-          if (_personDetails!['biography'] != null && _personDetails!['biography'].isNotEmpty) ...[
+          if (_personDetails!['biography'] != null &&
+              _personDetails!['biography'].isNotEmpty) ...[
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(12),
@@ -240,7 +251,9 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
                       color: Colors.grey[300],
                     ),
                     maxLines: _expandedBio ? null : 4,
-                    overflow: _expandedBio ? TextOverflow.visible : TextOverflow.ellipsis,
+                    overflow: _expandedBio
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
                   ),
                   if ((_personDetails!['biography'] as String).length > 200)
                     TextButton(
@@ -265,7 +278,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   Widget _infoRow(IconData icon, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -292,17 +305,30 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   String _formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       return '${months[date.month - 1]} ${date.day}, ${date.year}';
     } catch (e) {
       return dateStr;
     }
   }
-  
+
   Widget _filterSection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -383,8 +409,9 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
-  Widget _filterChip(String label, IconData icon, bool selected, VoidCallback onTap) {
+
+  Widget _filterChip(
+      String label, IconData icon, bool selected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -420,7 +447,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   Widget _creditsSliverGrid() {
     if (_filteredCredits.isEmpty) {
       return SliverToBoxAdapter(
@@ -449,7 +476,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
         ),
       );
     }
-    
+
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverGrid(
@@ -469,12 +496,10 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   Widget _creditCard(Map<String, dynamic> credit) {
     return GestureDetector(
-      onTap: () {
-        // TODO: Navigate to movie/show detail
-      },
+      onTap: () => _handleCreditTap(credit),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         child: Column(
@@ -484,99 +509,101 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 5,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: credit['posterPath'] != null
-                        ? Image.network(
-                            credit['posterPath'],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return _posterPlaceholder();
-                            },
-                          )
-                        : _posterPlaceholder(),
-                  ),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 5,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                        stops: [0.6, 1.0],
+                      child: credit['posterPath'] != null
+                          ? Image.network(
+                              credit['posterPath'],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _posterPlaceholder();
+                              },
+                            )
+                          : _posterPlaceholder(),
+                    ),
+                    // Gradient overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                          stops: [0.6, 1.0],
+                        ),
                       ),
                     ),
-                  ),
-                  // Year badge
-                  if (credit['year'] != null)
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          credit['year'],
-                          style: TextStyle(
-                            color: ZagColours.accent,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                    // Year badge
+                    if (credit['year'] != null)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            credit['year'],
+                            style: TextStyle(
+                              color: ZagColours.accent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  // Rating badge
-                  if (credit['rating'] != null && credit['rating'] > 0)
-                    Positioned(
-                      bottom: 6,
-                      right: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star_rounded,
-                              size: 11,
-                              color: Colors.amber,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              credit['rating'].toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                    // Rating badge
+                    if (credit['rating'] != null && credit['rating'] > 0)
+                      Positioned(
+                        bottom: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star_rounded,
+                                size: 11,
+                                color: Colors.amber,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 2),
+                              Text(
+                                credit['rating'].toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 6),
@@ -608,7 +635,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   Widget _profilePlaceholder() {
     return Container(
       color: Colors.grey.shade700,
@@ -619,7 +646,7 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
       ),
     );
   }
-  
+
   Widget _posterPlaceholder() {
     return Container(
       color: Colors.grey.shade700,
@@ -628,6 +655,184 @@ class _State extends State<PersonDetailsRoute> with SingleTickerProviderStateMix
         size: 30,
         color: Colors.grey.shade500,
       ),
+    );
+  }
+
+  Future<void> _openMovieInRadarr({required int tmdbId, String? title}) async {
+    final radarrState = context.read<RadarrState>();
+    if (!radarrState.enabled || radarrState.api == null) {
+      showZagSnackBar(
+        title: title ?? 'Radarr',
+        message: 'Connect Radarr to manage movies from filmography.',
+        type: ZagSnackbarType.INFO,
+      );
+      return;
+    }
+
+    bool loaderShown = false;
+    void dismissLoader() {
+      if (loaderShown && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        loaderShown = false;
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: ZagLoader()),
+    );
+    loaderShown = true;
+
+    try {
+      final results = await radarrState.api!.movieLookup.get(
+        term: 'tmdb:$tmdbId',
+      );
+
+      if (!mounted) {
+        dismissLoader();
+        return;
+      }
+
+      dismissLoader();
+
+      if (results.isEmpty) {
+        showZagSnackBar(
+          title: title ?? 'Movie',
+          message: 'Could not find TMDB ID $tmdbId in Radarr.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      final radarrMovie = results.first;
+
+      if (radarrMovie.id != null) {
+        RadarrRoutes.MOVIE.go(
+          params: {
+            'movie': radarrMovie.id!.toString(),
+          },
+        );
+        return;
+      }
+
+      RadarrRoutes.ADD_MOVIE_DETAILS.go(
+        extra: radarrMovie,
+        queryParams: {'isDiscovery': 'true'},
+      );
+    } catch (error) {
+      dismissLoader();
+      if (!mounted) return;
+      showZagSnackBar(
+        title: title ?? 'Movie',
+        message: 'Something went wrong talking to Radarr.',
+        type: ZagSnackbarType.ERROR,
+      );
+    }
+  }
+
+  Future<void> _openSeriesInSonarr({int? tmdbId, String? title}) async {
+    final sonarrState = context.read<SonarrState>();
+    if (!sonarrState.enabled || sonarrState.api == null) {
+      showZagSnackBar(
+        title: title ?? 'Sonarr',
+        message: 'Connect Sonarr to manage shows from filmography.',
+        type: ZagSnackbarType.INFO,
+      );
+      return;
+    }
+
+    try {
+      SonarrSeries? match;
+      if (sonarrState.series != null) {
+        final seriesMap = await sonarrState.series!;
+        final lowerTitle = title?.toLowerCase();
+        if (lowerTitle != null && lowerTitle.isNotEmpty) {
+          for (final series in seriesMap.values) {
+            final candidate = series.title?.toLowerCase();
+            if (candidate != null && candidate == lowerTitle) {
+              match = series;
+              break;
+            }
+          }
+        }
+      }
+
+      if (match != null && match.id != null) {
+        SonarrRoutes.SERIES.go(
+          params: {
+            'series': match.id!.toString(),
+          },
+        );
+        return;
+      }
+
+      final query = tmdbId != null
+          ? 'tmdb:$tmdbId'
+          : (title != null && title.isNotEmpty ? title : '');
+
+      if (query.isEmpty) {
+        showZagSnackBar(
+          title: title ?? 'Sonarr',
+          message: 'Unable to open this show in Sonarr.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      SonarrRoutes.ADD_SERIES.go(
+        queryParams: {
+          'query': query,
+        },
+      );
+    } catch (error) {
+      showZagSnackBar(
+        title: title ?? 'Sonarr',
+        message: 'Something went wrong talking to Sonarr.',
+        type: ZagSnackbarType.ERROR,
+      );
+    }
+  }
+
+  Future<void> _handleCreditTap(Map<String, dynamic> credit) async {
+    final mediaType = credit['mediaType'] as String?;
+    final dynamic rawId = credit['id'];
+    final int? tmdbId = rawId is int
+        ? rawId
+        : rawId is num
+            ? rawId.toInt()
+            : null;
+    final title = credit['title'] as String?;
+
+    if (mediaType == 'movie') {
+      if (tmdbId == null) {
+        showZagSnackBar(
+          title: title ?? 'Movie',
+          message: 'Missing TMDB identifier for this title.',
+          type: ZagSnackbarType.ERROR,
+        );
+        return;
+      }
+
+      await _openMovieInRadarr(
+        tmdbId: tmdbId,
+        title: title,
+      );
+      return;
+    }
+
+    if (mediaType == 'tv') {
+      await _openSeriesInSonarr(
+        tmdbId: tmdbId,
+        title: title,
+      );
+      return;
+    }
+
+    showZagSnackBar(
+      title: title ?? 'Unavailable',
+      message: 'Unable to open this credit yet.',
+      type: ZagSnackbarType.INFO,
     );
   }
 }

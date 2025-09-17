@@ -2490,7 +2490,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   if (rating > 0)
                     Positioned(
                       top: 8,
-                      right: 8,
+                      left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
@@ -2522,8 +2522,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 10,
-                      left: 10,
+                      top: 8,
+                      right: 8,
                       child: Container(
                         width: 12,
                         height: 12,
@@ -2714,7 +2714,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   if (rating > 0)
                     Positioned(
                       top: 8,
-                      right: 8,
+                      left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
@@ -2746,8 +2746,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 10,
-                      left: 10,
+                      top: 8,
+                      right: 8,
                       child: Container(
                         width: 12,
                         height: 12,
@@ -3001,7 +3001,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   if (rating > 0)
                     Positioned(
                       top: 8,
-                      right: 8,
+                      left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
@@ -3033,8 +3033,8 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
                   // In-library indicator
                   if (inLibrary)
                     Positioned(
-                      top: 10,
-                      left: 10,
+                      top: 8,
+                      right: 8,
                       child: Container(
                         width: 12,
                         height: 12,

@@ -246,8 +246,8 @@ class _State extends State<TMDBTrendingNewTVShowsRoute>
               ),
               if (inLibrary)
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  top: 12,
+                  right: 12,
                   child: Container(
                     width: 14,
                     height: 14,

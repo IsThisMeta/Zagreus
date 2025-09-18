@@ -57,7 +57,6 @@ class ZagreusPro {
   static bool get isEnabled {
     // Check if Pro is enabled locally
     final proEnabled = ZagreusDatabase.ZAGREUS_PRO_ENABLED.read();
-    print('DEBUG: ZagreusPro.isEnabled called - local value: $proEnabled');
     if (!proEnabled) {
       return false;
     }
@@ -92,14 +91,10 @@ class ZagreusPro {
     ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update('');
   }
 
-  // Debug method to manually disable Pro
-  static void debugDisablePro() {
-    print('DEBUG: Manually disabling Pro status');
-    _disablePro();
-    clearCache();
-  }
   
   static void enablePro({required bool isMonthly}) {
+    print('!!! ENABLING PRO - Called from: ${StackTrace.current}');
+
     // Set expiry date based on subscription type
     final now = DateTime.now();
     final expiry = isMonthly

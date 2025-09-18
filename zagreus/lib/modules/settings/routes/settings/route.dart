@@ -353,22 +353,6 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                 _cancelPro();
               },
             ),
-          // Debug: Force clear Pro status
-          if (const bool.fromEnvironment('dart.vm.product') == false)
-            ZagDialog.tile(
-              icon: Icons.delete_forever,
-              iconColor: ZagColours.red,
-              text: '[DEBUG] Clear Pro Status (Force)',
-              onTap: () {
-                Navigator.of(context).pop();
-                ZagreusPro.debugDisablePro();
-                setState(() {});
-                showZagInfoSnackBar(
-                  title: '[DEBUG] Pro Status Cleared',
-                  message: 'All Pro flags have been reset',
-                );
-              },
-            ),
         ],
       ),
       contentPadding: ZagDialog.listDialogContentPadding(),

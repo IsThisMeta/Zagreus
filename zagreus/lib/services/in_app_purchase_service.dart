@@ -170,18 +170,11 @@ class InAppPurchaseService {
     // Enable Pro locally
     ZagreusPro.enablePro(isMonthly: isMonthly);
 
-    // Show success message
-    if (purchaseDetails.status == PurchaseStatus.purchased) {
-      showZagInfoSnackBar(
-        title: 'Welcome to Zagreus Pro!',
-        message: 'Premium features are now unlocked',
-      );
-    } else if (purchaseDetails.status == PurchaseStatus.restored) {
-      showZagInfoSnackBar(
-        title: 'Subscription Restored',
-        message: 'Your Pro subscription has been restored',
-      );
-    }
+    // Show success message - always show welcome for user-initiated actions
+    showZagInfoSnackBar(
+      title: 'Welcome to Zagreus Pro!',
+      message: 'Premium features are now unlocked',
+    );
   }
 
   Future<void> _validateAndStoreReceipt(PurchaseDetails purchaseDetails) async {

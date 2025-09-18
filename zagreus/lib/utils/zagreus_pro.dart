@@ -4,8 +4,9 @@ import 'package:zagreus/modules.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ZagreusPro {
-  static const Duration _fallbackMonthlyDuration = Duration(days: 1);
-  static const Duration _fallbackYearlyDuration = Duration(days: 7);
+  // Shortened for testing - normally Duration(days: 1) and Duration(days: 7)
+  static const Duration _fallbackMonthlyDuration = Duration(minutes: 1);
+  static const Duration _fallbackYearlyDuration = Duration(minutes: 1);
 
   static bool? _cachedProStatus;
   static DateTime? _cacheExpiry;
@@ -66,19 +67,28 @@ class ZagreusPro {
     // Check if subscription has expired
     final expiryString = ZagreusDatabase.ZAGREUS_PRO_EXPIRY.read();
     if (expiryString.isEmpty) {
-      // No expiry set, disable Pro
+      print('⚠️ Pro: No expiry date set - disabling Pro');
       _disablePro();
       return false;
     }
 
     try {
       final expiry = DateTime.parse(expiryString).toUtc();
-      if (DateTime.now().toUtc().isAfter(expiry)) {
+      final now = DateTime.now().toUtc();
+
+      if (now.isAfter(expiry)) {
+        print('⏰ Pro: Subscription expired (was: $expiry, now: $now) - disabling');
         _disablePro();
         return false;
       }
+
+      // Log time remaining on first check
+      final remaining = expiry.difference(now);
+      if (remaining.inMinutes < 60) {
+        print('⏳ Pro: Active - expires in ${remaining.inMinutes} minutes');
+      }
     } catch (e) {
-      // Invalid expiry date, disable Pro
+      print('❌ Pro: Invalid expiry date - disabling');
       _disablePro();
       return false;
     }
@@ -99,6 +109,8 @@ class ZagreusPro {
     required String productId,
   }) {
     final expiryUtc = expiresAt.toUtc();
+    print('🔐 Pro: Setting expiry to $expiryUtc for product $productId');
+
     ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(true);
     ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(expiryUtc.toIso8601String());
     ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update(

@@ -167,17 +167,22 @@ class InAppPurchaseService {
     final bool isMonthly = purchaseDetails.productID == monthlyProductId;
     final bool isRestore = purchaseDetails.status == PurchaseStatus.restored;
 
+    print('🎯 IAP: Delivering product - ${purchaseDetails.productID}');
+
     // Validate receipt with server first to get real expiry date
     final validationSuccess = await _validateAndStoreReceipt(purchaseDetails);
 
     // Only enable Pro locally if we didn't get server validation
     // (Server validation already sets the expiry correctly)
     if (!validationSuccess) {
+      print('⚠️ IAP: Server validation failed - using fallback (1 day for testing)');
       // Fallback: enable with estimated expiry window
       ZagreusPro.enablePro(
         isMonthly: isMonthly,
         productId: purchaseDetails.productID,
       );
+    } else {
+      print('✅ IAP: Server validation successful - using Apple expiry');
     }
 
     showZagInfoSnackBar(
@@ -194,9 +199,11 @@ class InAppPurchaseService {
       final user = supabase.auth.currentUser;
 
       if (user == null) {
-        // If no user, just store locally
+        print('⚠️ IAP: No Supabase user - cannot validate with server');
         return false;
       }
+
+      print('🔄 IAP: Validating receipt with Supabase for user ${user.id}');
 
       // For iOS, get the receipt data
       String? receiptData;
@@ -225,11 +232,14 @@ class InAppPurchaseService {
           final expiry = _parseDate(subscription['expires_date']);
 
           if (expiry != null) {
+            print('✅ IAP: Got Apple expiry from server: $expiry');
             ZagreusPro.applySubscription(
               expiresAt: expiry,
               productId: productId,
             );
             return true;
+          } else {
+            print('⚠️ IAP: Server response missing expiry date');
           }
         }
       }

@@ -36,6 +36,7 @@ serve(async (req) => {
     const { receipt_data, user_id } = await req.json()
 
     if (!receipt_data) {
+      console.error('validate-receipt: missing receipt_data payload', { user_id })
       return new Response(
         JSON.stringify({ error: 'Missing receipt_data' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -57,6 +58,11 @@ serve(async (req) => {
 
     // Check validation status
     if (appleResponse.status !== 0) {
+      console.error('validate-receipt: Apple validation failed', {
+        status: appleResponse.status,
+        environment: appleResponse.environment,
+        body: appleResponse,
+      })
       return new Response(
         JSON.stringify({
           error: 'Invalid receipt',
@@ -70,6 +76,10 @@ serve(async (req) => {
     const latestReceiptInfo = appleResponse.latest_receipt_info?.[0]
 
     if (!latestReceiptInfo) {
+      console.error('validate-receipt: no subscription info returned by Apple', {
+        receipt: appleResponse.receipt,
+        pending_renewal_info: appleResponse.pending_renewal_info,
+      })
       return new Response(
         JSON.stringify({ error: 'No subscription found in receipt' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -89,11 +99,19 @@ serve(async (req) => {
     }
 
     // Check if subscription already exists
-    const { data: existingSubscription } = await supabase
+    const { data: existingSubscription, error: lookupError } = await supabase
       .from('subscriptions')
       .select('id')
       .eq('original_transaction_id', subscriptionData.original_transaction_id)
       .single()
+
+    if (lookupError && lookupError.code !== 'PGRST116') {
+      console.error('validate-receipt: failed to lookup existing subscription', {
+        error: lookupError,
+        original_transaction_id: subscriptionData.original_transaction_id,
+      })
+      throw lookupError
+    }
 
     let subscription
     if (existingSubscription) {
@@ -148,7 +166,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error validating receipt:', error)
+    console.error('validate-receipt: unhandled error', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

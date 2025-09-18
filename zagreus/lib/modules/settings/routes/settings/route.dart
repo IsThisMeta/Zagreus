@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:collection/collection.dart';
 
 import 'package:zagreus/core.dart';
 import 'package:zagreus/extensions/string/links.dart';
@@ -229,15 +230,36 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
             ),
           ),
           if (!isPro) ...[
-            ZagDialog.tile(
-              icon: Icons.calendar_month_rounded,
-              iconColor: ZagColours.accent,
-              text: 'Monthly • \$0.79/month',
-              onTap: () {
-                Navigator.of(context).pop();
-                _purchasePro(true);
-              },
-            ),
+            Builder(builder: (context) {
+              final iapService = InAppPurchaseService();
+              final monthlyProduct = iapService.products.firstWhereOrNull(
+                (p) => p.id == InAppPurchaseService.monthlyProductId,
+              );
+
+              if (monthlyProduct == null) {
+                return ZagDialog.tile(
+                  icon: Icons.error_outline,
+                  iconColor: ZagColours.red,
+                  text: 'Monthly (Not loaded - check logs)',
+                  onTap: () {
+                    showZagInfoSnackBar(
+                      title: 'Product Not Loaded',
+                      message: 'Check console logs for details',
+                    );
+                  },
+                );
+              }
+
+              return ZagDialog.tile(
+                icon: Icons.calendar_month_rounded,
+                iconColor: ZagColours.accent,
+                text: 'Monthly • ${monthlyProduct.price}/month',
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _purchasePro(true);
+                },
+              );
+            }),
             // TODO: Enable yearly subscription when available in App Store
             // ZagDialog.tile(
             //   icon: Icons.star_rounded,
@@ -331,6 +353,22 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                 _cancelPro();
               },
             ),
+          // Debug: Force clear Pro status
+          if (const bool.fromEnvironment('dart.vm.product') == false)
+            ZagDialog.tile(
+              icon: Icons.delete_forever,
+              iconColor: ZagColours.red,
+              text: '[DEBUG] Clear Pro Status (Force)',
+              onTap: () {
+                Navigator.of(context).pop();
+                ZagreusPro.debugDisablePro();
+                setState(() {});
+                showZagInfoSnackBar(
+                  title: '[DEBUG] Pro Status Cleared',
+                  message: 'All Pro flags have been reset',
+                );
+              },
+            ),
         ],
       ),
       contentPadding: ZagDialog.listDialogContentPadding(),
@@ -339,23 +377,23 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
   
   void _purchasePro(bool isMonthly) async {
     final iapService = InAppPurchaseService();
-    
+
     // Check if IAP is available
     if (!iapService.isAvailable) {
-      // Fallback to mock purchase in debug/TestFlight
-      if (const bool.fromEnvironment('dart.vm.product') == false) {
-        ZagreusPro.enablePro(isMonthly: isMonthly);
-        setState(() {});
-        showZagInfoSnackBar(
-          title: '[DEBUG] Welcome to Zagreus Pro!',
-          message: 'Premium features are now unlocked (Test Mode)',
-        );
-      } else {
-        showZagInfoSnackBar(
-          title: 'Unavailable',
-          message: 'In-app purchases are not available',
-        );
-      }
+      // Disabled debug fallback - was causing Pro to auto-enable
+      // if (const bool.fromEnvironment('dart.vm.product') == false) {
+      //   ZagreusPro.enablePro(isMonthly: isMonthly);
+      //   setState(() {});
+      //   showZagInfoSnackBar(
+      //     title: '[DEBUG] Welcome to Zagreus Pro!',
+      //     message: 'Premium features are now unlocked (Test Mode)',
+      //   );
+      // } else {
+      showZagInfoSnackBar(
+        title: 'Unavailable',
+        message: 'In-app purchases are not available',
+      );
+      // }
       return;
     }
     

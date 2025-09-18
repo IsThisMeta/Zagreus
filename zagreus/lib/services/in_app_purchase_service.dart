@@ -20,7 +20,7 @@ class InAppPurchaseService {
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
   // Product IDs - these must match exactly what you create in App Store Connect
-  static const String monthlyProductId = 'com.zagreus.pro.monthlyrenewing';
+  static const String monthlyProductId = 'com.zagreus.pro.monthly.v2';
   static const String yearlyProductId = 'com.zagreus.pro.yearly';
 
   static const Set<String> _productIds = {
@@ -31,8 +31,32 @@ class InAppPurchaseService {
   bool _isAvailable = false;
   List<ProductDetails> _products = [];
 
+  // Debug flag to disable automatic restore handling
+  static bool debugIgnoreAutoRestore = true;
+  // Track if user initiated a purchase
+  bool _userInitiatedPurchase = false;
+
   Future<void> initialize() async {
     print('DEBUG: IAP initialize called');
+
+    // Debug: Check Pro status at startup
+    final proEnabled = ZagreusDatabase.ZAGREUS_PRO_ENABLED.read();
+    final proExpiry = ZagreusDatabase.ZAGREUS_PRO_EXPIRY.read();
+    final proType = ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.read();
+    final isEnabled = ZagreusPro.isEnabled;
+
+    print('DEBUG: Pro status at startup:');
+    print('  - ZAGREUS_PRO_ENABLED: $proEnabled');
+    print('  - ZAGREUS_PRO_EXPIRY: $proExpiry');
+    print('  - ZAGREUS_PRO_SUBSCRIPTION_TYPE: $proType');
+    print('  - ZagreusPro.isEnabled: $isEnabled');
+
+    // AGGRESSIVE TOAST
+    showZagInfoSnackBar(
+      title: 'IAP Debug',
+      message: 'Pro: $proEnabled | Enabled: $isEnabled | Type: $proType',
+    );
+
     // Check if IAP is available
     _isAvailable = await _inAppPurchase.isAvailable();
     print('DEBUG: IAP available: $_isAvailable');
@@ -61,27 +85,61 @@ class InAppPurchaseService {
   }
 
   Future<void> loadProducts() async {
-    if (!_isAvailable) return;
-
-    print('DEBUG: Attempting to load products: $_productIds');
-    final ProductDetailsResponse response =
-        await _inAppPurchase.queryProductDetails(_productIds);
-    print('DEBUG: Response received');
-
-    if (response.error != null) {
-      ZagLogger().error('Error loading products', response.error, null);
+    if (!_isAvailable) {
+      print('DEBUG: Skipping product load - IAP not available');
       return;
     }
 
-    if (response.notFoundIDs.isNotEmpty) {
-      print('DEBUG: Products not found: ${response.notFoundIDs}');
-      ZagLogger().warning('Products not found: ${response.notFoundIDs}');
-    }
+    print('DEBUG: Attempting to load products: $_productIds');
+    try {
+      final ProductDetailsResponse response =
+          await _inAppPurchase.queryProductDetails(_productIds);
+      print('DEBUG: Response received');
+      print('DEBUG: - Error: ${response.error}');
+      print('DEBUG: - Not found IDs: ${response.notFoundIDs}');
+      print('DEBUG: - Product count: ${response.productDetails.length}');
 
-    _products = response.productDetails;
-    print('DEBUG: Found ${_products.length} products');
-    for (var p in _products) {
-      print('DEBUG: - ${p.id}');
+      if (response.error != null) {
+        print('DEBUG: Product query error details:');
+        print('  - Code: ${response.error!.code}');
+        print('  - Message: ${response.error!.message}');
+        print('  - Details: ${response.error!.details}');
+        ZagLogger().error('Error loading products', response.error, null);
+        return;
+      }
+
+      if (response.notFoundIDs.isNotEmpty) {
+        print('DEBUG: Products not found: ${response.notFoundIDs}');
+        print('DEBUG: Make sure these product IDs exist in App Store Connect');
+        ZagLogger().warning('Products not found: ${response.notFoundIDs}');
+      }
+
+      _products = response.productDetails;
+      print('DEBUG: Successfully loaded ${_products.length} products:');
+      for (var p in _products) {
+        print('DEBUG: - ID: ${p.id}');
+        print('DEBUG:   Title: ${p.title}');
+        print('DEBUG:   Price: ${p.price}');
+        print('DEBUG:   Currency: ${p.currencyCode}');
+        print('DEBUG:   Description: ${p.description}');
+      }
+
+      // AGGRESSIVE TOAST
+      if (_products.isNotEmpty) {
+        final p = _products.first;
+        showZagInfoSnackBar(
+          title: 'Product Loaded!',
+          message: '${p.title} - ${p.price} ${p.currencyCode}',
+        );
+      } else {
+        showZagInfoSnackBar(
+          title: 'No Products!',
+          message: 'Failed to load IAP products',
+        );
+      }
+    } catch (e, stack) {
+      print('DEBUG: Exception loading products: $e');
+      print('DEBUG: Stack trace: $stack');
     }
   }
 
@@ -119,6 +177,9 @@ class InAppPurchaseService {
     );
 
     try {
+      // Mark that user initiated this purchase
+      _userInitiatedPurchase = true;
+
       // For subscriptions, use buyNonConsumable
       final bool success = await _inAppPurchase.buyNonConsumable(
         purchaseParam: purchaseParam,
@@ -135,7 +196,20 @@ class InAppPurchaseService {
   }
 
   void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+    print('DEBUG: _onPurchaseUpdate called with ${purchaseDetailsList.length} items');
+
+    // AGGRESSIVE TOAST
+    showZagInfoSnackBar(
+      title: 'Purchase Event!',
+      message: '${purchaseDetailsList.length} items | Status: ${purchaseDetailsList.firstOrNull?.status}',
+    );
+
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
+      print('DEBUG: Purchase status: ${purchaseDetails.status}');
+      print('DEBUG: Product ID: ${purchaseDetails.productID}');
+      print('DEBUG: Transaction ID: ${purchaseDetails.purchaseID}');
+      print('DEBUG: Verification data: ${purchaseDetails.verificationData.localVerificationData}');
+
       if (purchaseDetails.status == PurchaseStatus.pending) {
         // Show pending UI
         showZagInfoSnackBar(
@@ -151,8 +225,35 @@ class InAppPurchaseService {
         );
       } else if (purchaseDetails.status == PurchaseStatus.purchased ||
           purchaseDetails.status == PurchaseStatus.restored) {
-        // Verify and deliver the purchase
-        _deliverProduct(purchaseDetails);
+
+        // Check if this is an auto-restore we should ignore
+        // Only block restores if user didn't initiate a purchase
+        if (debugIgnoreAutoRestore &&
+            purchaseDetails.status == PurchaseStatus.restored &&
+            !_userInitiatedPurchase) {
+          print('DEBUG: IGNORING AUTO-RESTORE (not user initiated)');
+          print('DEBUG: Would have delivered: ${purchaseDetails.productID}');
+
+          // AGGRESSIVE TOAST
+          showZagInfoSnackBar(
+            title: 'BLOCKED AUTO-RESTORE',
+            message: 'Ignored ${purchaseDetails.productID}',
+          );
+        } else {
+          print('DEBUG: DELIVERING PRODUCT - This is what enables Pro!');
+
+          // AGGRESSIVE TOAST
+          showZagInfoSnackBar(
+            title: _userInitiatedPurchase ? 'PURCHASE SUCCESS!' : 'DELIVERING PRODUCT!',
+            message: 'Enabling Pro for ${purchaseDetails.productID}',
+          );
+
+          // Verify and deliver the purchase
+          _deliverProduct(purchaseDetails);
+
+          // Reset flag after delivering
+          _userInitiatedPurchase = false;
+        }
       }
 
       // Complete the purchase
@@ -235,6 +336,9 @@ class InAppPurchaseService {
   }
 
   Future<void> restorePurchases() async {
+    // Mark as user-initiated restore
+    _userInitiatedPurchase = true;
+
     // First check if user has subscription in Supabase
     try {
       final supabase = Supabase.instance.client;
@@ -276,7 +380,13 @@ class InAppPurchaseService {
     if (!_isAvailable) return;
 
     try {
+      // Temporarily allow restores when manually triggered
+      debugIgnoreAutoRestore = false;
       await _inAppPurchase.restorePurchases();
+      // Wait a bit then re-enable the flag
+      Future.delayed(Duration(seconds: 5), () {
+        debugIgnoreAutoRestore = true;
+      });
     } catch (e) {
       ZagLogger().error('Restore purchases failed', e, null);
     }

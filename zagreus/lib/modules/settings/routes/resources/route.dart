@@ -66,13 +66,6 @@ class _State extends State<SettingsResourcesRoute> with ZagScrollControllerMixin
             );
           },
         ),
-        ZagHeader(text: 'Support'),
-        ZagBlock(
-          title: 'Buy Me a Coffee',
-          body: [TextSpan(text: 'Support the development of Zagreus')],
-          trailing: const ZagIconButton(icon: Icons.coffee_rounded),
-          onTap: () => 'https://buymeacoffee.com/isthismeta'.openLink(),
-        ),
       ],
     );
   }

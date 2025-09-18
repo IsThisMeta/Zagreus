@@ -178,23 +178,23 @@ class _State extends State<ConfigurationRoute> with ZagScrollControllerMixin {
   
   void _mockPurchase(bool isMonthly) async {
     final iapService = InAppPurchaseService();
-    
+
     // Check if IAP is available
     if (!iapService.isAvailable) {
-      // Fallback to mock purchase in debug/TestFlight
-      if (const bool.fromEnvironment('dart.vm.product') == false) {
-        ZagreusPro.enablePro(isMonthly: isMonthly);
-        setState(() {});
-        showZagInfoSnackBar(
-          title: '[DEBUG] Welcome to Zagreus Pro!',
-          message: 'Discover module is now unlocked (Test Mode)',
-        );
-      } else {
-        showZagInfoSnackBar(
-          title: 'Unavailable',
-          message: 'In-app purchases are not available',
-        );
-      }
+      // Disabled debug fallback - was causing Pro to auto-enable
+      // if (const bool.fromEnvironment('dart.vm.product') == false) {
+      //   ZagreusPro.enablePro(isMonthly: isMonthly);
+      //   setState(() {});
+      //   showZagInfoSnackBar(
+      //     title: '[DEBUG] Welcome to Zagreus Pro!',
+      //     message: 'Discover module is now unlocked (Test Mode)',
+      //   );
+      // } else {
+      showZagInfoSnackBar(
+        title: 'Unavailable',
+        message: 'In-app purchases are not available',
+      );
+      // }
       return;
     }
     

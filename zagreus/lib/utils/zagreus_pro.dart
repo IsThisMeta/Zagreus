@@ -4,6 +4,9 @@ import 'package:zagreus/modules.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ZagreusPro {
+  static const Duration _fallbackMonthlyDuration = Duration(days: 1);
+  static const Duration _fallbackYearlyDuration = Duration(days: 7);
+
   static bool? _cachedProStatus;
   static DateTime? _cacheExpiry;
 
@@ -56,8 +59,7 @@ class ZagreusPro {
   // Synchronous version for backward compatibility
   static bool get isEnabled {
     // Check if Pro is enabled locally
-    final proEnabled = ZagreusDatabase.ZAGREUS_PRO_ENABLED.read();
-    if (!proEnabled) {
+    if (!ZagreusDatabase.ZAGREUS_PRO_ENABLED.read()) {
       return false;
     }
 
@@ -70,9 +72,8 @@ class ZagreusPro {
     }
 
     try {
-      final expiry = DateTime.parse(expiryString);
-      if (DateTime.now().isAfter(expiry)) {
-        // Subscription expired, disable Pro
+      final expiry = DateTime.parse(expiryString).toUtc();
+      if (DateTime.now().toUtc().isAfter(expiry)) {
         _disablePro();
         return false;
       }
@@ -84,31 +85,52 @@ class ZagreusPro {
 
     return true;
   }
-  
+
   static void _disablePro() {
     ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(false);
     ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update('');
     ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update('');
+    clearCache();
   }
 
-  
-  static void enablePro({required bool isMonthly}) {
-    print('!!! ENABLING PRO - Called from: ${StackTrace.current}');
-
-    // Set expiry date based on subscription type
-    final now = DateTime.now();
-    final expiry = isMonthly
-      ? now.add(const Duration(days: 30))
-      : now.add(const Duration(days: 365));
-
+  /// Apply subscription data sourced from Apple/Supabase.
+  static void applySubscription({
+    required DateTime expiresAt,
+    required String productId,
+  }) {
+    final expiryUtc = expiresAt.toUtc();
     ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(true);
-    ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(expiry.toIso8601String());
+    ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update(expiryUtc.toIso8601String());
     ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update(
-      isMonthly ? 'monthly' : 'yearly'
+      _subscriptionTypeFromProduct(productId),
     );
+    ZagreusDatabase.LAST_SUBSCRIPTION_VERIFY
+        .update(DateTime.now().toUtc().toIso8601String());
 
-    // Automatically set boot module to Discover on first Pro activation
+    clearCache();
     _setProBootModule();
+  }
+
+  /// Fallback helper when the app cannot reach the backend.
+  /// Provides a temporary expiry so the user retains access until we can revalidate.
+  static void enablePro({
+    required bool isMonthly,
+    String? productId,
+    Duration? fallbackDuration,
+  }) {
+    final duration = fallbackDuration ??
+        (isMonthly ? _fallbackMonthlyDuration : _fallbackYearlyDuration);
+    final fallbackProductId =
+        productId ?? (isMonthly ? 'fallback-monthly' : 'fallback-yearly');
+
+    applySubscription(
+      expiresAt: DateTime.now().toUtc().add(duration),
+      productId: fallbackProductId,
+    );
+  }
+
+  static void disable() {
+    _disablePro();
   }
 
   static void _setProBootModule() {
@@ -131,20 +153,27 @@ class ZagreusPro {
       print('Error setting Pro boot module: $e');
     }
   }
-  
+
   static bool get hasExpired {
     final expiryString = ZagreusDatabase.ZAGREUS_PRO_EXPIRY.read();
     if (expiryString.isEmpty) return true;
-    
+
     try {
-      final expiry = DateTime.parse(expiryString);
-      return DateTime.now().isAfter(expiry);
+      final expiry = DateTime.parse(expiryString).toUtc();
+      return DateTime.now().toUtc().isAfter(expiry);
     } catch (e) {
       return true;
     }
   }
-  
+
   static String get subscriptionType {
     return ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.read();
+  }
+
+  static String _subscriptionTypeFromProduct(String productId) {
+    final lower = productId.toLowerCase();
+    if (lower.contains('year')) return 'yearly';
+    if (lower.contains('month')) return 'monthly';
+    return lower;
   }
 }

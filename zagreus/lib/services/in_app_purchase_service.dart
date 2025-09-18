@@ -127,9 +127,11 @@ class InAppPurchaseService {
   }
 
   void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
-    print('>>> Purchase update: ${purchaseDetailsList.length} items, userInitiated=$_userInitiatedAction');
+    print(
+        '>>> Purchase update: ${purchaseDetailsList.length} items, userInitiated=$_userInitiatedAction');
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
-      print('  Status: ${purchaseDetails.status}, ProductID: ${purchaseDetails.productID}');
+      print(
+          '  Status: ${purchaseDetails.status}, ProductID: ${purchaseDetails.productID}');
       if (purchaseDetails.status == PurchaseStatus.pending) {
         showZagInfoSnackBar(
           title: 'Processing',
@@ -163,28 +165,37 @@ class InAppPurchaseService {
   void _deliverProduct(PurchaseDetails purchaseDetails) async {
     // Determine if monthly or yearly
     final bool isMonthly = purchaseDetails.productID == monthlyProductId;
+    final bool isRestore = purchaseDetails.status == PurchaseStatus.restored;
 
-    // Validate receipt with server
-    await _validateAndStoreReceipt(purchaseDetails);
+    // Validate receipt with server first to get real expiry date
+    final validationSuccess = await _validateAndStoreReceipt(purchaseDetails);
 
-    // Enable Pro locally
-    ZagreusPro.enablePro(isMonthly: isMonthly);
+    // Only enable Pro locally if we didn't get server validation
+    // (Server validation already sets the expiry correctly)
+    if (!validationSuccess) {
+      // Fallback: enable with estimated expiry window
+      ZagreusPro.enablePro(
+        isMonthly: isMonthly,
+        productId: purchaseDetails.productID,
+      );
+    }
 
-    // Show success message - always show welcome for user-initiated actions
     showZagInfoSnackBar(
-      title: 'Welcome to Zagreus Pro!',
-      message: 'Premium features are now unlocked',
+      title: isRestore ? 'Subscription Restored' : 'Welcome to Zagreus Pro!',
+      message: isRestore
+          ? 'Your subscription has been restored.'
+          : 'Premium features are now unlocked.',
     );
   }
 
-  Future<void> _validateAndStoreReceipt(PurchaseDetails purchaseDetails) async {
+  Future<bool> _validateAndStoreReceipt(PurchaseDetails purchaseDetails) async {
     try {
       final supabase = Supabase.instance.client;
       final user = supabase.auth.currentUser;
 
       if (user == null) {
         // If no user, just store locally
-        return;
+        return false;
       }
 
       // For iOS, get the receipt data
@@ -194,7 +205,7 @@ class InAppPurchaseService {
       }
 
       if (receiptData == null) {
-        return;
+        return false;
       }
 
       // Call Supabase Edge Function to validate receipt
@@ -207,16 +218,26 @@ class InAppPurchaseService {
       );
 
       if (response.data != null && response.data['success'] == true) {
-        // Store subscription info locally for offline access
         final subscription = response.data['subscription'];
-        if (subscription != null) {
-          ZagreusDatabase.ZAGREUS_PRO_EXPIRY
-              .update(subscription['expires_date']?.toString() ?? '');
+        if (subscription is Map) {
+          final productId = (subscription['product_id'] as String?) ??
+              purchaseDetails.productID;
+          final expiry = _parseDate(subscription['expires_date']);
+
+          if (expiry != null) {
+            ZagreusPro.applySubscription(
+              expiresAt: expiry,
+              productId: productId,
+            );
+            return true;
+          }
         }
       }
+      return false;
     } catch (e) {
       // Don't block the purchase, local storage will work as fallback
       ZagLogger().debug('Receipt validation failed: $e');
+      return false;
     }
   }
 
@@ -241,22 +262,21 @@ class InAppPurchaseService {
 
         if (response != null && (response as List).isNotEmpty) {
           final subscription = response[0];
-          final expiresDate = DateTime.parse(subscription['expires_date']);
+          final expiresDate = _parseDate(subscription['expires_date']);
 
-          if (expiresDate.isAfter(DateTime.now())) {
-            // Restore Pro status from server
-            ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(true);
-            ZagreusDatabase.ZAGREUS_PRO_EXPIRY
-                .update(expiresDate.toIso8601String());
+          if (expiresDate != null &&
+              expiresDate.isAfter(DateTime.now().toUtc())) {
+            final productId =
+                (subscription['product_id'] as String?) ?? monthlyProductId;
 
-            final productId = subscription['product_id'] as String;
-            final isMonthly = productId.contains('monthly');
-            ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE
-                .update(isMonthly ? 'monthly' : 'yearly');
+            ZagreusPro.applySubscription(
+              expiresAt: expiresDate,
+              productId: productId,
+            );
 
             showZagInfoSnackBar(
               title: 'Subscription Restored',
-              message: 'Your Pro subscription has been restored from server',
+              message: 'Your Pro subscription has been restored.',
             );
             return;
           }
@@ -333,4 +353,16 @@ class InAppPurchaseService {
 
   bool get isAvailable => _isAvailable;
   List<ProductDetails> get products => _products;
+
+  DateTime? _parseDate(dynamic value) {
+    if (value is DateTime) {
+      return value.toUtc();
+    }
+    if (value is String && value.isNotEmpty) {
+      try {
+        return DateTime.parse(value).toUtc();
+      } catch (_) {}
+    }
+    return null;
+  }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
@@ -117,49 +118,47 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       ],
     );
   }
-  
+
   Widget _buildBootModuleToggle() {
     final bool isPro = ZagreusPro.isEnabled;
 
     // Only show if user has Pro
     if (!isPro) return const SizedBox.shrink();
 
-    return BIOSDatabase.BOOT_MODULE.listenableBuilder(
-      builder: (context, _) {
-        final currentModule = BIOSDatabase.BOOT_MODULE.read();
-        final isDiscoverMode = currentModule == ZagModule.DISCOVER;
-        final userModule = _getUserBootModule();
+    return BIOSDatabase.BOOT_MODULE.listenableBuilder(builder: (context, _) {
+      final currentModule = BIOSDatabase.BOOT_MODULE.read();
+      final isDiscoverMode = currentModule == ZagModule.DISCOVER;
+      final userModule = _getUserBootModule();
 
-        return ZagBlock(
-          title: 'Start with Discover',
-          body: [
-            TextSpan(
+      return ZagBlock(
+        title: 'Start with Discover',
+        body: [
+          TextSpan(
               text: isDiscoverMode
-                ? 'Opens Discover on launch'
-                : 'Opens ${userModule.title} on launch'
-            )
-          ],
-          trailing: ZagSwitch(
-            value: isDiscoverMode,
-            onChanged: (value) {
-              if (value) {
-                // Save current module as user preference if not already Discover
-                if (currentModule != ZagModule.DISCOVER) {
-                  ZagreusDatabase.USER_BOOT_MODULE.update(currentModule.key);
-                }
-                // Set to Discover
-                BIOSDatabase.BOOT_MODULE.update(ZagModule.DISCOVER);
-              } else {
-                // Restore user's previous module
-                final userModuleKey = ZagreusDatabase.USER_BOOT_MODULE.read();
-                final userModule = ZagModule.fromKey(userModuleKey) ?? ZagModule.DASHBOARD;
-                BIOSDatabase.BOOT_MODULE.update(userModule);
+                  ? 'Opens Discover on launch'
+                  : 'Opens ${userModule.title} on launch')
+        ],
+        trailing: ZagSwitch(
+          value: isDiscoverMode,
+          onChanged: (value) {
+            if (value) {
+              // Save current module as user preference if not already Discover
+              if (currentModule != ZagModule.DISCOVER) {
+                ZagreusDatabase.USER_BOOT_MODULE.update(currentModule.key);
               }
-            },
-          ),
-        );
-      }
-    );
+              // Set to Discover
+              BIOSDatabase.BOOT_MODULE.update(ZagModule.DISCOVER);
+            } else {
+              // Restore user's previous module
+              final userModuleKey = ZagreusDatabase.USER_BOOT_MODULE.read();
+              final userModule =
+                  ZagModule.fromKey(userModuleKey) ?? ZagModule.DASHBOARD;
+              BIOSDatabase.BOOT_MODULE.update(userModule);
+            }
+          },
+        ),
+      );
+    });
   }
 
   ZagModule _getUserBootModule() {
@@ -174,22 +173,17 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       title: 'Zagreus Pro',
       body: [
         TextSpan(
-          text: isPro
-            ? 'Active • Monthly subscription'
-            : 'Unlock premium features • \$0.79/mo'
-        )
+            text: isPro
+                ? 'Active • Monthly subscription'
+                : 'Unlock premium features • \$0.79/mo')
       ],
       trailing: GestureDetector(
         onLongPressStart: (_) {
-          // Start timer for 5 second hold
           if (isPro) {
             _startRevokeTimer();
           }
         },
-        onLongPressEnd: (_) {
-          // Cancel timer if released early
-          _cancelRevokeTimer();
-        },
+        onLongPressEnd: (_) => _cancelRevokeTimer(),
         child: ZagIconButton(
           icon: isPro ? Icons.star_rounded : Icons.lock_open_rounded,
           color: isPro ? ZagColours.orange : ZagColours.accent,
@@ -198,10 +192,10 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       onTap: () => _showProDialog(context),
     );
   }
-  
+
   void _showProDialog(BuildContext context) {
     final bool isPro = ZagreusPro.isEnabled;
-    
+
     ZagDialog.dialog(
       context: context,
       title: 'Zagreus Pro',
@@ -210,20 +204,20 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
           Padding(
             padding: ZagDialog.textDialogContentPadding(),
             child: Text(
-              isPro 
-                ? 'You have an active ${ZagreusPro.subscriptionType} subscription.\n\n'
-                  'Premium features unlocked:\n'
-                  '• Discover module with trending content\n'
-                  '• Recommended movies & shows\n'
-                  '• Missing from collections\n\n'
-                  'Thank you for supporting Zagreus!'
-                : 'Unlock premium features and support Zagreus development!\n\n'
-                  'Premium features:\n'
-                  '• Beautiful movie & TV discovery\n'
-                  '• Trending & popular content\n'
-                  '• Recommended based on your library\n'
-                  '• Missing movies from collections\n\n'
-                  'Choose your plan:',
+              isPro
+                  ? 'You have an active ${ZagreusPro.subscriptionType} subscription.\n\n'
+                      'Premium features unlocked:\n'
+                      '• Discover module with trending content\n'
+                      '• Recommended movies & shows\n'
+                      '• Missing from collections\n\n'
+                      'Thank you for supporting Zagreus!'
+                  : 'Unlock premium features and support Zagreus development!\n\n'
+                      'Premium features:\n'
+                      '• Beautiful movie & TV discovery\n'
+                      '• Trending & popular content\n'
+                      '• Recommended based on your library\n'
+                      '• Missing movies from collections\n\n'
+                      'Choose your plan:',
               style: const TextStyle(
                 fontSize: ZagUI.FONT_SIZE_H2,
               ),
@@ -282,7 +276,11 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                     'By subscribing, you agree to our',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color
+                          ?.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -290,7 +288,8 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       InkWell(
-                        onTap: () => _openUrl('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
+                        onTap: () => _openUrl(
+                            'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
                         child: Text(
                           'Terms of Service',
                           style: TextStyle(
@@ -304,7 +303,11 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
                         ' and ',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withOpacity(0.7),
                         ),
                       ),
                       InkWell(
@@ -358,7 +361,7 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       contentPadding: ZagDialog.listDialogContentPadding(),
     );
   }
-  
+
   void _purchasePro(bool isMonthly) async {
     final iapService = InAppPurchaseService();
 
@@ -380,22 +383,22 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       // }
       return;
     }
-    
+
     // Attempt real purchase
     showZagInfoSnackBar(
       title: 'Processing',
       message: 'Connecting to App Store...',
     );
-    
-    final bool success = isMonthly 
-      ? await iapService.purchaseMonthly()
-      : await iapService.purchaseYearly();
-    
+
+    final bool success = isMonthly
+        ? await iapService.purchaseMonthly()
+        : await iapService.purchaseYearly();
+
     if (success) {
       setState(() {});
     }
   }
-  
+
   void _cancelPro() async {
     // Restore user's previous boot module before revoking Pro
     final currentModule = BIOSDatabase.BOOT_MODULE.read();
@@ -412,32 +415,25 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
     }
 
     // Debug only - reset Pro status locally
-    ZagreusDatabase.ZAGREUS_PRO_ENABLED.update(false);
-    ZagreusDatabase.ZAGREUS_PRO_EXPIRY.update('');
-    ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE.update('');
+    ZagreusPro.disable();
 
     // Also clear from Supabase if signed in
     try {
       final supabase = Supabase.instance.client;
       final user = supabase.auth.currentUser;
       if (user != null) {
-        await supabase
-            .from('subscriptions')
-            .delete()
-            .eq('user_id', user.id);
+        await supabase.from('subscriptions').delete().eq('user_id', user.id);
       }
     } catch (e) {
       print('Error clearing cloud subscription: $e');
     }
 
-    // Clear any cached Pro status
-    ZagreusPro.clearCache();
-
     setState(() {});
 
     showZagInfoSnackBar(
       title: 'Pro Status Revoked',
-      message: 'Boot module restored to ${BIOSDatabase.BOOT_MODULE.read().name}',
+      message:
+          'Boot module restored to ${BIOSDatabase.BOOT_MODULE.read().name}',
     );
   }
 
@@ -466,12 +462,15 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
     setState(() {});
   }
 
+  @override
+  void dispose() {
+    _cancelRevokeTimer();
+    super.dispose();
+  }
+
   void _startRevokeTimer() {
-    _cancelRevokeTimer(); // Cancel any existing timer
-    _revokeTimer = Timer(const Duration(seconds: 5), () {
-      // After 5 seconds of holding, show secret revoke option
-      _showSecretRevokeDialog();
-    });
+    _cancelRevokeTimer();
+    _revokeTimer = Timer(const Duration(seconds: 5), _showSecretRevokeDialog);
   }
 
   void _cancelRevokeTimer() {
@@ -480,14 +479,14 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
   }
 
   void _showSecretRevokeDialog() {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('🤫 Secret Debug Menu'),
         content: const Text(
           'Revoke Zagreus Pro subscription?\n\n'
-          'This will clear your Pro status locally.\n'
-          'Use "Restore Purchases" to get it back.',
+          'This clears local status for debugging. Use "Restore Purchases" to re-sync.',
         ),
         actions: [
           TextButton(
@@ -499,16 +498,13 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
               Navigator.of(context).pop();
               _cancelPro();
             },
-            child: Text('Revoke', style: TextStyle(color: ZagColours.red)),
+            child: Text(
+              'Revoke',
+              style: TextStyle(color: ZagColours.red),
+            ),
           ),
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _cancelRevokeTimer();
-    super.dispose();
   }
 }

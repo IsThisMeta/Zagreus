@@ -9,7 +9,7 @@ class RevenueCatService {
   RevenueCatService._internal();
 
   static const String _apiKey = 'appl_rUDwskSqmGCotcUTmqthnGgYCFq';
-  static const String _entitlementId = 'pro';
+  static const String _entitlementId = 'Pro';  // Note: Uppercase 'Pro' as shown in dashboard
 
   CustomerInfo? _customerInfo;
 
@@ -51,7 +51,12 @@ class RevenueCatService {
   }
 
   void _updateProStatus() {
+    print('🔍 RevenueCat: Checking entitlements...');
+    print('🔍 All entitlements: ${_customerInfo?.entitlements.all.keys}');
+    print('🔍 Active entitlements: ${_customerInfo?.entitlements.active.keys}');
+
     final isActive = _customerInfo?.entitlements.all[_entitlementId]?.isActive ?? false;
+    print('🔍 Pro entitlement "$_entitlementId" active: $isActive');
 
     if (isActive) {
       final expirationDate = _customerInfo?.entitlements.all[_entitlementId]?.expirationDate;
@@ -64,7 +69,7 @@ class RevenueCatService {
         );
       }
     } else {
-      print('📵 RevenueCat: Pro not active');
+      print('📵 RevenueCat: Pro not active - entitlements: ${_customerInfo?.entitlements.all}');
       ZagreusPro.disable();
     }
   }
@@ -73,6 +78,10 @@ class RevenueCatService {
     try {
       // Get available packages
       final offerings = await Purchases.getOfferings();
+
+      print('🔍 RevenueCat Offerings: ${offerings.all.keys}');
+      print('🔍 Current offering: ${offerings.current?.identifier}');
+      print('🔍 Available packages: ${offerings.current?.availablePackages.map((p) => p.identifier).toList()}');
 
       // Try to find monthly package by identifier, or just use the first available package
       final packages = offerings.current?.availablePackages ?? [];
@@ -84,6 +93,7 @@ class RevenueCatService {
           : null;
 
       if (monthlyPackage == null) {
+        print('❌ No monthly package found in offerings');
         showZagInfoSnackBar(
           title: 'Error',
           message: 'Monthly subscription not available',
@@ -117,8 +127,16 @@ class RevenueCatService {
 
   Future<void> restorePurchases() async {
     try {
+      print('🔄 RevenueCat: Starting restore...');
       final customerInfo = await Purchases.restorePurchases();
       _customerInfo = customerInfo;
+
+      print('🔍 Entitlements: ${customerInfo.entitlements.all.keys}');
+      print('🔍 Pro entitlement: ${customerInfo.entitlements.all[_entitlementId]}');
+      print('🔍 Is Pro active: ${customerInfo.entitlements.all[_entitlementId]?.isActive}');
+      print('🔍 All active purchases: ${customerInfo.activeSubscriptions}');
+      print('🔍 All purchases: ${customerInfo.allPurchasedProductIdentifiers}');
+
       _updateProStatus();
 
       if (_customerInfo?.entitlements.all[_entitlementId]?.isActive ?? false) {

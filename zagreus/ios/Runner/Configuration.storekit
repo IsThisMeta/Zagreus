@@ -1,0 +1,103 @@
+{
+  "identifier" : "B0EE08C5",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6737178871",
+    "_developerTeamID" : "A72HB5582T",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21591251",
+      "localizations" : [
+
+      ],
+      "name" : "Zagreus Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.79",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6737285719",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock premium features and support development",
+              "displayName" : "Zagreus Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.zagreus.pro.monthly.v2",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Zagreus Pro Monthly",
+          "subscriptionGroupID" : "21591251",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

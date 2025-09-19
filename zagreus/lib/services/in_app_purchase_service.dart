@@ -29,10 +29,13 @@ class InAppPurchaseService {
   };
 
   bool _isAvailable = false;
+  bool _initialized = false;
   List<ProductDetails> _products = [];
   bool _userInitiatedAction = false;
 
   Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
     // Check if IAP is available
     _isAvailable = await _inAppPurchase.isAvailable();
     if (!_isAvailable) {
@@ -95,7 +98,12 @@ class InAppPurchaseService {
   }
 
   Future<bool> purchaseYearly() async {
-    return _purchase(yearlyProductId);
+    // Yearly subscription not yet available
+    showZagInfoSnackBar(
+      title: 'Coming Soon',
+      message: 'Yearly subscriptions will be available soon!',
+    );
+    return false;
   }
 
   Future<bool> _purchase(String productId) async {
@@ -202,9 +210,9 @@ class InAppPurchaseService {
   }
 
   void _deliverProduct(PurchaseDetails purchaseDetails) async {
-    // Determine if monthly or yearly
-    final bool isMonthly = purchaseDetails.productID == monthlyProductId;
+    // Properly detect restore vs purchase
     final bool isRestore = purchaseDetails.status == PurchaseStatus.restored;
+    final bool isMonthly = purchaseDetails.productID == monthlyProductId;
 
     print('🎯 IAP: Delivering product - ${purchaseDetails.productID}');
 
@@ -213,12 +221,16 @@ class InAppPurchaseService {
     if (purchaseDetails is SK2PurchaseDetails) {
       try {
         final transactions = await SK2Transaction.transactions();
-        final matchingTx = transactions.firstWhereOrNull(
-          (tx) => tx.productId == purchaseDetails.productID
-        );
-        if (matchingTx != null && matchingTx.expirationDate != null) {
-          sk2Expiry = _parseDate(matchingTx.expirationDate);
-          print('✨ IAP: Got SK2 expiry date: $sk2Expiry');
+        // Get all matching transactions and sort by purchase date (newest first)
+        final matching = transactions
+          .where((tx) => tx.productId == purchaseDetails.productID)
+          .toList()
+          ..sort((a, b) => (b.purchaseDate ?? '').compareTo(a.purchaseDate ?? ''));
+
+        final latestTx = matching.firstOrNull;
+        if (latestTx != null && latestTx.expirationDate != null) {
+          sk2Expiry = _parseDate(latestTx.expirationDate);
+          print('✨ IAP: Got SK2 expiry date from latest transaction: $sk2Expiry');
         }
       } catch (e) {
         print('⚠️ IAP: Could not fetch SK2 transaction details: $e');
@@ -233,19 +245,20 @@ class InAppPurchaseService {
         productId: purchaseDetails.productID,
       );
     } else {
-      // Otherwise try server validation
-      final validationSuccess = await _validateAndStoreReceipt(purchaseDetails);
-
-      if (!validationSuccess) {
-        print('❌ IAP: Could not validate purchase - no expiry date available');
-        showZagInfoSnackBar(
-          title: 'Validation Failed',
-          message: 'Could not verify subscription. Please try restoring purchases.',
-        );
-        return; // Don't enable Pro without valid expiry
-      } else {
-        print('✅ IAP: Server validation successful - using Apple expiry');
-      }
+      // Fallback for SK1 or when SK2 expiry unavailable
+      // Use short window for TestFlight (15 minutes) to catch issues
+      print('⚠️ IAP: No SK2 expiry - using 15 minute fallback window');
+      showZagInfoSnackBar(
+        title: 'Notice',
+        message: 'Using temporary access - please restore if needed.',
+      );
+      final fallbackExpiry = DateTime.now().toUtc().add(
+        Duration(minutes: 15) // Short window for TestFlight to catch issues
+      );
+      ZagreusPro.applySubscription(
+        expiresAt: fallbackExpiry,
+        productId: purchaseDetails.productID,
+      );
     }
 
     showZagInfoSnackBar(
@@ -433,6 +446,10 @@ class InAppPurchaseService {
     }
     if (value is String && value.isNotEmpty) {
       try {
+        // SK2 dates come without timezone - treat as UTC
+        if (!value.contains('Z') && !value.contains('+')) {
+          value = '${value}Z';
+        }
         return DateTime.parse(value).toUtc();
       } catch (_) {}
     }

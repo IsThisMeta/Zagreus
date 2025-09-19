@@ -7,7 +7,7 @@ import 'package:zagreus/utils/profile_tools.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/modules.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
-import 'package:zagreus/services/in_app_purchase_service.dart';
+import 'package:zagreus/services/revenuecat_service.dart';
 
 class ConfigurationRoute extends StatefulWidget {
   const ConfigurationRoute({
@@ -177,7 +177,7 @@ class _State extends State<ConfigurationRoute> with ZagScrollControllerMixin {
   }
   
   void _mockPurchase(bool isMonthly) async {
-    final iapService = InAppPurchaseService();
+    final iapService = RevenueCatService();
 
     // Check if IAP is available
     if (!iapService.isAvailable) {

@@ -11,7 +11,8 @@ class SettingsResourcesRoute extends StatefulWidget {
   State<SettingsResourcesRoute> createState() => _State();
 }
 
-class _State extends State<SettingsResourcesRoute> with ZagScrollControllerMixin {
+class _State extends State<SettingsResourcesRoute>
+    with ZagScrollControllerMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -52,19 +53,6 @@ class _State extends State<SettingsResourcesRoute> with ZagScrollControllerMixin
           body: [TextSpan(text: 'Source code and issue tracking')],
           trailing: const ZagIconButton(icon: Icons.code_rounded),
           onTap: () => 'https://github.com/isthismeta/zagreus'.openLink(),
-        ),
-        ZagHeader(text: 'Documentation'),
-        ZagBlock(
-          title: 'Wiki',
-          body: [TextSpan(text: 'Setup guides and documentation')],
-          trailing: const ZagIconButton(icon: Icons.menu_book_rounded),
-          onTap: () {
-            // TODO: Add wiki link
-            showZagInfoSnackBar(
-              title: 'Coming Soon',
-              message: 'Documentation coming soon',
-            );
-          },
         ),
       ],
     );

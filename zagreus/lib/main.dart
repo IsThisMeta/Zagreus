@@ -14,7 +14,7 @@ import 'package:zagreus/system/window_manager/window_manager.dart';
 import 'package:zagreus/system/platform.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/modules/services/webhook_sync_service.dart';
-import 'package:zagreus/services/in_app_purchase_service.dart';
+import 'package:zagreus/services/revenuecat_service.dart';
 
 /// Zagreus Entry Point: Bootstrap & Run Application
 ///
@@ -47,26 +47,15 @@ Future<void> bootstrap() async {
   // Initialize Supabase for auth and storage
   if (ZagSupabase.isSupported) {
     await ZagSupabase().initialize();
-    // Sign in anonymously if no user exists
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        print('🔐 No Supabase user found, signing in anonymously...');
-        await Supabase.instance.client.auth.signInAnonymously();
-        print('✅ Anonymous user created: ${Supabase.instance.client.auth.currentUser?.id}');
-      } else {
-        print('✅ Existing Supabase user: ${user.id}');
-      }
-    } catch (e) {
-      print('⚠️ Failed to create anonymous user: $e');
-    }
+    // Skip anonymous auth for now - will use shared backend with Zebrra later
+    // SK2 provides expiry dates directly, so server validation is optional
   }
   ZagRouter().initialize();
   await ZagMemoryStore().initialize();
   // Initialize webhook sync service for 24-hour checks
   WebhookSyncService.initialize();
-  // Initialize in-app purchases for iOS
-  if (ZagPlatform.isIOS) await InAppPurchaseService().initialize();
+  // Initialize RevenueCat for in-app purchases
+  if (ZagPlatform.isIOS) await RevenueCatService().initialize();
 }
 
 class ZagBIOS extends StatefulWidget {

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:zagreus/api/radarr/types.dart';
 
 part 'notification.g.dart';
 

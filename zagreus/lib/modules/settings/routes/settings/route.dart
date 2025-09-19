@@ -11,7 +11,7 @@ import 'package:zagreus/supabase/messaging.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/database/tables/bios.dart';
-import 'package:zagreus/services/in_app_purchase_service.dart';
+import 'package:zagreus/services/revenuecat_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zagreus/modules.dart';
 
@@ -224,36 +224,15 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
             ),
           ),
           if (!isPro) ...[
-            Builder(builder: (context) {
-              final iapService = InAppPurchaseService();
-              final monthlyProduct = iapService.products.firstWhereOrNull(
-                (p) => p.id == InAppPurchaseService.monthlyProductId,
-              );
-
-              if (monthlyProduct == null) {
-                return ZagDialog.tile(
-                  icon: Icons.error_outline,
-                  iconColor: ZagColours.red,
-                  text: 'Monthly (Not loaded - check logs)',
-                  onTap: () {
-                    showZagInfoSnackBar(
-                      title: 'Product Not Loaded',
-                      message: 'Check console logs for details',
-                    );
-                  },
-                );
-              }
-
-              return ZagDialog.tile(
-                icon: Icons.calendar_month_rounded,
-                iconColor: ZagColours.accent,
-                text: 'Monthly • ${monthlyProduct.price}/month',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _purchasePro(true);
-                },
-              );
-            }),
+            ZagDialog.tile(
+              icon: Icons.calendar_month_rounded,
+              iconColor: ZagColours.accent,
+              text: 'Monthly • \$0.79/month',
+              onTap: () {
+                Navigator.of(context).pop();
+                _purchasePro(true);
+              },
+            ),
             // TODO: Enable yearly subscription when available in App Store
             // ZagDialog.tile(
             //   icon: Icons.star_rounded,
@@ -363,7 +342,7 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
   }
 
   void _purchasePro(bool isMonthly) async {
-    final iapService = InAppPurchaseService();
+    final iapService = RevenueCatService();
 
     // Check if IAP is available
     if (!iapService.isAvailable) {
@@ -455,7 +434,7 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
       message: 'Checking for previous purchases...',
     );
 
-    final iapService = InAppPurchaseService();
+    final iapService = RevenueCatService();
     await iapService.restorePurchases();
 
     // Refresh the UI to show updated Pro status

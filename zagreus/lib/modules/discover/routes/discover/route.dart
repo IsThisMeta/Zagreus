@@ -906,7 +906,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       appBar: ZagAppBar(
         title: 'Discover',
         useDrawer: true,
-        actions: _currentPageIndex != 3
+        actions: _currentPageIndex != 2
             ? [
                 Container(
                   margin: const EdgeInsets.only(right: 8),
@@ -934,7 +934,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       children: [
         _moviesPage(),
         _tvShowsPage(),
-        _calendarPage(),
+        // _calendarPage(), // Calendar tab reserved for future release
         _searchPage(),
       ],
     );
@@ -1041,6 +1041,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     );
   }
 
+  /*
   Widget _calendarPage() {
     return Center(
       child: Column(
@@ -1078,6 +1079,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       ),
     );
   }
+  */
 
   // Search state
   final TextEditingController _searchController = TextEditingController();
@@ -4274,14 +4276,14 @@ class _DiscoverNavigationBar extends StatelessWidget {
   static const List<IconData> icons = [
     Icons.movie_rounded,
     Icons.tv_rounded,
-    Icons.calendar_today_rounded,
+    // Icons.calendar_today_rounded, // Calendar tab reserved for future release
     Icons.search_rounded,
   ];
 
   static const List<String> titles = [
     'Movies',
     'TV Shows',
-    'Calendar',
+    // 'Calendar', // Calendar tab reserved for future release
     'Search',
   ];
 

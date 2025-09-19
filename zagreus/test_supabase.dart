@@ -1,4 +1,5 @@
 // Quick test script to verify Supabase connection
+// ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:zagreus/supabase/core.dart';
 import 'package:zagreus/config/supabase_config.dart';
@@ -11,19 +12,18 @@ void main() async {
   print('Key: ${SupabaseConfig.anonKey.substring(0, 20)}...');
   
   try {
-    await LunaSupabase().initialize();
+    await ZagSupabase().initialize();
     print('✅ Supabase initialized successfully!');
     
     // Test auth
-    final client = LunaSupabase.client;
+    final client = ZagSupabase.client;
     print('✅ Client created');
-    
+
     // Test if we can reach Supabase
-    final response = await client.auth.signInWithPassword(
-      email: 'test@example.com', 
-      password: 'wrongpassword'
+    await client.auth.signInWithPassword(
+      email: 'test@example.com',
+      password: 'wrongpassword',
     );
-    
   } catch (e) {
     if (e.toString().contains('Invalid login')) {
       print('✅ Supabase is responding correctly (auth working)');

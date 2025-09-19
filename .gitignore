@@ -17,3 +17,5 @@ zagreus/lib/services/in_app_purchase_service.dart
 AuthKey_*.p8
 zagreus-notification-service/Dockerfile
 zagreus-notification-service/apns.go
+zagreus-notification-service/apns.go
+zagreus-notification-service/Dockerfile

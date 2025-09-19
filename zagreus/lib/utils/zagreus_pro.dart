@@ -4,9 +4,8 @@ import 'package:zagreus/modules.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ZagreusPro {
-  // Shortened for testing - normally Duration(days: 1) and Duration(days: 7)
-  static const Duration _fallbackMonthlyDuration = Duration(minutes: 1);
-  static const Duration _fallbackYearlyDuration = Duration(minutes: 1);
+  static const Duration _fallbackMonthlyDuration = Duration(days: 1);
+  static const Duration _fallbackYearlyDuration = Duration(days: 7);
 
   static bool? _cachedProStatus;
   static DateTime? _cacheExpiry;

@@ -44,7 +44,22 @@ Future<void> bootstrap() async {
   if (ZagNetwork.isSupported) ZagNetwork().initialize();
   if (ZagImageCache.isSupported) ZagImageCache().initialize();
   // Initialize Supabase for auth and storage
-  if (ZagSupabase.isSupported) await ZagSupabase().initialize();
+  if (ZagSupabase.isSupported) {
+    await ZagSupabase().initialize();
+    // Sign in anonymously if no user exists
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        print('🔐 No Supabase user found, signing in anonymously...');
+        await Supabase.instance.client.auth.signInAnonymously();
+        print('✅ Anonymous user created: ${Supabase.instance.client.auth.currentUser?.id}');
+      } else {
+        print('✅ Existing Supabase user: ${user.id}');
+      }
+    } catch (e) {
+      print('⚠️ Failed to create anonymous user: $e');
+    }
+  }
   ZagRouter().initialize();
   await ZagMemoryStore().initialize();
   // Initialize webhook sync service for 24-hour checks

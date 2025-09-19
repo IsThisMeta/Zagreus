@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
@@ -71,6 +73,18 @@ class InAppPurchaseService {
       }
 
       _products = response.productDetails;
+
+      // Log StoreKit 2 subscription info if available
+      for (final product in _products) {
+        if (product is AppStoreProduct2Details) {
+          print('🔍 SK2 Product: ${product.id}');
+          final subscription = product.sk2Product.subscription;
+          if (subscription != null) {
+            print('  Subscription period: ${subscription.subscriptionPeriod}');
+            print('  Promotional offers: ${subscription.promotionalOffers?.length ?? 0}');
+          }
+        }
+      }
     } catch (e, stack) {
       ZagLogger().error('Failed to load products', e, stack);
     }
@@ -126,12 +140,37 @@ class InAppPurchaseService {
     }
   }
 
-  void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+  void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) async {
     print(
         '>>> Purchase update: ${purchaseDetailsList.length} items, userInitiated=$_userInitiatedAction');
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
       print(
           '  Status: ${purchaseDetails.status}, ProductID: ${purchaseDetails.productID}');
+
+      // Check if we have SK2 purchase details
+      if (purchaseDetails is SK2PurchaseDetails) {
+        print('  🎯 SK2 Purchase Details detected!');
+        print('    Transaction date: ${purchaseDetails.transactionDate}');
+
+        // Try to get expiration date from SK2 transactions
+        try {
+          final transactions = await SK2Transaction.transactions();
+          final matchingTx = transactions.firstWhereOrNull(
+            (tx) => tx.productId == purchaseDetails.productID
+          );
+          if (matchingTx != null && matchingTx.expirationDate != null) {
+            print('  ✨ SK2 Expiration date: ${matchingTx.expirationDate}');
+          }
+        } catch (e) {
+          print('  ⚠️ Could not fetch SK2 transaction details: $e');
+        }
+      } else if (purchaseDetails is AppStorePurchaseDetails) {
+        print('  📦 AppStore (SK1) Purchase Details');
+        final transaction = purchaseDetails.skPaymentTransaction;
+        print('    Transaction ID: ${transaction.transactionIdentifier}');
+        print('    Transaction date: ${transaction.transactionTimeStamp}');
+      }
+
       if (purchaseDetails.status == PurchaseStatus.pending) {
         showZagInfoSnackBar(
           title: 'Processing',
@@ -169,20 +208,44 @@ class InAppPurchaseService {
 
     print('🎯 IAP: Delivering product - ${purchaseDetails.productID}');
 
-    // Validate receipt with server first to get real expiry date
-    final validationSuccess = await _validateAndStoreReceipt(purchaseDetails);
+    // Try to get expiry from SK2 directly first
+    DateTime? sk2Expiry;
+    if (purchaseDetails is SK2PurchaseDetails) {
+      try {
+        final transactions = await SK2Transaction.transactions();
+        final matchingTx = transactions.firstWhereOrNull(
+          (tx) => tx.productId == purchaseDetails.productID
+        );
+        if (matchingTx != null && matchingTx.expirationDate != null) {
+          sk2Expiry = _parseDate(matchingTx.expirationDate);
+          print('✨ IAP: Got SK2 expiry date: $sk2Expiry');
+        }
+      } catch (e) {
+        print('⚠️ IAP: Could not fetch SK2 transaction details: $e');
+      }
+    }
 
-    // Only enable Pro locally if we didn't get server validation
-    // (Server validation already sets the expiry correctly)
-    if (!validationSuccess) {
-      print('⚠️ IAP: Server validation failed - using fallback (1 day for testing)');
-      // Fallback: enable with estimated expiry window
-      ZagreusPro.enablePro(
-        isMonthly: isMonthly,
+    // If we got SK2 expiry, use it directly
+    if (sk2Expiry != null) {
+      print('🎯 IAP: Using SK2 expiry date directly: $sk2Expiry');
+      ZagreusPro.applySubscription(
+        expiresAt: sk2Expiry,
         productId: purchaseDetails.productID,
       );
     } else {
-      print('✅ IAP: Server validation successful - using Apple expiry');
+      // Otherwise try server validation
+      final validationSuccess = await _validateAndStoreReceipt(purchaseDetails);
+
+      if (!validationSuccess) {
+        print('❌ IAP: Could not validate purchase - no expiry date available');
+        showZagInfoSnackBar(
+          title: 'Validation Failed',
+          message: 'Could not verify subscription. Please try restoring purchases.',
+        );
+        return; // Don't enable Pro without valid expiry
+      } else {
+        print('✅ IAP: Server validation successful - using Apple expiry');
+      }
     }
 
     showZagInfoSnackBar(

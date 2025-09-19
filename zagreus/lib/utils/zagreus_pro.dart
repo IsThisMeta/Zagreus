@@ -4,8 +4,6 @@ import 'package:zagreus/modules.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ZagreusPro {
-  static const Duration _fallbackMonthlyDuration = Duration(days: 1);
-  static const Duration _fallbackYearlyDuration = Duration(days: 7);
 
   static bool? _cachedProStatus;
   static DateTime? _cacheExpiry;
@@ -122,23 +120,6 @@ class ZagreusPro {
     _setProBootModule();
   }
 
-  /// Fallback helper when the app cannot reach the backend.
-  /// Provides a temporary expiry so the user retains access until we can revalidate.
-  static void enablePro({
-    required bool isMonthly,
-    String? productId,
-    Duration? fallbackDuration,
-  }) {
-    final duration = fallbackDuration ??
-        (isMonthly ? _fallbackMonthlyDuration : _fallbackYearlyDuration);
-    final fallbackProductId =
-        productId ?? (isMonthly ? 'fallback-monthly' : 'fallback-yearly');
-
-    applySubscription(
-      expiresAt: DateTime.now().toUtc().add(duration),
-      productId: fallbackProductId,
-    );
-  }
 
   static void disable() {
     _disablePro();

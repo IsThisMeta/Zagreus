@@ -67,6 +67,10 @@ class RevenueCatService {
           expiresAt: expiry,
           productId: 'revenuecat_pro',
         );
+      } else {
+        // Active but no expiration date - this shouldn't happen for subscriptions
+        print('⚠️ RevenueCat: Pro marked active but no expiration date');
+        ZagreusPro.disable();
       }
     } else {
       print('📵 RevenueCat: Pro not active - entitlements: ${_customerInfo?.entitlements.all}');

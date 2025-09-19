@@ -150,7 +150,11 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
     try {
       final user = ZagSupabase.client.auth.currentUser;
       if (user != null) {
-        await ZagSupabaseMessaging.instance.registerDeviceToken();
+        ZagLogger().debug('User authenticated, registering device token for user: ${user.id}');
+        final success = await ZagSupabaseMessaging.instance.registerDeviceToken();
+        ZagLogger().debug('Device token registration result: $success');
+      } else {
+        ZagLogger().warning('No authenticated user, cannot register device token');
       }
     } catch (e, stackTrace) {
       ZagLogger().error('Failed to register device token', e, stackTrace);
@@ -263,7 +267,9 @@ class _State extends State<NotificationsRoute> with ZagScrollControllerMixin {
                       });
 
                       // Register device token when notifications are enabled
-                      await _registerDeviceTokenIfNeeded();
+                      ZagLogger().debug('Attempting to register device token...');
+                      final registered = await _registerDeviceTokenIfNeeded();
+                      ZagLogger().debug('Device registration complete');
                     } catch (e) {
                       ZagLogger()
                           .error('Failed to request permissions', e, null);

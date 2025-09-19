@@ -58,6 +58,7 @@ class RadarrWebhookManager {
       // Encode the user ID in base64
       final payload = base64.encode(utf8.encode(userToken));
       final webhookUrl = 'https://zagreus-notifications.fly.dev/v1/notifications/webhook/$payload';
+      ZagLogger().debug('Webhook URL: $webhookUrl');
       
       // Create simple fields (just name and value)
       final simpleFields = [
@@ -114,7 +115,17 @@ class RadarrWebhookManager {
       // Extract error details from Radarr's response
       String errorMsg = 'Webhook sync failed: ';
       if (e.response?.data != null) {
-        if (e.response!.data is Map) {
+        if (e.response!.data is List) {
+          // Handle validation error array
+          final errors = e.response!.data as List;
+          final errorMessages = errors.map((e) {
+            if (e is Map) {
+              return e['errorMessage'] ?? e['propertyName'] ?? e.toString();
+            }
+            return e.toString();
+          }).join(', ');
+          errorMsg += errorMessages;
+        } else if (e.response!.data is Map) {
           // Try to get error message from response
           final data = e.response!.data as Map;
           if (data['message'] != null) {

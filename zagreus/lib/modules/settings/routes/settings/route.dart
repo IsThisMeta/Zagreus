@@ -175,7 +175,7 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
         TextSpan(
             text: isPro
                 ? 'Active • Monthly subscription'
-                : 'Unlock premium features • \$0.79/mo')
+                : 'Unlock premium features')
       ],
       trailing: GestureDetector(
         onLongPressStart: (_) {
@@ -206,63 +206,21 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
             child: Text(
               isPro
                   ? 'You have an active ${ZagreusPro.subscriptionType} subscription.\n\n'
-                      'Premium features unlocked:\n'
-                      '• Discover module with trending content\n'
-                      '• Recommended movies & shows\n'
-                      '• Missing from collections\n\n'
                       'Thank you for supporting Zagreus!'
-                  : 'Unlock premium features and support Zagreus development!\n\n'
-                      'Premium features:\n'
-                      '• Beautiful movie & TV discovery\n'
-                      '• Trending & popular content\n'
-                      '• Recommended based on your library\n'
-                      '• Missing movies from collections\n\n'
-                      'Start your 7-day free trial:',
+                  : 'Unlock the Discover module and support continued development!',
               style: const TextStyle(
                 fontSize: ZagUI.FONT_SIZE_H2,
               ),
             ),
           ),
           if (!isPro) ...[
-            // Free trial badge
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: ZagColours.accent.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: ZagColours.accent.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.celebration_rounded,
-                    size: 16,
-                    color: ZagColours.accent,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '7-Day Free Trial',
-                    style: TextStyle(
-                      color: ZagColours.accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             ZagDialog.tile(
               icon: Icons.calendar_month_rounded,
               iconColor: ZagColours.accent,
               text: 'Monthly • \$0.79/month',
               subtitle: RichText(
                 text: TextSpan(
-                  text: 'Start with 7-day free trial',
+                  text: '7-day free trial',
                   style: TextStyle(
                     color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
                     fontSize: 14,

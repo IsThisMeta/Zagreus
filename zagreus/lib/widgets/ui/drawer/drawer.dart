@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zagreus/core.dart';
 import 'package:zagreus/api/wake_on_lan/wake_on_lan.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
+import 'package:zagreus/database/tables/zagreus.dart';
 
 class ZagDrawer extends StatelessWidget {
   final String page;
@@ -78,8 +79,10 @@ class ZagDrawer extends StatelessWidget {
     return <Widget>[
       ..._sharedHeader(context),
       ...modules.map((module) {
-        // Hide Discover module if not Pro
-        if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
+        // Hide Discover module if not Pro and TestFlight bypass not enabled
+        if (module == ZagModule.DISCOVER &&
+            !ZagreusPro.isEnabled &&
+            !ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read()) {
           return const SizedBox(height: 0.0);
         }
         

@@ -37,7 +37,8 @@ enum ZagreusDatabase<T> with ZagTableMixin<T> {
   ZAGREUS_PRO_EXPIRY<String>(''),
   ZAGREUS_PRO_SUBSCRIPTION_TYPE<String>(''),
   LAST_SUBSCRIPTION_VERIFY<String>(''),
-  USER_BOOT_MODULE<String>('dashboard');
+  USER_BOOT_MODULE<String>('dashboard'),
+  TESTFLIGHT_BYPASS_PRO<bool>(false);
 
   @override
   ZagTable get table => ZagTable.zagreus;

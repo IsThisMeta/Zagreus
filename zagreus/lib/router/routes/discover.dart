@@ -4,6 +4,7 @@ import 'package:zagreus/modules/discover.dart';
 import 'package:zagreus/router/routes.dart';
 import 'package:zagreus/vendor.dart';
 import 'package:zagreus/utils/zagreus_pro.dart';
+import 'package:zagreus/database/tables/zagreus.dart';
 
 enum DiscoverRoutes with ZagRoutesMixin {
   HOME('/discover'),
@@ -22,7 +23,8 @@ enum DiscoverRoutes with ZagRoutesMixin {
   ZagModule get module => ZagModule.DISCOVER;
 
   @override
-  bool isModuleEnabled(BuildContext context) => ZagreusPro.isEnabled;
+  bool isModuleEnabled(BuildContext context) =>
+      ZagreusPro.isEnabled || ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read();
 
   @override
   GoRoute get routes {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -115,15 +116,17 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
         ZagDivider(),
         _buildProButton(),
         _buildBootModuleToggle(),
+        if (_isTestFlight()) _buildTestFlightBypass(),
       ],
     );
   }
 
   Widget _buildBootModuleToggle() {
     final bool isPro = ZagreusPro.isEnabled;
+    final bool testFlightBypass = ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read();
 
-    // Only show if user has Pro
-    if (!isPro) return const SizedBox.shrink();
+    // Show if user has Pro OR TestFlight bypass is enabled
+    if (!isPro && !testFlightBypass) return const SizedBox.shrink();
 
     return BIOSDatabase.BOOT_MODULE.listenableBuilder(builder: (context, _) {
       final currentModule = BIOSDatabase.BOOT_MODULE.read();
@@ -484,5 +487,47 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
         ],
       ),
     );
+  }
+
+  bool _isTestFlight() {
+    // Check if running in TestFlight by looking for sandbox receipt
+    // In production builds, the receipt is at /StoreKit/receipt
+    // In TestFlight, it's at /StoreKit/sandboxReceipt
+    return !const bool.fromEnvironment('dart.vm.product') ||
+           Platform.isIOS; // For now, show on iOS to allow TestFlight users to enable it
+  }
+
+  Widget _buildTestFlightBypass() {
+    return StatefulBuilder(builder: (context, setState) {
+      final bool bypassEnabled = ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read();
+
+      return ZagBlock(
+        title: 'TestFlight Bypass',
+        body: [
+          TextSpan(
+            text: 'Allow free access to Discover module for TestFlight testers',
+          )
+        ],
+        trailing: ZagSwitch(
+          value: bypassEnabled,
+          onChanged: (value) {
+            ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.update(value);
+            setState(() {});
+
+            // If enabling bypass and not Pro, switch to Discover
+            if (value && !ZagreusPro.isEnabled) {
+              BIOSDatabase.BOOT_MODULE.update(ZagModule.DISCOVER);
+            }
+
+            showZagInfoSnackBar(
+              title: value ? 'Bypass Enabled' : 'Bypass Disabled',
+              message: value
+                ? 'TestFlight users can now access Discover module'
+                : 'Normal Pro restrictions apply',
+            );
+          },
+        ),
+      );
+    });
   }
 }

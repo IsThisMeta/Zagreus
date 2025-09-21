@@ -87,12 +87,6 @@ enum ZagreusDatabase<T> with ZagTableMixin<T> {
         });
         result = item;
         break;
-      // Skip Pro-related settings during import - these should be managed by RevenueCat
-      case ZagreusDatabase.ZAGREUS_PRO_ENABLED:
-      case ZagreusDatabase.ZAGREUS_PRO_EXPIRY:
-      case ZagreusDatabase.ZAGREUS_PRO_SUBSCRIPTION_TYPE:
-      case ZagreusDatabase.LAST_SUBSCRIPTION_VERIFY:
-        return; // Don't import these values
       default:
         result = value;
         break;

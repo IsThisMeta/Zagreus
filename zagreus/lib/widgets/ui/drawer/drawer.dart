@@ -20,13 +20,16 @@ class ZagDrawer extends StatelessWidget {
   static List<ZagModule> moduleOrderedList() {
     try {
       const db = ZagreusDatabase.DRAWER_MANUAL_ORDER;
-      final modules = List.from(db.read());
+      final storedModules = db.read();
+      print('[DEBUG] moduleOrderedList - stored modules: $storedModules');
+      final modules = List.from(storedModules);
       final missing = ZagModule.active;
 
       missing.retainWhere((m) => !modules.contains(m));
       modules.addAll(missing);
       modules.retainWhere((m) => (m as ZagModule).featureFlag);
 
+      print('[DEBUG] moduleOrderedList - final modules: ${modules.map((m) => (m as ZagModule).key).toList()}');
       return modules.cast<ZagModule>();
     } catch (error, stack) {
       ZagLogger().error('Failed to create ordered module list', error, stack);
@@ -50,9 +53,17 @@ class ZagDrawer extends StatelessWidget {
                     controller: PrimaryScrollController.of(context),
                     children: _moduleList(
                       context,
-                      ZagreusDatabase.DRAWER_AUTOMATIC_MANAGE.read()
-                          ? moduleAlphabeticalList()
-                          : moduleOrderedList(),
+                      () {
+                        final autoManage = ZagreusDatabase.DRAWER_AUTOMATIC_MANAGE.read();
+                        print('[DEBUG] Drawer - DRAWER_AUTOMATIC_MANAGE: $autoManage');
+                        if (autoManage) {
+                          print('[DEBUG] Using alphabetical list');
+                          return moduleAlphabeticalList();
+                        } else {
+                          print('[DEBUG] Using manual ordered list');
+                          return moduleOrderedList();
+                        }
+                      }(),
                     ),
                     physics: const ClampingScrollPhysics(),
                     padding: MediaQuery.of(context).padding.copyWith(top: 0),

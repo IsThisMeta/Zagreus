@@ -80,18 +80,25 @@ enum ZagreusDatabase<T> with ZagTableMixin<T> {
 
     switch (db) {
       case ZagreusDatabase.DRAWER_MANUAL_ORDER:
+        print('[DEBUG] Importing DRAWER_MANUAL_ORDER: $value');
         List<ZagModule> item = [];
         (value as List).cast<String>().forEach((val) {
           ZagModule? module = ZagModule.fromKey(val);
           if (module != null) item.add(module);
         });
         result = item;
+        print('[DEBUG] Converted to modules: ${item.map((m) => m.key).toList()}');
+        break;
+      case ZagreusDatabase.DRAWER_AUTOMATIC_MANAGE:
+        print('[DEBUG] Importing DRAWER_AUTOMATIC_MANAGE: $value');
+        result = value;
         break;
       default:
         result = value;
         break;
     }
 
+    print('[DEBUG] About to call super.import for ${db.name} with value: $result');
     return super.import(result);
   }
 }

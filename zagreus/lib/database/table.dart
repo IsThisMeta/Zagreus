@@ -59,9 +59,32 @@ enum ZagTable<T extends ZagTableMixin> {
 
   void import(Map<String, dynamic>? table) {
     if (table == null || table.isEmpty) return;
+
+    // Get the expected prefix for this table
+    final expectedPrefix = '${this.key.toUpperCase()}_';
+
     for (final key in table.keys) {
-      final db = _itemFromKey(key);
-      db?.import(table[key]);
+      String normalizedKey = key;
+
+      // If this is a LunaSea backup (LUNASEA_ prefix) and we're the zagreus table,
+      // replace LUNASEA_ with ZAGREUS_
+      if (key.startsWith('LUNASEA_') && this.key == 'zagreus') {
+        normalizedKey = key.replaceFirst('LUNASEA_', 'ZAGREUS_');
+        print('[DEBUG] Replacing LUNASEA_ with ZAGREUS_: $key -> $normalizedKey');
+      }
+      // For other tables, ensure the key has the correct prefix
+      else if (!key.startsWith(expectedPrefix)) {
+        normalizedKey = '$expectedPrefix$key';
+        print('[DEBUG] Adding expected prefix: $key -> $normalizedKey');
+      }
+
+      final db = _itemFromKey(normalizedKey);
+      if (db != null) {
+        print('[DEBUG] Importing $normalizedKey with value: ${table[key]}');
+        db.import(table[key]);
+      } else {
+        print('[DEBUG] No database item found for key: $normalizedKey');
+      }
     }
   }
 }

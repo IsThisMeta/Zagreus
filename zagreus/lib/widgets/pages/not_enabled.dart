@@ -14,7 +14,11 @@ class NotEnabledPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ZagScaffold(
       scaffoldKey: _scaffoldKey,
-      appBar: ZagAppBar(title: module),
+      drawer: ZagDrawer(page: module),
+      appBar: ZagAppBar(
+        title: module,
+        useDrawer: true,
+      ),
       body: ZagMessage.moduleNotEnabled(
         context: context,
         module: module,

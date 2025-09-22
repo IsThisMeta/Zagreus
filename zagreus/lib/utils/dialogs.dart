@@ -29,7 +29,7 @@ class ZagDialogs {
       title: dialogTitle,
       buttons: [
         ZagDialog.button(
-          text: 'zagreus.Set'.tr(),
+          text: 'Save',
           onPressed: () => _setValues(true),
         ),
       ],

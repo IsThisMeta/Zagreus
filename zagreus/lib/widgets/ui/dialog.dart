@@ -53,20 +53,18 @@ abstract class ZagDialog {
     required void Function() onPressed,
     Color? textColor,
   }) =>
-      Builder(
-        builder: (context) => TextButton(
-          child: Text(
-            text,
-            style: TextStyle(
-              color: textColor ?? ZagColours.accentColor(context),
-              fontSize: ZagDialog.BUTTON_SIZE,
-            ),
+      TextButton(
+        child: Text(
+          text,
+          style: TextStyle(
+            color: textColor ?? ZagColours.accent,
+            fontSize: ZagDialog.BUTTON_SIZE,
           ),
-          onPressed: () async {
-            HapticFeedback.lightImpact();
-            onPressed();
-          },
         ),
+        onPressed: () async {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
       );
 
   static Widget cancel(

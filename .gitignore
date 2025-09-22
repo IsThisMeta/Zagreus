@@ -23,3 +23,4 @@ zagreus-notification-service/apns.go
 zagreus-notification-service/Dockerfile
 zagreus-notification-service/Dockerfile
 zagreus-notification-service/apns.go
+zagreus/lib/modules/settings/core/dialogs.dart

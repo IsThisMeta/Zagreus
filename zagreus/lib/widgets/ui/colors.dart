@@ -16,10 +16,10 @@ class ZagColours {
 
   /// Core accent colour
   static const Color accent = Color(0xFF236969);
-  
-  /// Dark mode accent colour
-  static const Color accentDark = Color(0xFF236969);
-  
+
+  /// Dark mode accent colour - using brighter color for better visibility
+  static const Color accentDark = Color(0xFF5AD2BE);
+
   /// Light mode accent colour
   static const Color accentLight = Color(0xFF5AD2BE);
   

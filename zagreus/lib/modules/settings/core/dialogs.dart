@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:wake_on_lan/wake_on_lan.dart';
+import 'package:zagreus/database/box.dart';
+import 'package:zagreus/database/models/profile.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/modules.dart';
 import 'package:zagreus/modules/dashboard/core/adapters/calendar_starting_day.dart';
@@ -11,6 +13,7 @@ import 'package:zagreus/system/state.dart';
 import 'package:zagreus/utils/validator.dart';
 import 'package:zagreus/vendor.dart';
 import 'package:zagreus/widgets/ui.dart';
+import 'package:zagreus/core.dart';
 import 'package:zagreus/supabase/types.dart';
 
 class SettingsDialogs {
@@ -1321,6 +1324,115 @@ class SettingsDialogs {
       title: 'settings.AccountHelp'.tr(),
       content: [ZagDialog.textContent(text: 'settings.AccountHelpHint1'.tr())],
       contentPadding: ZagDialog.textDialogContentPadding(),
+      buttons: [
+        ZagDialog.button(
+          text: 'Review Demo',
+          onPressed: () {
+            Navigator.of(context).pop();
+            _showDemoPasswordDialog(context);
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showDemoPasswordDialog(BuildContext context) async {
+    final TextEditingController passwordController = TextEditingController();
+
+    await ZagDialog.dialog(
+      context: context,
+      title: 'Demo Configuration',
+      content: [
+        ZagDialog.textContent(text: 'Enter password to load demo configuration:'),
+        ZagDialog.textFormInput(
+          controller: passwordController,
+          title: 'Password',
+          obscureText: true,
+          onSubmitted: (_) {},
+          validator: null,
+        ),
+      ],
+      contentPadding: ZagDialog.inputTextDialogContentPadding(),
+      buttons: [
+        ZagDialog.button(
+          text: 'Cancel',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        ZagDialog.button(
+          text: 'Load Demo',
+          onPressed: () async {
+            if (passwordController.text == 'Review2025') {
+              Navigator.of(context).pop();
+              await _setupDemoConfiguration(context);
+            } else {
+              Navigator.of(context).pop();
+              showZagErrorSnackBar(
+                title: 'Invalid Password',
+                message: 'Please check the password and try again',
+              );
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _setupDemoConfiguration(BuildContext context) async {
+    // Import required classes
+    final profile = ZagProfile(
+      // Lidarr
+      lidarrEnabled: true,
+      lidarrHost: 'YOUR_LIDARR_HOST', // You'll provide this
+      lidarrKey: 'YOUR_LIDARR_KEY', // You'll provide this
+      lidarrHeaders: {},
+
+      // NZBGet
+      nzbgetEnabled: true,
+      nzbgetHost: 'YOUR_NZBGET_HOST', // You'll provide this
+      nzbgetUser: 'YOUR_NZBGET_USER', // You'll provide this
+      nzbgetPass: 'YOUR_NZBGET_PASS', // You'll provide this
+      nzbgetHeaders: {},
+
+      // Radarr
+      radarrEnabled: true,
+      radarrHost: 'YOUR_RADARR_HOST', // You'll provide this
+      radarrKey: 'YOUR_RADARR_KEY', // You'll provide this
+      radarrHeaders: {},
+
+      // SABnzbd
+      sabnzbdEnabled: true,
+      sabnzbdHost: 'YOUR_SABNZBD_HOST', // You'll provide this
+      sabnzbdKey: 'YOUR_SABNZBD_KEY', // You'll provide this
+      sabnzbdHeaders: {},
+
+      // Sonarr
+      sonarrEnabled: true,
+      sonarrHost: 'YOUR_SONARR_HOST', // You'll provide this
+      sonarrKey: 'YOUR_SONARR_KEY', // You'll provide this
+      sonarrHeaders: {},
+
+      // Tautulli
+      tautulliEnabled: true,
+      tautulliHost: 'YOUR_TAUTULLI_HOST', // You'll provide this
+      tautulliKey: 'YOUR_TAUTULLI_KEY', // You'll provide this
+      tautulliHeaders: {},
+
+      // Overseerr (if needed)
+      overseerrEnabled: false,
+      overseerrHost: '',
+      overseerrKey: '',
+      overseerrHeaders: {},
+    );
+
+    // Save the profile
+    await ZagBox.profiles.update(ZagProfile.DEFAULT_PROFILE, profile);
+
+    // Set as active profile
+    ZagreusDatabase.ENABLED_PROFILE.update(ZagProfile.DEFAULT_PROFILE);
+
+    showZagSuccessSnackBar(
+      title: 'Demo Configuration Loaded',
+      message: 'All modules have been configured',
     );
   }
 

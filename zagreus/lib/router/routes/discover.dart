@@ -23,8 +23,7 @@ enum DiscoverRoutes with ZagRoutesMixin {
   ZagModule get module => ZagModule.DISCOVER;
 
   @override
-  bool isModuleEnabled(BuildContext context) =>
-      ZagreusPro.isEnabled || ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read();
+  bool isModuleEnabled(BuildContext context) => ZagreusPro.isEnabled;
 
   @override
   GoRoute get routes {

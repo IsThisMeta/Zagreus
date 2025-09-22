@@ -53,10 +53,8 @@ class _State extends State<ModulesPage> with AutomaticKeepAliveClientMixin {
             b.title.toLowerCase(),
           ))
       ..forEach((module) {
-        // Skip Discover if not Pro and TestFlight bypass not enabled
-        if (module == ZagModule.DISCOVER &&
-            !ZagreusPro.isEnabled &&
-            !ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read()) {
+        // Skip Discover if not Pro
+        if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
           return;
         }
         
@@ -77,10 +75,8 @@ class _State extends State<ModulesPage> with AutomaticKeepAliveClientMixin {
     List<Widget> modules = [];
     int index = 0;
     ZagDrawer.moduleOrderedList().forEach((module) {
-      // Skip Discover if not Pro and TestFlight bypass not enabled
-      if (module == ZagModule.DISCOVER &&
-          !ZagreusPro.isEnabled &&
-          !ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read()) {
+      // Skip Discover if not Pro
+      if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
         return;
       }
       

@@ -90,10 +90,8 @@ class ZagDrawer extends StatelessWidget {
     return <Widget>[
       ..._sharedHeader(context),
       ...modules.map((module) {
-        // Hide Discover module if not Pro and TestFlight bypass not enabled
-        if (module == ZagModule.DISCOVER &&
-            !ZagreusPro.isEnabled &&
-            !ZagreusDatabase.TESTFLIGHT_BYPASS_PRO.read()) {
+        // Hide Discover module if not Pro
+        if (module == ZagModule.DISCOVER && !ZagreusPro.isEnabled) {
           return const SizedBox(height: 0.0);
         }
         

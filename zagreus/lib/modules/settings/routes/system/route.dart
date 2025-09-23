@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'package:zagreus/core.dart';
 import 'package:zagreus/database/database.dart';
+import 'package:zagreus/database/models/external_module.dart';
+import 'package:zagreus/database/tables/zagreus.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/modules/settings/routes/system/widgets/backup_tile.dart';
 import 'package:zagreus/modules/settings/routes/system/widgets/restore_tile.dart';
 import 'package:zagreus/router/routes/settings.dart';
+import 'package:zagreus/router/routes/dashboard.dart';
+import 'package:zagreus/supabase/demo_config.dart';
 import 'package:zagreus/system/cache/image/image_cache.dart';
 
 class SystemRoute extends StatefulWidget {
@@ -46,6 +50,8 @@ class _State extends State<SystemRoute> with ZagScrollControllerMixin {
         _logs(),
         _clearImageCache(),
         _clearConfiguration(),
+        ZagDivider(),
+        _buildDemoButton(),
       ],
     );
   }
@@ -101,5 +107,121 @@ class _State extends State<SystemRoute> with ZagScrollControllerMixin {
         }
       },
     );
+  }
+
+  Widget _buildDemoButton() {
+    return ZagBlock(
+      title: 'Review Demo',
+      body: [],
+      trailing: ZagIconButton(
+        icon: Icons.play_circle_outline_rounded,
+        color: ZagColours.orange,
+      ),
+      onTap: () => _loadDemoConfiguration(context),
+    );
+  }
+
+  Future<void> _loadDemoConfiguration(BuildContext context) async {
+    showZagInfoSnackBar(
+      title: 'Loading Demo Configuration',
+      message: 'Checking demo availability...',
+    );
+
+    // Check Supabase for demo config
+    final demoConfig = await ZagDemoConfig.fetchDemoConfig();
+
+    if (demoConfig == null || demoConfig['enabled'] != true) {
+      showZagErrorSnackBar(
+        title: 'Demo Unavailable',
+        message: 'Demo configuration is not available at this time',
+      );
+      return;
+    }
+
+    // Build profile from Supabase data or use defaults
+    final profile = ZagProfile(
+      // Lidarr
+      lidarrEnabled: demoConfig['lidarr_enabled'] ?? false,
+      lidarrHost: demoConfig['lidarr_host'] ?? '',
+      lidarrKey: demoConfig['lidarr_key'] ?? '',
+      lidarrHeaders: {},
+
+      // NZBGet
+      nzbgetEnabled: demoConfig['nzbget_enabled'] ?? false,
+      nzbgetHost: demoConfig['nzbget_host'] ?? '',
+      nzbgetUser: demoConfig['nzbget_user'] ?? '',
+      nzbgetPass: demoConfig['nzbget_pass'] ?? '',
+      nzbgetHeaders: {},
+
+      // Radarr
+      radarrEnabled: demoConfig['radarr_enabled'] ?? false,
+      radarrHost: demoConfig['radarr_host'] ?? '',
+      radarrKey: demoConfig['radarr_key'] ?? '',
+      radarrHeaders: {},
+
+      // SABnzbd
+      sabnzbdEnabled: demoConfig['sabnzbd_enabled'] ?? false,
+      sabnzbdHost: demoConfig['sabnzbd_host'] ?? '',
+      sabnzbdKey: demoConfig['sabnzbd_key'] ?? '',
+      sabnzbdHeaders: {},
+
+      // Sonarr
+      sonarrEnabled: demoConfig['sonarr_enabled'] ?? false,
+      sonarrHost: demoConfig['sonarr_host'] ?? '',
+      sonarrKey: demoConfig['sonarr_key'] ?? '',
+      sonarrHeaders: {},
+
+      // Tautulli
+      tautulliEnabled: demoConfig['tautulli_enabled'] ?? false,
+      tautulliHost: demoConfig['tautulli_host'] ?? '',
+      tautulliKey: demoConfig['tautulli_key'] ?? '',
+      tautulliHeaders: {},
+
+      // Overseerr
+      overseerrEnabled: false,
+      overseerrHost: '',
+      overseerrKey: '',
+      overseerrHeaders: {},
+    );
+
+    // Save the profile with Radarr and Sonarr initially disabled (workaround)
+    profile.radarrEnabled = false;
+    profile.sonarrEnabled = false;
+    await ZagBox.profiles.update(ZagProfile.DEFAULT_PROFILE, profile);
+
+    // Now re-enable Radarr and Sonarr to fix the bug
+    profile.radarrEnabled = true;
+    profile.sonarrEnabled = true;
+    await ZagBox.profiles.update(ZagProfile.DEFAULT_PROFILE, profile);
+
+    // External module demo entry (from Supabase)
+    if (demoConfig['external_module_enabled'] == true) {
+      final externalModuleKeys = List.of(ZagBox.externalModules.keys);
+      for (final key in externalModuleKeys) {
+        await ZagBox.externalModules.delete(key);
+      }
+
+      final moduleName = demoConfig['external_module_name'] ?? 'Test';
+      final moduleHost = demoConfig['external_module_host'] ?? 'https://zagreus.app';
+
+      await ZagBox.externalModules.update(
+        0,
+        ZagExternalModule(
+          displayName: moduleName,
+          host: moduleHost,
+        ),
+      );
+    }
+
+    // Set as active profile
+    ZagreusDatabase.ENABLED_PROFILE.update(ZagProfile.DEFAULT_PROFILE);
+
+    showZagSuccessSnackBar(
+      title: 'Demo Configuration Loaded',
+      message: 'All modules have been configured',
+    );
+
+    // Navigate to dashboard
+    DashboardRoutes.HOME.go();
   }
 }

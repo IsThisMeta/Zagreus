@@ -167,7 +167,7 @@ class _State extends State<SettingsRoute> with ZagScrollControllerMixin {
     return ZagModule.fromKey(userModuleKey) ?? ZagModule.DASHBOARD;
   }
 
-  Widget _buildProButton() {
+Widget _buildProButton() {
     final bool isPro = ZagreusPro.isEnabled;
 
     return ZagBlock(

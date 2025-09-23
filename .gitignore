@@ -25,3 +25,5 @@ zagreus-notification-service/Dockerfile
 zagreus-notification-service/apns.go
 zagreus/lib/modules/settings/core/dialogs.dart
 zagreus/lib/supabase/demo_config.dart
+zagreus/demo_config_setup.sql
+zagreus/DEMO_SETUP_INSTRUCTIONS.md

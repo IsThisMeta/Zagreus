@@ -4,6 +4,7 @@ import 'package:zagreus/core.dart';
 import 'package:zagreus/database/database.dart';
 import 'package:zagreus/database/models/external_module.dart';
 import 'package:zagreus/database/tables/zagreus.dart';
+import 'package:zagreus/modules.dart';
 import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/modules/settings/routes/system/widgets/backup_tile.dart';
 import 'package:zagreus/modules/settings/routes/system/widgets/restore_tile.dart';
@@ -193,6 +194,23 @@ class _State extends State<SystemRoute> with ZagScrollControllerMixin {
     profile.radarrEnabled = true;
     profile.sonarrEnabled = true;
     await ZagBox.profiles.update(ZagProfile.DEFAULT_PROFILE, profile);
+
+    // Set the drawer order (excluding Dashboard since it's always added automatically)
+    // First disable automatic manage
+    ZagreusDatabase.DRAWER_AUTOMATIC_MANAGE.update(false);
+
+    // Set manual order without Dashboard
+    final orderedModules = [
+      ZagModule.DISCOVER,
+      ZagModule.RADARR,
+      ZagModule.SONARR,
+      ZagModule.LIDARR,
+      ZagModule.SABNZBD,
+      ZagModule.NZBGET,
+      ZagModule.TAUTULLI,
+      ZagModule.EXTERNAL_MODULES,
+    ];
+    ZagreusDatabase.DRAWER_MANUAL_ORDER.update(orderedModules);
 
     // External module demo entry (from Supabase)
     if (demoConfig['external_module_enabled'] == true) {

@@ -9,7 +9,6 @@ import 'package:zagreus/modules/settings.dart';
 import 'package:zagreus/modules/settings/routes/system/widgets/backup_tile.dart';
 import 'package:zagreus/modules/settings/routes/system/widgets/restore_tile.dart';
 import 'package:zagreus/router/routes/settings.dart';
-import 'package:zagreus/router/routes/dashboard.dart';
 import 'package:zagreus/supabase/demo_config.dart';
 import 'package:zagreus/system/cache/image/image_cache.dart';
 
@@ -238,8 +237,5 @@ class _State extends State<SystemRoute> with ZagScrollControllerMixin {
       title: 'Demo Configuration Loaded',
       message: 'All modules have been configured',
     );
-
-    // Navigate to dashboard
-    DashboardRoutes.HOME.go();
   }
 }

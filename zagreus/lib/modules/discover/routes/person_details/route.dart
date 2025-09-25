@@ -563,7 +563,7 @@ class _State extends State<PersonDetailsRoute>
                           child: Text(
                             credit['year'],
                             style: TextStyle(
-                              color: ZagColours.accent,
+                              color: ZagColours.accentLight,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),

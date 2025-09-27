@@ -169,11 +169,56 @@ class RevenueCatService {
   bool get isAvailable => true; // RevenueCat handles availability internally
 
   Future<bool> purchaseYearly() async {
-    // TODO: Implement yearly subscription when available
-    showZagInfoSnackBar(
-      title: 'Coming Soon',
-      message: 'Yearly subscriptions will be available soon',
-    );
-    return false;
+    try {
+      // Get available packages
+      final offerings = await Purchases.getOfferings();
+
+      print('🔍 RevenueCat Offerings: ${offerings.all.keys}');
+      print('🔍 Current offering: ${offerings.current?.identifier}');
+      print('🔍 Available packages: ${offerings.current?.availablePackages.map((p) => p.identifier).toList()}');
+
+      // Try to find yearly package by identifier
+      final packages = offerings.current?.availablePackages ?? [];
+      final yearlyPackage = packages.isNotEmpty
+          ? packages.firstWhere(
+              (pkg) => pkg.identifier == '\$rc_annual',
+              orElse: () => packages.firstWhere(
+                (pkg) => pkg.packageType == PackageType.annual,
+                orElse: () => packages.last, // Fallback to last package if no annual found
+              ),
+            )
+          : null;
+
+      if (yearlyPackage == null) {
+        print('❌ No yearly package found in offerings');
+        showZagInfoSnackBar(
+          title: 'Error',
+          message: 'Yearly subscription not available',
+        );
+        return false;
+      }
+
+      // Make purchase
+      final result = await Purchases.purchasePackage(yearlyPackage);
+      _customerInfo = result.customerInfo;
+      _updateProStatus();
+
+      showZagInfoSnackBar(
+        title: 'Welcome to Zagreus Pro!',
+        message: 'Premium features are now unlocked for a year.',
+      );
+      return true;
+    } catch (e) {
+      if (e is PurchasesErrorCode && e == PurchasesErrorCode.purchaseCancelledError) {
+        // User cancelled - don't show error
+        return false;
+      }
+      print('❌ Purchase failed: $e');
+      showZagInfoSnackBar(
+        title: 'Purchase Failed',
+        message: 'Unable to complete purchase',
+      );
+      return false;
+    }
   }
 }

@@ -233,16 +233,24 @@ Widget _buildProButton() {
                 _purchasePro(true);
               },
             ),
-            // TODO: Enable yearly subscription when available in App Store
-            // ZagDialog.tile(
-            //   icon: Icons.star_rounded,
-            //   iconColor: ZagColours.orange,
-            //   text: 'Yearly • \$3.99/year (Save 58%!)',
-            //   onTap: () {
-            //     Navigator.of(context).pop();
-            //     _purchasePro(false);
-            //   },
-            // ),
+            ZagDialog.tile(
+              icon: Icons.star_rounded,
+              iconColor: ZagColours.orange,
+              text: 'Yearly • \$3.99/year (Save 58%!)',
+              subtitle: RichText(
+                text: TextSpan(
+                  text: '1 month free trial',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                _purchasePro(false);
+              },
+            ),
             const SizedBox(height: 16),
             // Legal links required by Apple
             Padding(
@@ -273,7 +281,7 @@ Widget _buildProButton() {
                           'Terms of Service',
                           style: TextStyle(
                             fontSize: 12,
-                            color: ZagColours.accent,
+                            color: ZagColours.accentLight,
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -295,7 +303,7 @@ Widget _buildProButton() {
                           'Privacy Policy',
                           style: TextStyle(
                             fontSize: 12,
-                            color: ZagColours.accent,
+                            color: ZagColours.accentLight,
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -317,7 +325,7 @@ Widget _buildProButton() {
                   'Restore Purchases',
                   style: TextStyle(
                     fontSize: 16,
-                    color: ZagColours.accent,
+                    color: ZagColours.accentLight,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

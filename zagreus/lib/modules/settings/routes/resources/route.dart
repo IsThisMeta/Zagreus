@@ -35,7 +35,6 @@ class _State extends State<SettingsResourcesRoute>
     return ZagListView(
       controller: scrollController,
       children: [
-        ZagHeader(text: 'Community'),
         ZagBlock(
           title: 'Reddit',
           body: [TextSpan(text: 'Join the community discussion')],
@@ -53,6 +52,13 @@ class _State extends State<SettingsResourcesRoute>
           body: [TextSpan(text: 'Source code and issue tracking')],
           trailing: const ZagIconButton(icon: Icons.code_rounded),
           onTap: () => 'https://github.com/isthismeta/zagreus'.openLink(),
+        ),
+        ZagDivider(),
+        ZagBlock(
+          title: 'Support Email',
+          body: [TextSpan(text: 'support@zebrra.co')],
+          trailing: const ZagIconButton(icon: Icons.mail_rounded),
+          onTap: () => 'mailto:support@zebrra.co'.openLink(),
         ),
       ],
     );

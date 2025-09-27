@@ -1502,11 +1502,10 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
 
       await _openMovieInRadarr(tmdbId: tmdbId, title: title);
     } else if (mediaType == 'tv') {
-      // TV show handling would go here with Sonarr
-      showZagSnackBar(
+      // For search results, we only have TMDB ID
+      await _openSeriesInSonarr(
+        tmdbId: tmdbId,
         title: title,
-        message: 'TV show support coming soon',
-        type: ZagSnackbarType.INFO,
       );
     } else if (mediaType == 'person') {
       // Person details
@@ -1776,11 +1775,32 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         title: item['title'] as String?,
       );
     } else if (mediaType == 'tv') {
-      // For TV shows, we'd need similar logic with Sonarr
-      showZagSnackBar(
-        title: item['title'] as String,
-        message: 'TV show support coming soon',
-        type: ZagSnackbarType.INFO,
+      // Check if show is in Sonarr library
+      final sonarrState = context.read<SonarrState>();
+      if (sonarrState.enabled && sonarrState.series != null) {
+        final series = await sonarrState.series!;
+        final title = item['title'] as String?;
+
+        // Try to find by title match
+        if (title != null) {
+          for (final show in series.values) {
+            if (show.title?.toLowerCase() == title.toLowerCase()) {
+              if (show.id != null) {
+                SonarrRoutes.SERIES.go(
+                  params: {
+                    'series': show.id.toString(),
+                  },
+                );
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      await _openSeriesInSonarr(
+        tmdbId: tmdbId,
+        title: item['title'] as String?,
       );
     }
   }
@@ -2601,6 +2621,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     final bool inLibrary = show['inLibrary'] ?? false;
     final int? serviceItemId = show['serviceItemId'] as int?;
     final int? tmdbId = show['tmdbId'] as int?;
+    final int? tvdbId = show['tvdbId'] as int?;
     final String? title = show['title'] as String?;
 
     if (inLibrary && serviceItemId != null) {
@@ -2614,6 +2635,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
 
     await _openSeriesInSonarr(
       tmdbId: tmdbId,
+      tvdbId: tvdbId,
       title: title,
     );
   }
@@ -2828,6 +2850,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     final bool inLibrary = show['inLibrary'] ?? false;
     final int? serviceItemId = show['serviceItemId'] as int?;
     final int? tmdbId = show['tmdbId'] as int?;
+    final int? tvdbId = show['tvdbId'] as int?;
     final String? title = show['title'] as String?;
 
     if (inLibrary && serviceItemId != null) {
@@ -2841,6 +2864,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
 
     await _openSeriesInSonarr(
       tmdbId: tmdbId,
+      tvdbId: tvdbId,
       title: title,
     );
   }
@@ -2922,7 +2946,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     }
   }
 
-  Future<void> _openSeriesInSonarr({int? tmdbId, String? title}) async {
+  Future<void> _openSeriesInSonarr({int? tmdbId, int? tvdbId, String? title}) async {
     final sonarrState = context.read<SonarrState>();
     if (!sonarrState.enabled || sonarrState.api == null) {
       showZagSnackBar(
@@ -2966,9 +2990,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
         return;
       }
 
-      final query = tmdbId != null
-          ? 'tmdb:$tmdbId'
-          : (title != null && title.trim().isNotEmpty ? title.trim() : '');
+      final query = tvdbId != null
+          ? 'tvdb:$tvdbId'
+          : tmdbId != null
+              ? 'tmdb:$tmdbId'
+              : (title != null && title.trim().isNotEmpty ? title.trim() : '');
 
       if (query.isEmpty) {
         showZagSnackBar(
@@ -2998,9 +3024,11 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
       if (results.isEmpty) {
         showZagSnackBar(
           title: title ?? 'Sonarr',
-          message: tmdbId != null
-              ? 'Could not find TMDB ID $tmdbId in Sonarr.'
-              : 'Could not find this show in Sonarr.',
+          message: tvdbId != null
+              ? 'Could not find TVDB ID $tvdbId in Sonarr.'
+              : tmdbId != null
+                  ? 'Could not find TMDB ID $tmdbId in Sonarr.'
+                  : 'Could not find this show in Sonarr.',
           type: ZagSnackbarType.ERROR,
         );
         return;
@@ -3240,6 +3268,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
     final bool inLibrary = show['inLibrary'] ?? false;
     final int? serviceItemId = show['serviceItemId'] as int?;
     final int? tmdbId = show['tmdbId'] as int?;
+    final int? tvdbId = show['tvdbId'] as int?;
     final String? title = show['title'] as String?;
 
     if (inLibrary && serviceItemId != null) {
@@ -3253,6 +3282,7 @@ class _State extends State<DiscoverHomeRoute> with ZagScrollControllerMixin {
 
     await _openSeriesInSonarr(
       tmdbId: tmdbId,
+      tvdbId: tvdbId,
       title: title,
     );
   }
